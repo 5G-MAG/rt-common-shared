@@ -8,3 +8,9 @@ This directory contains files that are shared by two or more of these repositori
 - [rt-5gms-media-stream-handler](https://github.com/5G-MAG/rt-5gms-media-stream-handler)
 
 The `examples` directory contains example configuration files and API outputs.
+
+The `scripts` directory contains scripts which may be used in building the
+projects from the repositories named above.
+
+The `man` directory contains man(1) pages for the scripts in the scripts
+directory.
