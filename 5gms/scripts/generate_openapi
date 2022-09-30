@@ -1,0 +1,212 @@
+#!/bin/sh
+#
+# 5G-MAG Reference Tools: Generate OpenAPI bindings tool
+# ======================================================
+#
+# Author(s): David Waring <david.warin2@bbc.co.uk>
+#            Dev Audsin <dev.audsin@bbc.co.uk>
+# Copyright: ©2022 British Broadcasting Corporation
+#   License: 5G-MAG Public License v1.0
+#
+# Prerequisites:
+#   - git
+#   - java
+#   - wget
+#
+# For full license terms please see the LICENSE file distributed with this
+# program. If this file is missing then the license can be retrieved from
+# https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+#
+# This script will use wget and git to download the openapi-generator-cli tool
+# and a specified branch of the 5G APIs. It will then create a set of bindings
+# in a specified output language.
+#
+
+# Save location of this script and the name it was called by
+scriptname=`basename "$0"`
+scriptdir=`dirname "$0"`
+scriptdir=`cd "$scriptdir"; pwd`
+
+# Command line option defaults
+default_branch='REL-17'
+default_language=
+default_api=
+default_destdir='openapi'
+default_openapi_gen_config=
+default_openapi_gen_version='6.0.1'
+
+# script constants
+GIT_5G_APIS_URL='https://forge.3gpp.org/rep/all/5G_APIs.git'
+OPENAPI_GEN_URL_FORMAT='https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_GEN_VERSION}/openapi-generator-cli-${OPENAPI_GEN_VERSION}.jar'
+
+# Parse command line arguments
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:h' -l 'api:,branch:,generator-config:,language:,directory:,help' -s sh -- "$@"`
+
+if [ $? -ne 0 ]; then
+    print_syntax >&2
+    exit 1
+fi
+
+print_syntax() {
+    echo "Syntax: $scriptname [-h] [-b <release-branch>] [-d <directory>]"
+    echo '                    [-c <openapi-generator-config>] -a <API-name>'
+    echo '                    -l <language>[:<additional-properties>]'
+}
+
+print_help() {
+    cat <<EOF
+5G-MAG Reference Tools - Generate OpenAPI bindings
+
+This script will download the 5G APIs and openapi-generator-cli tool and uses
+them to create bindings of the specified language.
+
+EOF
+    print_syntax
+    cat <<EOF
+
+Options:
+  -h         --help           Show this help message and exit.
+  -a API     --api API        The OpenAPI interface to generate the bindings
+			      from (e.g. TS26512_M1_ContentHostingProvisioning).
+  -b BRANCH  --branch BRANCH  Use the given branch of the 5G_APIs repository.
+                              [default: $default_branch]
+  -c CONFIG  --generator-config CONFIG
+                              A configuration file to pass to
+                              openapi-generator-cli.
+  -d DIR     --directory DIR  Directory for the OpenAPI bindings.
+                              [default: $default_destdir]
+  -l LANG[:PROP[,PROP...]]  --language LANG[:PROP[,PROP...]]
+                              Output language to use for OpenAPI bindings (e.g.
+                              c or python).
+  -g VERSION --openapi-generator-version VERSION
+                              Version of the openapi-generator-cli to use.
+                              [default: $default_openapi_gen_version]
+EOF
+}
+
+eval set -- "$ARGS"
+unset ARGS
+
+API="$default_api"
+BRANCH="$default_branch"
+DIRECTORY="$default_destdir"
+LANGUAGE="$default_language"
+OPENAPI_GEN_CONFIG="$default_openapi_gen_config"
+OPENAPI_GEN_VERSION="$default_openapi_gen_version"
+
+while true; do
+    case "$1" in
+    -a|--api)
+	API="$2"
+	shift 2
+	continue
+	;;
+    -b|--branch)
+	BRANCH="$2"
+	shift 2
+	continue
+	;;
+    -c|--generator-config)
+	OPENAPI_GEN_CONFIG="$2"
+	shift 2
+	continue
+	;;
+    -l|--language)
+	LANGUAGE="$2"
+	shift 2
+	continue
+	;;
+    -d|--directory)
+	DIRECTORY="$2"
+	shift 2
+	continue
+	;;
+    -h|--help)
+	print_help
+	exit 0
+	;;
+    --)
+	shift
+	break
+	;;
+    *)
+	echo "Error: Command line argument \"$1\" unexpected" >&2
+	print_syntax >&2
+	exit 1
+	;;
+    esac
+done
+
+if [ $# -gt 0 ]; then
+    echo "Error: Command line argument \"$1\" unexpected" >&2
+    print_syntax >&2
+    exit 1
+fi
+
+if [ -z "$API" -o -z "$LANGUAGE" ]; then
+    echo 'Error: Required command line parameters are missing' >&2
+    print_syntax >&2
+    exit 1
+fi
+
+find_java() {
+    # Use the JAVA environment variable if set else look for "java" command
+    if [ -n "$JAVA" ]; then
+	echo $JAVA
+    else
+	which java
+    fi
+}
+
+# Get the absolute path to the destination directory
+destdir=`realpath -m "$DIRECTORY"`
+
+# Convert openapi-generator-cli configuration file path to absolute path
+if [ -n "$OPENAPI_GEN_CONFIG" ]; then
+    OPENAPI_GEN_CONFIG=`realpath "$OPENAPI_GEN_CONFIG"`
+fi
+
+# Find JAVA
+java=`find_java`
+
+# Create temporary directory to work in
+tmpdir=`mktemp -d --tmpdir openapi-generator.XXXXXXXX`
+trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
+(
+    cd "$tmpdir"
+    # Download openapi-generator-cli
+    openapi_gen_url=`eval echo "$OPENAPI_GEN_URL_FORMAT"`
+    if ! wget "$openapi_gen_url" -O openapi-generator-cli.jar; then
+        echo "Error: Failed to fetch openapi-generator-cli" >&2
+        exit 1
+    fi
+    # Clone the 5G APIs git repository
+    if ! git clone -b "$BRANCH" "$GIT_5G_APIS_URL"; then
+        echo "Error: Failed to fetch branch $BRANCH from the 5G_APIs repository" >&2
+        exit 1
+    fi
+    echo "At commit "`cd 5G_APIs; git log -g --pretty='format:%h %d' --max-count=1 HEAD`
+    # Make sure we have the API requested
+    if [ ! -e "5G_APIs/${API}.yaml" ]; then
+        echo "Error: Could not find API, $API, in the 5G_APIs repository" >&2
+        exit 1
+    fi
+    # Prepare for API generation
+    unset language
+    unset additional_props
+    IFS=: read -r language additional_props <<EOF
+$LANGUAGE
+EOF
+    if [ -d "$destdir" ] && ! rm -rf "$destdir"; then
+        echo "Error: Unable to remove old $DIRECTORY directory for replacement" >&2
+	exit 1
+    fi
+    if ! mkdir -p "$destdir"; then
+	echo "Error: Unable to create output directory $DIRECTORY" >&2
+	exit 1
+    fi
+    # Use openapi-generator-cli to convert the API file to the language bindings
+    "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}"
+)
+
+exit 0
