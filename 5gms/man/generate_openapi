@@ -16,6 +16,7 @@ generate_openapi - Generate OpenAPI language bindings from 5G APIs
 .B \-h
 .SY generate_openapi
 .OP \-b branch
+.OP \-c config
 .OP \-d directory
 .OP \-g version
 .BI \-a\  api
@@ -65,6 +66,18 @@ This selects the top level API for the generated bindings. This is the same as a
 .BI "-b " "BRANCH" ", --branch " "BRANCH"
 .IX Item "-b"
 The 5G_APIs branch to use. If not given the default is to use the REL-17 branch.
+.TP
+.BI "-c " "CONFIG" ", --generator-config " "CONFIG"
+.IX Item "-c"
+An optional
+.I openapi-generator-cli
+YAML configuration file to pass to the generator using its
+.B -c
+command line option. See the
+.UR https://openapi-generator.tech/docs/customization
+openapi-generator-cli customization
+.UE
+documentation for further information about this configuration file.
 .TP
 .BI "-d " "DIRECTORY" ", --directory " "DIRECTORY"
 .IX Item "-d"

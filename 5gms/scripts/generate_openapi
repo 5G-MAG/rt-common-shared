@@ -32,6 +32,7 @@ default_branch='REL-17'
 default_language=
 default_api=
 default_destdir='openapi'
+default_openapi_gen_config=
 default_openapi_gen_version='6.0.1'
 
 # script constants
@@ -39,7 +40,7 @@ GIT_5G_APIS_URL='https://forge.3gpp.org/rep/all/5G_APIs.git'
 OPENAPI_GEN_URL_FORMAT='https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_GEN_VERSION}/openapi-generator-cli-${OPENAPI_GEN_VERSION}.jar'
 
 # Parse command line arguments
-ARGS=`getopt -n "$scriptname" -o 'a:b:l:d:h' -l 'api:,branch:,language:,directory:,help' -s sh -- "$@"`
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:h' -l 'api:,branch:,generator-config:,language:,directory:,help' -s sh -- "$@"`
 
 if [ $? -ne 0 ]; then
     print_syntax >&2
@@ -47,7 +48,8 @@ if [ $? -ne 0 ]; then
 fi
 
 print_syntax() {
-    echo "Syntax: $scriptname [-h] [-b <release-branch>] [-d <directory>] -a <API-name>"
+    echo "Syntax: $scriptname [-h] [-b <release-branch>] [-d <directory>]"
+    echo '                    [-c <openapi-generator-config>] -a <API-name>'
     echo '                    -l <language>[:<additional-properties>]'
 }
 
@@ -68,6 +70,9 @@ Options:
 			      from (e.g. TS26512_M1_ContentHostingProvisioning).
   -b BRANCH  --branch BRANCH  Use the given branch of the 5G_APIs repository.
                               [default: $default_branch]
+  -c CONFIG  --generator-config CONFIG
+                              A configuration file to pass to
+                              openapi-generator-cli.
   -d DIR     --directory DIR  Directory for the OpenAPI bindings.
                               [default: $default_destdir]
   -l LANG[:PROP[,PROP...]]  --language LANG[:PROP[,PROP...]]
@@ -86,6 +91,7 @@ API="$default_api"
 BRANCH="$default_branch"
 DIRECTORY="$default_destdir"
 LANGUAGE="$default_language"
+OPENAPI_GEN_CONFIG="$default_openapi_gen_config"
 OPENAPI_GEN_VERSION="$default_openapi_gen_version"
 
 while true; do
@@ -97,6 +103,11 @@ while true; do
 	;;
     -b|--branch)
 	BRANCH="$2"
+	shift 2
+	continue
+	;;
+    -c|--generator-config)
+	OPENAPI_GEN_CONFIG="$2"
 	shift 2
 	continue
 	;;
@@ -147,8 +158,15 @@ find_java() {
     fi
 }
 
+# Get the absolute path to the destination directory
 destdir=`realpath -m "$DIRECTORY"`
 
+# Convert openapi-generator-cli configuration file path to absolute path
+if [ -n "$OPENAPI_GEN_CONFIG" ]; then
+    OPENAPI_GEN_CONFIG=`realpath "$OPENAPI_GEN_CONFIG"`
+fi
+
+# Find JAVA
 java=`find_java`
 
 # Create temporary directory to work in
@@ -188,7 +206,7 @@ EOF
 	exit 1
     fi
     # Use openapi-generator-cli to convert the API file to the language bindings
-    "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}"
+    "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}"
 )
 
 exit 0
