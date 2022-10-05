@@ -40,7 +40,7 @@ GIT_5G_APIS_URL='https://forge.3gpp.org/rep/all/5G_APIs.git'
 OPENAPI_GEN_URL_FORMAT='https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_GEN_VERSION}/openapi-generator-cli-${OPENAPI_GEN_VERSION}.jar'
 
 # Parse command line arguments
-ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:h' -l 'api:,branch:,generator-config:,language:,directory:,help' -s sh -- "$@"`
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:g:h' -l 'api:,branch:,generator-config:,language:,directory:,openapi-generator-version:,help' -s sh -- "$@"`
 
 if [ $? -ne 0 ]; then
     print_syntax >&2
@@ -49,7 +49,8 @@ fi
 
 print_syntax() {
     echo "Syntax: $scriptname [-h] [-b <release-branch>] [-d <directory>]"
-    echo '                    [-c <openapi-generator-config>] -a <API-name>'
+    echo '                    [-c <openapi-generator-config>] [-g <version>]'
+    echo '                    -a <API-name>'
     echo '                    -l <language>[:<additional-properties>]'
 }
 
@@ -118,6 +119,11 @@ while true; do
 	;;
     -d|--directory)
 	DIRECTORY="$2"
+	shift 2
+	continue
+	;;
+    -g|--openapi-generator-version)
+	OPENAPI_GEN_VERSION="$2"
 	shift 2
 	continue
 	;;
