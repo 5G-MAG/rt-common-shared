@@ -19,6 +19,7 @@ generate_openapi - Generate OpenAPI language bindings from 5G APIs
 .OP \-c config
 .OP \-d directory
 .OP \-g version
+.OP \-y executable
 .BI \-a\  api
 .BI \-l\  language \fR[:\fP additional-properties \fR]\fP
 .YS
@@ -106,6 +107,10 @@ command line argument. These additional properties are language specific. See th
 generators list
 .UE
 for more information.
+.TP
+.BI "-y " "EXEC" ", --yaml-directory-processor " "EXEC"
+.IX Item "-y"
+An optional executable can be nominated to process the contents of the directory containing the OpenAPI YAML files. This executable will be run with the directory path of the 5G OpenAPI YAML as the only argument. The executable is run after the 5G API is cloned and before the bindings are generated.
 .SH "EXIT STATUS"
 .IX Header "EXIT STATUS"
 This command will exit with a return code of 0 on success and 1 on failure.
