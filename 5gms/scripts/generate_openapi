@@ -34,13 +34,14 @@ default_api=
 default_destdir='openapi'
 default_openapi_gen_config=
 default_openapi_gen_version='6.0.1'
+default_yaml_dir_processor=
 
 # script constants
 GIT_5G_APIS_URL='https://forge.3gpp.org/rep/all/5G_APIs.git'
 OPENAPI_GEN_URL_FORMAT='https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_GEN_VERSION}/openapi-generator-cli-${OPENAPI_GEN_VERSION}.jar'
 
 # Parse command line arguments
-ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:g:h' -l 'api:,branch:,generator-config:,language:,directory:,openapi-generator-version:,help' -s sh -- "$@"`
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:g:hy:' -l 'api:,branch:,generator-config:,language:,directory:,openapi-generator-version:,help,yaml-directory-processor:' -s sh -- "$@"`
 
 if [ $? -ne 0 ]; then
     print_syntax >&2
@@ -50,7 +51,7 @@ fi
 print_syntax() {
     echo "Syntax: $scriptname [-h] [-b <release-branch>] [-d <directory>]"
     echo '                    [-c <openapi-generator-config>] [-g <version>]'
-    echo '                    -a <API-name>'
+    echo '                    [-y <yaml-dir-processor>] -a <API-name>'
     echo '                    -l <language>[:<additional-properties>]'
 }
 
@@ -67,8 +68,9 @@ EOF
 
 Options:
   -h         --help           Show this help message and exit.
-  -a API     --api API        The OpenAPI interface to generate the bindings
-			      from (e.g. TS26512_M1_ContentHostingProvisioning).
+  -a APIS    --api APIS       Space separated list of OpenAPI interfaces to
+                              generate the bindings from (e.g.
+                              "TS26512_M1_ContentHostingProvisioning").
   -b BRANCH  --branch BRANCH  Use the given branch of the 5G_APIs repository.
                               [default: $default_branch]
   -c CONFIG  --generator-config CONFIG
@@ -76,29 +78,35 @@ Options:
                               openapi-generator-cli.
   -d DIR     --directory DIR  Directory for the OpenAPI bindings.
                               [default: $default_destdir]
-  -l LANG[:PROP[,PROP...]]  --language LANG[:PROP[,PROP...]]
-                              Output language to use for OpenAPI bindings (e.g.
-                              c or python).
   -g VERSION --openapi-generator-version VERSION
                               Version of the openapi-generator-cli to use.
                               [default: $default_openapi_gen_version]
+  -l LANG[:PROP[,PROP...]]  --language LANG[:PROP[,PROP...]]
+                              Output language to use for OpenAPI bindings (e.g.
+                              c or python).
+  -y EXE     --yaml-directory-processor EXE
+                              Executable to run to process the 5G API yaml
+                              directory before the generator is run. EXE will
+                              be run with the 5G API directory path as its only
+                              argument.
 EOF
 }
 
 eval set -- "$ARGS"
 unset ARGS
 
-API="$default_api"
+APIS="$default_api"
 BRANCH="$default_branch"
 DIRECTORY="$default_destdir"
 LANGUAGE="$default_language"
 OPENAPI_GEN_CONFIG="$default_openapi_gen_config"
 OPENAPI_GEN_VERSION="$default_openapi_gen_version"
+YAML_DIR_PROCESSOR="$default_yaml_dir_processor"
 
 while true; do
     case "$1" in
     -a|--api)
-	API="$2"
+	APIS="$2"
 	shift 2
 	continue
 	;;
@@ -131,6 +139,11 @@ while true; do
 	print_help
 	exit 0
 	;;
+    -y|--yaml-directory-processor)
+	YAML_DIR_PROCESSOR="$2"
+	shift 2
+	continue
+	;;
     --)
 	shift
 	break
@@ -149,7 +162,7 @@ if [ $# -gt 0 ]; then
     exit 1
 fi
 
-if [ -z "$API" -o -z "$LANGUAGE" ]; then
+if [ -z "$APIS" -o -z "$LANGUAGE" ]; then
     echo 'Error: Required command line parameters are missing' >&2
     print_syntax >&2
     exit 1
@@ -166,6 +179,15 @@ find_java() {
 
 # Get the absolute path to the destination directory
 destdir=`realpath -m "$DIRECTORY"`
+
+# Get the absolute path of the YAML directory processor executable
+if [ -n "$YAML_DIR_PROCESSOR" ]; then
+    YAML_DIR_PROCESSOR=`realpath "$YAML_DIR_PROCESSOR"`
+    if [ ! -x "$YAML_DIR_PROCESSOR" ]; then
+	echo "YAML directory processor is not executable" >&2
+	exit 1
+    fi
+fi
 
 # Convert openapi-generator-cli configuration file path to absolute path
 if [ -n "$OPENAPI_GEN_CONFIG" ]; then
@@ -192,10 +214,20 @@ trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
         exit 1
     fi
     echo "At commit "`cd 5G_APIs; git log -g --pretty='format:%h %d' --max-count=1 HEAD`
-    # Make sure we have the API requested
-    if [ ! -e "5G_APIs/${API}.yaml" ]; then
-        echo "Error: Could not find API, $API, in the 5G_APIs repository" >&2
-        exit 1
+    # Make sure we have the APIS requested
+    have_apis=1
+    for API in $APIS; do
+        if [ ! -e "5G_APIs/${API}.yaml" ]; then
+            echo "Error: Could not find API, $API, in the 5G_APIs repository" >&2
+	    have_apis=0
+	fi
+    done
+    if [ $have_apis == 0 ]; then
+	exit 1
+    fi
+    # Run YAML directory processor if one given
+    if [ -n "$YAML_DIR_PROCESSOR" ]; then
+	"$YAML_DIR_PROCESSOR" "$tmpdir/5G_APIs"
     fi
     # Prepare for API generation
     unset language
@@ -211,8 +243,11 @@ EOF
 	echo "Error: Unable to create output directory $DIRECTORY" >&2
 	exit 1
     fi
-    # Use openapi-generator-cli to convert the API file to the language bindings
-    "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}"
+    for API in $APIS; do
+        # Use openapi-generator-cli to convert the API file to the language
+        # bindings
+        "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}"
+    done
 )
 
 exit 0
