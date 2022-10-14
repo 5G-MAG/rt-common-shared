@@ -1,0 +1,33 @@
+5G-MAG Reference Tools Common and Shared files attribution notice
+=================================================================
+
+This repository contains examples and scripts which are used when building and
+testing the 5G-MAG Reference Tools.
+
+The following is a list of open source software that is used directly by scripts in this repository:
+
+- java - Java VM 1.8.0+
+  - available at https://openjdk.org/install
+    Licensed under GPL v2.0 with Classpath Exception (https://openjdk.org/legal/gplv2+ce.html)
+  - also available at https://www.oracle.com/java/technologies/downloads/
+    Licensed under various Oracle Java licenses (https://www.oracle.com/a/tech/docs/jdk19-lium.pdf)
+
+- openapi-generator - OpenAPI to code generator
+  - available at https://github.com/OpenAPITools/openapi-generator
+    Licensed under Apache Software License v2.0 terms (https://www.apache.org/licenses/LICENSE-2.0)
+
+- openssl - OpenSSL v1.1.1 and later
+  - available at https://openssl.org/
+    Licensed under The Dual OpenSSL and SSLeay License (https://www.openssl.org/source/license-openssl-ssleay.txt)
+
+- python - Python Interpreter v3.7 and later
+  - available at https://www.python.org/downloads/
+    Licensed under PSF License Agreement (https://docs.python.org/3/license.html#psf-license)
+
+- PyYAML - Python YAML processing framework module
+  - available at https://pypi.org/project/PyYAML/
+    Licensed under MIT License (https://github.com/yaml/pyyaml/blob/master/LICENSE)
+
+- wget - GNU Wget
+  - available at https://www.gnu.org/software/wget/
+    Licensed under GNU General Public License v3 (https://www.gnu.org/licenses/gpl-3.0.html)
