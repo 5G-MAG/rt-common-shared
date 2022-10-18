@@ -35,13 +35,14 @@ default_destdir='openapi'
 default_openapi_gen_config=
 default_openapi_gen_version='6.0.1'
 default_yaml_dir_processor=
+default_overrides_dirs="$scriptdir/../5G_APIs-overrides"
 
 # script constants
 GIT_5G_APIS_URL='https://forge.3gpp.org/rep/all/5G_APIs.git'
 OPENAPI_GEN_URL_FORMAT='https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_GEN_VERSION}/openapi-generator-cli-${OPENAPI_GEN_VERSION}.jar'
 
 # Parse command line arguments
-ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:g:hy:' -l 'api:,branch:,generator-config:,language:,directory:,openapi-generator-version:,help,yaml-directory-processor:' -s sh -- "$@"`
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:g:ho:y:' -l 'api:,branch:,generator-config:,language:,directory:,openapi-generator-version:,help,overrides-directories:,yaml-directory-processor:' -s sh -- "$@"`
 
 if [ $? -ne 0 ]; then
     print_syntax >&2
@@ -51,6 +52,7 @@ fi
 print_syntax() {
     echo "Syntax: $scriptname [-h] [-b <release-branch>] [-d <directory>]"
     echo '                    [-c <openapi-generator-config>] [-g <version>]'
+    echo '                    [-o <overrides-dir>[:<overrides-dir>...]]'
     echo '                    [-y <yaml-dir-processor>] -a <API-name>'
     echo '                    -l <language>[:<additional-properties>]'
 }
@@ -84,6 +86,10 @@ Options:
   -l LANG[:PROP[,PROP...]]  --language LANG[:PROP[,PROP...]]
                               Output language to use for OpenAPI bindings (e.g.
                               c or python).
+  -o OVERRIDES-DIRS --overrides-directories OVERRIDES-DIRS
+                              An optional list of directory paths, separated
+                              by colons, that will be searched for OpenAPI YAML
+                              files before the 5G APIs repository versions.
   -y EXE     --yaml-directory-processor EXE
                               Executable to run to process the 5G API yaml
                               directory before the generator is run. EXE will
@@ -102,6 +108,7 @@ LANGUAGE="$default_language"
 OPENAPI_GEN_CONFIG="$default_openapi_gen_config"
 OPENAPI_GEN_VERSION="$default_openapi_gen_version"
 YAML_DIR_PROCESSOR="$default_yaml_dir_processor"
+OVERRIDES_DIRS="$default_overrides_dirs"
 
 while true; do
     case "$1" in
@@ -138,6 +145,11 @@ while true; do
     -h|--help)
 	print_help
 	exit 0
+	;;
+    -o|--overrides-directories)
+	OVERRIDES_DIRS="$2"
+	shift 2
+	continue
 	;;
     -y|--yaml-directory-processor)
 	YAML_DIR_PROCESSOR="$2"
@@ -197,6 +209,22 @@ fi
 # Find JAVA
 java=`find_java`
 
+reverse_paths() {
+    old_IFS="$IFS"
+    IFS=:
+    rev=''
+    for p in $1; do
+	p=`realpath "$p"`
+	rev="${p}:$rev"
+    done
+    IFS="$old_IFS"
+    echo "${rev%:}"
+}
+
+rev_overrides_dirs=`reverse_paths "$OVERRIDES_DIRS"`
+
+echo "Overrides directories: $rev_overrides_dirs"
+
 # Create temporary directory to work in
 tmpdir=`mktemp -d --tmpdir openapi-generator.XXXXXXXX`
 trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
@@ -214,6 +242,14 @@ trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
         exit 1
     fi
     echo "At commit "`cd 5G_APIs; git log -g --pretty='format:%h %d' --max-count=1 HEAD`
+    # import overrides
+    (
+        IFS=:
+	for p in $rev_overrides_dirs; do
+	    echo "Copying YAML files from $p..."
+	    find "$p" -maxdepth 1 -type f -name '*.yaml' -print0 | xargs -0 -I ARGS /bin/cp -f ARGS 5G_APIs/
+	done
+    )
     # Make sure we have the APIS requested
     have_apis=1
     for API in $APIS; do
