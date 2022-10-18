@@ -1,0 +1,206 @@
+openapi: 3.0.0
+info:
+  title: M3_ContentHostingProvisioning
+  version: 0.0.0
+  description: |
+    5GMS AS M3 Content Hosting Provisioning API
+    Copyright © 2022 British Broadcasting Corporation
+    All rights reserved.
+tags:
+  - name: M3_ContentHostingProvisioning
+    description: '5G Media Streaming: Application Server Provisioning (M3) APIs: Content Hosting Provisioning'
+externalDocs:
+  description: 'TS 26.512 V16.x.x; 5G Media Streaming (5GMS); Protocols'
+  url: 'https://www.3gpp.org/ftp/Specs/archive/26_series/26.512/'
+servers:
+  - url: '{apiRoot}/3gpp-m3/v1'
+    variables:
+      apiRoot:
+        default: https://example.com
+        description: See 3GPP TS 29.512 clause 6.1.
+paths:
+  /content-hosting-configurations:
+    summary: "Content Hosting Configuration collection"
+    get:
+      operationId: retrieveContentHostingConfigurations
+      summary: "Retrieve a list of Content Hosting Configuration resource identifiers currently registered with the 5GMS AS"
+      responses:
+        '200':
+          # OK
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+        '500':
+          # Internal Server Error
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          # Service Unavailable
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+
+  /content-hosting-configurations/{provisioningSessionId}:
+    summary: "Operations to manipulate a single Content Hosting Configuration resource"
+    description: "Individual Content Hosting Configuration resources in the collection are addressed by the provisioningSessionId of their parent Provisioning Session."
+    parameters:
+      - name: provisioningSessionId
+        in: path
+        required: true
+        schema:
+          $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+        description: 'The resource identifier of an existing Provisioning Session.'
+    post:
+      operationId: createContentHostingConfiguration
+      summary: 'Create and upload the Content Hosting Configuration for the specified Provisioning Session'
+      requestBody:
+        description: 'A JSON representation of a Content Hosting Configuration'
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'TS26512_M1_ContentHostingProvisioning.yaml#/components/schemas/ContentHostingConfiguration'
+      responses:
+        '201':
+          # Created
+          description: 'Content Hosting Configuration Created'
+          headers:
+            Location:
+              description: 'URL of the newly created Content Hosting Configuration (which may be redirected from the request URL).'
+              required: true
+              schema:
+                $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+        '405':
+          # Method Not Allowed: Content Hosting Configuration resource already exists at the specified path
+          $ref: 'TS29571_CommonData.yaml#/components/responses/405'
+        '413':
+          # Payload too large
+          $ref: 'TS29571_CommonData.yaml#/components/responses/413'
+        '414':
+          # URI too long
+          $ref: 'TS29571_CommonData.yaml#/components/responses/414'
+        '415':
+          # Unsupported Media Type
+          $ref: 'TS29571_CommonData.yaml#/components/responses/415'
+        '500':
+          # Internal Server Error
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          # Service Unavailable
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'    
+    # (Retrieval of individual Content Hosting Configuration resources is not permitted at reference point M3.)
+    put:
+      operationId: updateContentHostingConfiguration
+      summary: 'Update (by replacement) an existing Content Hosting Configuration for the specified Provisioning Session'
+      requestBody:
+        description: 'A JSON representation of a Content Hosting Configuration'
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'TS26512_M1_ContentHostingProvisioning.yaml#/components/schemas/ContentHostingConfiguration'
+      responses:
+        '200':
+          # OK
+          description: 'Content Hosting Configuration Updated'
+        '204':
+          # No Content
+          description: 'Content Hosting Configuration Unchanged'
+        '404':
+          # Not Found
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '413':
+          # Payload too large
+          $ref: 'TS29571_CommonData.yaml#/components/responses/413'
+        '414':
+          # URI too long
+          $ref: 'TS29571_CommonData.yaml#/components/responses/414'
+        '415':
+          # Unsupported Media Type
+          $ref: 'TS29571_CommonData.yaml#/components/responses/415'
+        '500':
+          # Internal Server Error
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          # Service Unavailable
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default' 
+    delete:
+      operationId: destroyContentHostingConfiguration
+      summary: 'Destroy the specified Content Hosting Configuration'
+      responses:
+        '204':
+          # No Content
+          description: 'Content Hosting Configuration Destroyed'
+        '404':
+          # Not Found
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '413':
+          # Payload too large
+          $ref: 'TS29571_CommonData.yaml#/components/responses/413'
+        '414':
+          # URI too long
+          $ref: 'TS29571_CommonData.yaml#/components/responses/414'
+        '500':
+          # Internal Server Error
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          # Service Unavailable
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+
+  /content-hosting-configurations/{provisioningSessionId}/purge:
+    parameters:
+        - name: provisioningSessionId
+          in: path
+          required: true
+          schema:
+            $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+          description: 'The Provisioning Session identifier of an existing Content Hosting Configuration.'
+    post:
+      operationId: purgeContentHostingCache
+      summary: 'Purge the content of the cache for the specified Content Hosting Configuration'
+      requestBody:
+        description: 'The regular expression pattern for resources to purge from the cache'
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                pattern: 
+                  description: 'Keyword'
+                  type: string
+                value:
+                  description: 'The regular expression'
+                  type: string
+      responses:
+        '204':
+          # No Content
+          description: 'Content Purged'
+        '404':
+          # Not Found
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '413':
+          # Payload too large
+          $ref: 'TS29571_CommonData.yaml#/components/responses/413'
+        '415':
+          # Unsupported Media Type
+          $ref: 'TS29571_CommonData.yaml#/components/responses/415'
+        '414':
+          # URI too long
+          $ref: 'TS29571_CommonData.yaml#/components/responses/414'
+        '500':
+          # Internal Server Error
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          # Service Unavailable
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
