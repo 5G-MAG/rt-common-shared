@@ -43,22 +43,16 @@ paths:
         default:
           $ref: 'TS29571_CommonData.yaml#/components/responses/default'
 
-  /certificates/{provisioningSessionId}+{certificateId}:
+  /certificates/{afUniqueCertificateId}:
     summary: "Operations to manipulate a single Server Certificate resource"
     description: "Individual Server Certificate resources in the collection are addressed using a composite key since certificateId is only unique within the scope of a provisioningSessionId."
     parameters:
-     - name: provisioningSessionId
+     - name: afUniqueCertificateId
        in: path
        required: true
        schema:
          $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
-       description: 'The resource identifier of a Provisioning Session in the 5GMS AF.'
-     - name: certificateId
-       in: path
-       required: true
-       schema:
-         $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
-       description: 'The resource identifier of a Server Certificate, unique within the scope of a Provisioning Session.'
+       description: 'The unique identifier, assigned by the 5GMS AF, for a certificate. This is unique across all certificates for all provisioning sessions.'
     post:
       operationId: createServerCertificate
       summary: "Create a new Server Certificate resource and upload an X.509 certificate bundle to be associated with it"
@@ -147,6 +141,9 @@ paths:
         '404':
           # Not Found
           $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '409':
+          # Conflict
+          $ref: 'TS29571_CommonData.yaml#/components/responses/409'
         '413':
           # Payload too large
           $ref: 'TS29571_CommonData.yaml#/components/responses/413'
