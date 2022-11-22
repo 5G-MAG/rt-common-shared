@@ -175,10 +175,7 @@ paths:
             schema:
               properties:
                 pattern: 
-                  description: 'Keyword'
-                  type: string
-                value:
-                  description: 'The regular expression'
+                  description: 'Regular expression to match URL in cache entry'
                   type: string
       responses:
         '204':
