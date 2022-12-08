@@ -51,7 +51,7 @@ a=mbms-mode:broadcast-mbsfn 269087077
 c=IN IP4 238.1.1.111/127
 b=AS:1699
 m=application 40101 FLUTE/UDP 0
-a=flute-tsi:16
+a=flute-tsi:0
 a=flute-ch:1
 a=3GPP-QoE-Metrics:metrics={Object_Loss};rate=null;resolution=10
 a=3GPP-QoE-Metrics:metrics={Network_Resource};rate=null;resolution=10
@@ -65,7 +65,7 @@ Content-Location: file:///TMGI-0x1009f165.m3u8
 #EXT-X-VERSION:3
 
 #EXT-X-STREAM-INF:CODECS="avc1.4D401E,mp4a.40.2",BANDWIDTH=1427133,FRAME-RATE=25.000,RESOLUTION=640x360
-out/u/bbb/qxa/manifest_3.m3u8?m=1614073235
+watchfolder/hls/stream_0.m3u8
 
 --xxx.yyy.zzz.--Rohde&Schwarz-BSCC--zzz.yyy.xxx--
 Content-Type: application/vnd.apple.mpegurl
@@ -113,7 +113,7 @@ Content-Location: file:///usdBundle.xml
     <deliveryMethod sessionDescriptionURI="file:///TMGI-0x1009f165.sdp">
       <sv:delimiter>0</sv:delimiter>
       <r12:broadcastAppService>
-        <r12:basePattern>out/u/bbb/qxa/manifest_3.m3u8?m=1614073235</r12:basePattern>
+        <r12:basePattern>watchfolder/hls/stream_0.m3u8</r12:basePattern>
         <r12:basePattern>file:///TMGI-0x1009f165.m3u8</r12:basePattern>
         <r12:serviceArea>2</r12:serviceArea>
       </r12:broadcastAppService>
