@@ -1,6 +1,6 @@
 {
   "name": "Big Buck Bunny",
-  "entryPointPath": "https://ftp.itec.aau.at/datasets/DASHDataset2014/BigBuckBunny/4sec/BigBuckBunny_4s_onDemand_2014_05_09.mpd",
+  "entryPointPath": "BigBuckBunny_4s_onDemand_2014_05_09.mpd",
   "ingestConfiguration": {
     "pull": true,
     "protocol": "urn:3gpp:5gms:content-protocol:http-pull-ingest",

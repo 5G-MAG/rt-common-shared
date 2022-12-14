@@ -261,7 +261,8 @@ components:
         name:
           type: string
         entryPointPath:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+          type: string
+          format: uri-reference
         ingestConfiguration:
           $ref: '#/components/schemas/IngestConfiguration'
         distributionConfigurations:
