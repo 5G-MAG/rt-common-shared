@@ -93,6 +93,22 @@ def read_certs(certs_file):
 
     return certs
 
+def openssl_version():
+    result = subprocess.run(['openssl','version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        sys.stderr.write('Error: Failed to determine OpenSSL version\n')
+        sys.exit(1)
+    result = [s.decode('utf-8') for s in result.stdout.split()]
+    if result[0] != 'OpenSSL':
+        sys.stderr.write('Error: Cannot extract version number from "openssl version": %r\n'%result)
+        sys.exit(1)
+    result = result[1].split('.')
+    result += [result[2].lstrip('0123456789')]
+    if len(result[3]) > 0:
+        result[2] = result[2][:-len(result[3])]
+    result = {'major': int(result[0]), 'minor': int(result[1]), 'micro': int(result[2]), 'release': result[3]}
+    return result
+
 def main():
     if len(sys.argv) != 3:
         sys.stderr.write('Syntax: %s <CHC-JSON-file> <Certificates-JSON-file>\n'%os.path.basename(sys.argv[0]))
@@ -115,10 +131,16 @@ def main():
         if cert_id not in certs:
             raise ConfigError('Certificate ID %s in ContentHostingConfiguration but does not appear in the certificates map'%cert_id)
 
+    openssl_ver = openssl_version()
+    if openssl_ver['major'] >= 3:
+        noenc = '-noenc'
+    else:
+        noenc = '-nodes'
+
     # Generate the certificates
     for cert_id, hosts in cert_id_map.items():
         cert_filename = certs[cert_id]
-        cmd = ['openssl','req','-new','-newkey','rsa:2048','-keyout',cert_filename,'-out',cert_filename,'-x509','-batch','-outform','PEM','-noenc','-set_serial','1','-subj','/CN='+hosts['canonicalname'],'-days','30']
+        cmd = ['openssl','req','-new','-newkey','rsa:2048','-keyout',cert_filename,'-out',cert_filename,'-x509','-batch','-outform','PEM',noenc,'-set_serial','1','-subj','/CN='+hosts['canonicalname'],'-days','30']
         for h in hosts['hostnames']:
             cmd += ['-addext','subjectAltName=DNS:'+h]
         print('Running: '+' '.join(cmd))
