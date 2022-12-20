@@ -187,3 +187,58 @@ components:
             This string provides forward-compatibility with future
             extensions to the enumeration but is not used to encode
             content defined in the present version of this API.
+
+    EndpointAddress:
+      type: object
+      required:
+        - portNumber
+      properties:
+        ipv4Addr:
+          $ref: 'TS29571_CommonData.yaml#/components/schemas/Ipv4Addr'
+        ipv6Addr:
+          $ref: 'TS29571_CommonData.yaml#/components/schemas/Ipv6Addr'
+        portNumber:
+          $ref: 'TS29571_CommonData.yaml#/components/schemas/Uint16'
+
+    CacheStatus:
+      anyOf:
+        - type: string
+          enum: [HIT, MISS, EXPIRED]
+        - type: string
+          description: >
+            This string provides forward-compatibility with future
+            extensions to the enumeration but is not used to encode
+            content defined in the present version of this API.
+
+    EdgeProcessingEligibilityCriteria:
+      type: object
+      required:
+        - serviceDataFlowDescriptions
+        - ueLocations
+        - timeWindows
+        - appRequest
+      properties:
+        serviceDataFlowDescriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceDataFlowDescription'
+        ueLocations:
+          type: array
+          items:
+            $ref: 'TS29122_CommonData.yaml#/components/schemas/LocationArea5G'
+        timeWindows:
+          type: array
+          items:
+            $ref: 'TS29122_CommonData.yaml#/components/schemas/TimeWindow'
+        appRequest:
+          type: boolean
+
+    EASRelocationTolerance:
+      anyOf:
+        - type: string
+          enum: [RELOCATION_UNAWARE, RELOCATION_TOLERANT, RELOCATION_INTOLERANT]
+        - type: string
+          description: >
+            This string provides forward-compatibility with future
+            extensions to the enumeration but is not used to encode
+            content defined in the present version of this API.
