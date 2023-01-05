@@ -193,6 +193,9 @@ paths:
         '414':
           # URI too long
           $ref: 'TS29571_CommonData.yaml#/components/responses/414'
+        '422':
+          # Unprocessable Entity (e.g. syntactically invalid regular expression in request body)
+          $ref: 'TS29571_CommonData.yaml#/components/responses/422'
         '500':
           # Internal Server Error
           $ref: 'TS29571_CommonData.yaml#/components/responses/500'
