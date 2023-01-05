@@ -195,7 +195,11 @@ paths:
           $ref: 'TS29571_CommonData.yaml#/components/responses/414'
         '422':
           # Unprocessable Entity (e.g. syntactically invalid regular expression in request body)
-          $ref: 'TS29571_CommonData.yaml#/components/responses/422'
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'TS29571_CommonData.yaml#/components/schemas/ProblemDetails'
         '500':
           # Internal Server Error
           $ref: 'TS29571_CommonData.yaml#/components/responses/500'
