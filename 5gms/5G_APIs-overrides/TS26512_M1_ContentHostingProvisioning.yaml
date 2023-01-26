@@ -130,7 +130,43 @@ paths:
                   type: string
       responses:
         '200':
+          # OK
           description: 'Content Purged'
+          content:
+            application/json:
+              schema:
+                type: integer
+                minimum: 1
+        '204':
+          # No Content
+          description: 'No Content Purged'
+        '404':
+          # Not Found
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '413':
+          # Payload Too Large
+          $ref: 'TS29571_CommonData.yaml#/components/responses/413'
+        '414':
+          # URI Too Long
+          $ref: 'TS29571_CommonData.yaml#/components/responses/414'
+        '415':
+          # Unsupported Media Type
+          $ref: 'TS29571_CommonData.yaml#/components/responses/415'
+        '422':
+          # Unprocessable Entity (e.g. syntactically invalid regular expression in request body)
+          description: 'Unprocessable Entity'
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'TS29571_CommonData.yaml#/components/schemas/ProblemDetails'
+        '500':
+          # Internal Server Error
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          # Service Unavailable
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
 components:
   schemas:
     IngestConfiguration:
