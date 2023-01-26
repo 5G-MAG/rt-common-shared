@@ -178,9 +178,18 @@ paths:
                   description: 'Regular expression to match URL in cache entry'
                   type: string
       responses:
+        '200':
+          # OK
+          description: 'Content Purged'
+          content:
+            application/json:
+              schema:
+                type: integer
+                description: 'Number of cache entries purged'
+                minimum: 1
         '204':
           # No Content
-          description: 'Content Purged'
+          description: 'No Content Purged'
         '404':
           # Not Found
           $ref: 'TS29571_CommonData.yaml#/components/responses/404'
