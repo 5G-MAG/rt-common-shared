@@ -29,21 +29,27 @@ certificate JSON file as input and will generate a self-signed certificate for
 each file given.
 
 Syntax: make_self_signed_certs.py <CHC-JSON-file> <Certificates-JSON-file>
+        make_self_signed_certs.py --af-conf=<5GMS-Application-Function-Configuration-file>
 '''
 
 import json
 import os.path
 import subprocess
 import sys
+from typing import Tuple, Any
+import yaml
 
 class ConfigError(RuntimeError):
     pass
 
-def get_chc_certificate_id_map(chc):
+def get_chc_certificate_id_map(chc, canonical_domain=None):
     found_cert_ids = {}
     for dc in chc['distributionConfigurations']:
         if 'canonicalDomainName' not in dc:
-            raise ConfigError('ContentHostingConfiguration.distributionConfigurations must include a canonicalDomainName')
+            if canonical_domain is not None:
+                dc['canonicalDomainName'] = canonical_domain
+            else:
+                raise ConfigError('ContentHostingConfiguration.distributionConfigurations must include a canonicalDomainName')
         hostnames = {dc['canonicalDomainName']}
         if 'domainNameAlias' in dc and len(dc['domainNameAlias']) > 0:
             hostnames.add(dc['domainNameAlias'])
@@ -60,7 +66,8 @@ def join_paths(base, relpath):
         base = os.path.dirname(base)
     return os.path.realpath(os.path.join(base, relpath))
 
-def read_chc(chc_file):
+def read_chc(chc_file, canonical_domain=None):
+    #print(f'Reading ContentHostingConfiguration from "{chc_file}" (default canonical domain = {canonical_domain})')
     with open(chc_file) as chc_in:
         chc = json.load(chc_in)
 
@@ -70,7 +77,7 @@ def read_chc(chc_file):
     if 'distributionConfigurations' not in chc:
         raise ConfigError('ContentHostingConfiguration must have distributionConfigurations for certificate association.')
 
-    found_cert_ids = get_chc_certificate_id_map(chc)
+    found_cert_ids = get_chc_certificate_id_map(chc, canonical_domain=canonical_domain)
 
     if len(found_cert_ids) < 1:
         raise ConfigError('At least one ContentHostingConfiguration.distributionConfigurations must reference a certificate.')
@@ -78,6 +85,7 @@ def read_chc(chc_file):
     return chc
 
 def read_certs(certs_file):
+    #print(f'Reading certificate index from "{certs_file}"')
     with open(certs_file) as certs_in:
         certs = json.load(certs_in)
     
@@ -92,6 +100,30 @@ def read_certs(certs_file):
     certs = {cert_id: join_paths(certs_file, filename) for cert_id, filename in certs.items()}
 
     return certs
+
+def read_af_conf(conf_file: str) -> Tuple[Any,Any,str]:
+    try:
+        with open(conf_file, 'r') as af_conf:
+            conf = yaml.safe_load(af_conf)
+    except FileNotFoundError:
+        raise ConfigError(f'AF configuration file "{conf_file}" does not exist')
+    except PermissionError:
+        raise ConfigError(f'AF configuration file "{conf_file}" is not readable')
+    except yaml.scanner.ScannerError:
+        raise ConfigError(f'Unable to parse "{conf_file}" as YAML')
+
+    if 'msaf' not in conf or 'contentHostingConfiguration' not in conf['msaf']:
+        raise ConfigError(f'The file "{conf_file}" does not appear to be a 5GMS Application Function configuration file')
+    if 'certificate' not in conf['msaf']:
+        raise ConfigError(f'AF configuration file "{conf_file}" does not have a certificates index file')
+    if 'applicationServers' not in conf['msaf'] or len(conf['msaf']['applicationServers']) == 0:
+        raise ConfigError(f'AF configuration file "{conf_file}" does not have any Application Servers configured')
+    if 'canonicalHostname' not in conf['msaf']['applicationServers'][0]:
+        raise ConfigError(f'AF configuration file "{conf_file}" does not have a canonicalHostname for the Application Server')
+
+    return (join_paths(conf_file, conf['msaf']['contentHostingConfiguration']),
+            join_paths(conf_file, conf['msaf']['certificate']),
+            conf['msaf']['applicationServers'][0]['canonicalHostname'])
 
 def openssl_version():
     result = subprocess.run(['openssl','version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -110,21 +142,36 @@ def openssl_version():
     return result
 
 def main():
-    if len(sys.argv) != 3:
-        sys.stderr.write('Syntax: %s <CHC-JSON-file> <Certificates-JSON-file>\n'%os.path.basename(sys.argv[0]))
+    if len(sys.argv) != 3 and len(sys.argv) != 2:
+        cmd = os.path.basename(sys.argv[0])
+        sys.stderr.write(f'''Syntax: {cmd} <CHC-JSON-file> <Certificates-JSON-file>
+        {cmd} --af-conf=<5GMS-Application-Function-Configuration>
+''')
         return 1
 
-    chc_file = sys.argv[1]
-    certs_file = sys.argv[2]
+    if len(sys.argv) == 3:
+        if sys.argv[1] == '--af-conf':
+            (chc_file, certs_file, canon_host) = read_af_conf(sys.argv[2])
+        else:
+            chc_file = sys.argv[1]
+            certs_file = sys.argv[2]
+            canon_host = None
+    else:
+        if sys.argv[1][:10] != '--af-conf=':
+            sys.stderr.write(f'''Syntax: {cmd} <CHC-JSON-file> <Certificates-JSON-file>
+        {cmd} --af-conf=<5GMS-Application-Function-Configuration>
+''')
+            return 1
+        (chc_file, certs_file, canon_host) = read_af_conf(sys.argv[1].split('=')[1])
 
     try:
-        chc = read_chc(chc_file)
+        chc = read_chc(chc_file, canonical_domain=canon_host)
         certs = read_certs(certs_file)
     except ConfigError as e:
         sys.stderr.write(str(e) + '\n')
         return 1
 
-    cert_id_map = get_chc_certificate_id_map(chc)
+    cert_id_map = get_chc_certificate_id_map(chc, canonical_domain=canon_host)
 
     # Check we have all the certificate configuration first
     for cert_id, hosts in cert_id_map.items():
