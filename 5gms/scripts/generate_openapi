@@ -281,8 +281,18 @@ EOF
     fi
     for API in $APIS; do
         # Use openapi-generator-cli to convert the API file to the language
+	api_name_normal="$API"
+	api_name_lower=`echo "$API" | tr 'A-Z' 'a-z'`
+	api_name_upper=`echo "$API" | tr 'a-z' 'A-Z'`
         # bindings
         "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}"
+	# Rename untagged API files to include the original API name.
+	if [ -d "${destdir}/api" ]; then
+	    find "${destdir}/api" -type f '(' -name '*Default*' -o -name '*DEFAULT*' -o -name '*default*' ')' -print | while read filename; do
+        	newname=`echo "$filename" | sed "s/Default/${api_name_normal}/g;s/DEFAULT/${api_name_upper}/g;s/default/${api_name_lower}/g"`
+		mv "$filename" "$newname"
+	    done	
+        fi
     done
 )
 
