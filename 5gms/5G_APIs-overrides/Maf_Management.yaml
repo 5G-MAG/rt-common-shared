@@ -29,7 +29,6 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProvisioningSession'
                 type: array
                 description: 'A list of current Provisioning Session resource identifiers.'
                 items:
