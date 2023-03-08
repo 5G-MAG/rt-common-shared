@@ -7,8 +7,8 @@ info:
     Copyright © 2023 British Broadcasting Corporation.
     All rights reserved.
 tags:
-    description: '5G Media Streaming: AF Management API'
   - name: Maf_Management
+    description: '5G Media Streaming: AF Management API'
 externalDocs:
   description: '5G-MAG Reference Tools - 5GMS Application Function'
   url: 'https://github.com/5G-MAG/rt-common-shared/tree/main/5gms/5G_APIs-overrides'
