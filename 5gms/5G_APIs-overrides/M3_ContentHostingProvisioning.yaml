@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: M3_ContentHostingProvisioning
-  version: 0.0.0
+  version: 0.1.0
   description: |
     5GMS AS M3 Content Hosting Provisioning API
     Copyright © 2022 British Broadcasting Corporation
