@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: M1_ContentHostingProvisioning
-  version: 2.1.1
+  version: 2.2.0
   description: |
     5GMS AF M1 Content Hosting Provisioning API
     © 2023, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
@@ -10,7 +10,7 @@ tags:
   - name: M1_ContentHostingProvisioning
     description: '5G Media Streaming: Provisioning (M1) APIs: Content Hosting Provisioning'
 externalDocs:
-  description: 'TS 26.512 DRAFT V17.4.0; 5G Media Streaming (5GMS); Protocols'
+  description: 'TS 26.512 V17.4.0; 5G Media Streaming (5GMS); Protocols'
   url: 'https://www.3gpp.org/ftp/Specs/archive/26_series/26.512/'
 servers:
   - url: '{apiRoot}/3gpp-m1/v2'
@@ -45,7 +45,7 @@ paths:
               description: 'URL of the newly created Content Hosting Configuration (same as request URL).'
               required: true
               schema:
-                $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+                $ref: 'TS26512_CommonData.yaml#/components/schemas/AbsoluteUrl'
     get:
       operationId: retrieveContentHostingConfiguration
       summary: 'Retrieve the Content Hosting Configuration of the specified Provisioning Session'
@@ -123,9 +123,6 @@ paths:
             schema:
               properties:
                 pattern: 
-                  description: 'Keyword'
-                  type: string
-                value:
                   description: 'The regular expression'
                   type: string
       responses:
@@ -135,6 +132,7 @@ paths:
           content:
             application/json:
               schema:
+                description: 'The aggregate number of cache entries purged in all 5GMSd AS instances distributing content for the requested Provisioning Session.'
                 type: integer
                 minimum: 1
         '204':
@@ -167,6 +165,7 @@ paths:
           $ref: 'TS29571_CommonData.yaml#/components/responses/503'
         default:
           $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+
 components:
   schemas:
     IngestConfiguration:
@@ -179,6 +178,24 @@ components:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Uri'
         baseURL:
           $ref: 'TS26512_CommonData.yaml#/components/schemas/AbsoluteUrl'
+
+    MediaEntryPoint:
+      description: "A typed entry point for downlink or uplink media streaming."
+      type: object
+      required:
+        - relativePath
+        - contentType
+      properties:
+        relativePath:
+          $ref: 'TS26512_CommonData.yaml#/components/schemas/RelativeUrl'
+        contentType:
+          type: string
+        profiles:
+          type: array
+          items:
+            $ref: 'TS29571_CommonData.yaml#/components/schemas/Uri'
+          minItems: 1
+
     PathRewriteRule:
       type: object
       description: 'A rule to manipulate URL paths.'
@@ -190,6 +207,7 @@ components:
           type: string
         mappedPath:
           type: string
+
     CachingConfiguration:
       type: object
       description: 'A content caching configuration.'
@@ -212,10 +230,13 @@ components:
             maxAge:
               type: integer
               format: int32
+
     DistributionConfiguration:
       type: object
       description: 'A content distribution configuration.'
       properties:
+        entryPoint:
+          $ref: '#/components/schemas/MediaEntryPoint'
         contentPreparationTemplateId:
           $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
         canonicalDomainName:
@@ -285,6 +306,7 @@ components:
                 $ref: '#/components/schemas/DistributionNetworkType'
               distributionMode:
                 $ref: '#/components/schemas/DistributionMode'
+
     # Schema for the resource itself
     ContentHostingConfiguration:
       type: object
@@ -296,8 +318,6 @@ components:
       properties:
         name:
           type: string
-        entryPointPath:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/RelativeUrl'
         ingestConfiguration:
           $ref: '#/components/schemas/IngestConfiguration'
         distributionConfigurations:
