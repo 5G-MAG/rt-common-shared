@@ -41,7 +41,7 @@ paths:
           description: 'Not Found'
 components:
   schemas:
-    MediaEntryPoint:
+    M5MediaEntryPoint:
       description: "A typed entry point for downlink or uplink media streaming."
       type: object
       required:
@@ -82,7 +82,7 @@ components:
             entryPoints:
               type: array
               items:
-                $ref: '#/components/schemas/MediaEntryPoint'
+                $ref: '#/components/schemas/M5MediaEntryPoint'
             eMBMSServiceAnnouncementLocator:
               $ref: 'TS26512_CommonData.yaml#/components/schemas/AbsoluteUrl'
         clientConsumptionReportingConfiguration:
