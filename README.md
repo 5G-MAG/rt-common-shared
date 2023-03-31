@@ -4,7 +4,7 @@ Common example configurations and other files shared between multiple 5G-MAG rep
 
 ## 5GMS
 
-The 5gms directory contains example configurations and common scripts for the
+The 5gms directory contains Android Model classes, example configurations and common scripts for the
 5GMS Reference Tools.
 
 ## MBMS
