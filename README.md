@@ -1,4 +1,4 @@
-# rt-common-shared
+# Tools common to various projects
 
 Common example configurations and other files shared between multiple 5G-MAG repositories.
 
