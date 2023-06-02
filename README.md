@@ -2,10 +2,10 @@
 
 Common example configurations and other files shared between multiple 5G-MAG repositories.
 
-## 5GMSd
+## 5GMS
 
 The 5gms directory contains example configurations and common scripts for the
-5GMSd (rt-5gms-\*) Reference Tools.
+5GMS (rt-5gms-\*) Reference Tools.
 
 ## MBMS
 
