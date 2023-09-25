@@ -129,20 +129,22 @@ components:
       properties:
         policyTemplateId:
           readOnly: true
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+          allOf:
+            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
         state:
           readOnly: true
           anyOf:
-          - type: string
-            enum: [PENDING, INVALID, READY, SUSPENDED]
-          - type: string
-            description: >
-              This string provides forward-compatibility with future
-              extensions to the enumeration but is not used to encode
-              content defined in the present version of this API.
+            - type: string
+              enum: [PENDING, INVALID, READY, SUSPENDED]
+            - type: string
+              description: >
+                This string provides forward-compatibility with future
+                extensions to the enumeration but is not used to encode
+                content defined in the present version of this API.
         stateReason:
           readOnly: true
-          $ref: 'TS29571_CommonData.yaml#/components/schemas/ProblemDetails'
+          allOf:
+            - $ref: 'TS29571_CommonData.yaml#/components/schemas/ProblemDetails'
         externalReference:
           type: string
         qoSSpecification:
