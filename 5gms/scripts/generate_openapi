@@ -36,13 +36,15 @@ default_openapi_gen_config=
 default_openapi_gen_version='6.0.1'
 default_yaml_dir_processor=
 default_overrides_dirs="$scriptdir/../5G_APIs-overrides"
+default_debug=
+default_model_name_prefix=
 
 # script constants
 GIT_5G_APIS_URL='https://forge.3gpp.org/rep/all/5G_APIs.git'
 OPENAPI_GEN_URL_FORMAT='https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_GEN_VERSION}/openapi-generator-cli-${OPENAPI_GEN_VERSION}.jar'
 
 # Parse command line arguments
-ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:g:ho:y:' -l 'api:,branch:,generator-config:,language:,directory:,openapi-generator-version:,help,overrides-directories:,yaml-directory-processor:' -s sh -- "$@"`
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:Dg:ho:p:y:' -l 'api:,branch:,generator-config:,language:,directory:,debug,openapi-generator-version:,help,overrides-directories:,model-name-prefix:,yaml-directory-processor:' -s sh -- "$@"`
 
 if [ $? -ne 0 ]; then
     print_syntax >&2
@@ -50,10 +52,11 @@ if [ $? -ne 0 ]; then
 fi
 
 print_syntax() {
-    echo "Syntax: $scriptname [-h] [-b <release-branch>] [-d <directory>]"
+    echo "Syntax: $scriptname [-h] [-D] [-b <release-branch>] [-d <directory>]"
     echo '                    [-c <openapi-generator-config>] [-g <version>]'
     echo '                    [-o <overrides-dir>[:<overrides-dir>...]]'
-    echo '                    [-y <yaml-dir-processor>] -a <API-name>'
+    echo '                    [-y <yaml-dir-processor>] [-p <prefix>]'
+    echo '                    -a <API-name>'
     echo '                    -l <language>[:<additional-properties>]'
 }
 
@@ -70,6 +73,7 @@ EOF
 
 Options:
   -h         --help           Show this help message and exit.
+  -D         --debug          Output model debugging.
   -a APIS    --api APIS       Space separated list of OpenAPI interfaces to
                               generate the bindings from (e.g.
                               "TS26512_M1_ContentHostingProvisioning").
@@ -90,6 +94,8 @@ Options:
                               An optional list of directory paths, separated
                               by colons, that will be searched for OpenAPI YAML
                               files before the 5G APIs repository versions.
+  -p PREFIX  --model-name-prefix PREFIX
+                              Name to prefix generated model names with.
   -y EXE     --yaml-directory-processor EXE
                               Executable to run to process the 5G API yaml
                               directory before the generator is run. EXE will
@@ -109,6 +115,8 @@ OPENAPI_GEN_CONFIG="$default_openapi_gen_config"
 OPENAPI_GEN_VERSION="$default_openapi_gen_version"
 YAML_DIR_PROCESSOR="$default_yaml_dir_processor"
 OVERRIDES_DIRS="$default_overrides_dirs"
+DEBUG="$default_debug"
+MODEL_NAME_PREFIX="$default_model_name_prefix"
 
 while true; do
     case "$1" in
@@ -137,6 +145,11 @@ while true; do
 	shift 2
 	continue
 	;;
+    -D|--debug)
+	DEBUG=Y
+	shift
+        continue
+	;;
     -g|--openapi-generator-version)
 	OPENAPI_GEN_VERSION="$2"
 	shift 2
@@ -151,6 +164,11 @@ while true; do
 	shift 2
 	continue
 	;;
+    -p|--model-name-prefix)
+        MODEL_NAME_PREFIX="$2"
+        shift 2
+        continue
+        ;;
     -y|--yaml-directory-processor)
 	YAML_DIR_PROCESSOR="$2"
 	shift 2
@@ -204,6 +222,11 @@ fi
 # Convert openapi-generator-cli configuration file path to absolute path
 if [ -n "$OPENAPI_GEN_CONFIG" ]; then
     OPENAPI_GEN_CONFIG=`realpath "$OPENAPI_GEN_CONFIG"`
+fi
+
+# Debug flags
+if [ "$DEBUG" = "Y" ]; then
+    debugmodels="--global-property debugModels,debugOperations,debugOpenAPI,debugSupportingFiles"
 fi
 
 # Find JAVA
@@ -285,7 +308,7 @@ EOF
 	api_name_lower=`echo "$API" | tr 'A-Z' 'a-z'`
 	api_name_upper=`echo "$API" | tr 'a-z' 'A-Z'`
         # bindings
-        "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}"
+        "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}" ${debugmodels} ${MODEL_NAME_PREFIX:+--model-name-prefix $MODEL_NAME_PREFIX}
 	# Rename untagged API files to include the original API name.
 	if [ -d "${destdir}/api" ]; then
 	    find "${destdir}/api" -type f '(' -name '*Default*' -o -name '*DEFAULT*' -o -name '*default*' ')' -print | while read filename; do
