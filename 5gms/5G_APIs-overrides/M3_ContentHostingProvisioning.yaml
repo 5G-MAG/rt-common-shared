@@ -190,6 +190,9 @@ paths:
         '204':
           # No Content
           description: 'No Content Purged'
+        '400':
+          # Bad Request
+          $ref: 'TS29571_CommonData.yaml#/components/responses/400'
         '404':
           # Not Found
           $ref: 'TS29571_CommonData.yaml#/components/responses/404'
@@ -202,13 +205,6 @@ paths:
         '414':
           # URI too long
           $ref: 'TS29571_CommonData.yaml#/components/responses/414'
-        '422':
-          # Unprocessable Entity (e.g. syntactically invalid regular expression in request body)
-          description: Unprocessable Entity
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'TS29571_CommonData.yaml#/components/schemas/ProblemDetails'
         '500':
           # Internal Server Error
           $ref: 'TS29571_CommonData.yaml#/components/responses/500'
