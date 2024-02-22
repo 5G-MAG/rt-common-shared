@@ -401,6 +401,11 @@ components:
           items:
             $ref: 'TS26532_CommonData.yaml#/components/schemas/DataSamplingRule'
           minItems: 0
+        dataReportingConditions:
+          type: array
+          items:
+            $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingCondition'
+          minItems: 1
         dataReportingRules:
           type: array
           items:
@@ -414,6 +419,7 @@ components:
       required:
         - dataReportingConfigurationId
         - dataCollectionClientType
+        - dataReportingConditions
         - dataAccessProfiles
 
     DataReportingConfigurationPatch:
@@ -427,6 +433,11 @@ components:
           items:
             $ref: 'TS26532_CommonData.yaml#/components/schemas/DataSamplingRule'
           minItems: 0
+        dataReportingConditions:
+          type: array
+          items:
+            $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingCondition'
+          minItems: 1
         dataReportingRules:
           type: array
           items:

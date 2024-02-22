@@ -251,7 +251,7 @@ components:
               conditions:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ReportingCondition'
+                  $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingCondition'
                 minItems: 0
         reportingRules:
           type: array
@@ -272,33 +272,6 @@ components:
         - externalApplicationId
         - supportedDomains
         - reportingConditions
-
-    ReportingCondition:
-      description: "A condition that triggers data reporting by a data collection client to the Data Collection AF."
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/ReportingConditionType'
-        period:
-          $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
-        parameter:
-          type: string
-        threshold:
-          anyOf:
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Double'
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Float'
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Int32'
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Int64'
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Uint16'
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Uint32'
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Uint64'
-          - $ref: 'TS29571_CommonData.yaml#/components/schemas/Uinteger'
-        reportWhenBelow:
-          type: boolean
-        eventTrigger:
-          $ref: '#/components/schemas/ReportingEventTrigger'
-      required:
-        - type
 
     DataReport:
       description: "A data report sent by a data collection client to the Data Collection AF."
@@ -351,28 +324,6 @@ components:
       anyOf:
       - type: string
         enum: [SERVICE_EXPERIENCE, LOCATION, COMMUNICATION, PERFORMANCE, APPLICATION_SPECIFIC, MS_ACCESS_ACTIVITY, PLANNED_TRIPS]
-      - type: string
-        description: >
-            This string provides forward-compatibility with future
-            extensions to the enumeration but is not used to encode
-            content defined in the present version of this API.
-
-    ReportingConditionType:
-      description: "The type of condition that triggers reporting by a data collection client to the Data Collection AF."
-      anyOf:
-      - type: string
-        enum: [INTERVAL, THRESHOLD, EVENT]
-      - type: string
-        description: >
-            This string provides forward-compatibility with future
-            extensions to the enumeration but is not used to encode
-            content defined in the present version of this API.
-
-    ReportingEventTrigger:
-      description: "The type of event that triggers reporting by a data collection client to the Data Collection AF."
-      anyOf:
-      - type: string
-        enum: [LOCATION, DESTINATION]
       - type: string
         description: >
             This string provides forward-compatibility with future
