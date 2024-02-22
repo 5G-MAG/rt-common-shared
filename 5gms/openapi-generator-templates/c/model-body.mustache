@@ -283,12 +283,14 @@ void {{classname}}_free({{classname}}_t *{{classname}})
         OpenAPI_lnode_t *node = NULL;
 
         OpenAPI_list_for_each({{classname}}->{{name}}, node) {
+	      {{#items}}
                 {{#isPrimitiveType}}
             ogs_free(node->data);
                 {{/isPrimitiveType}}
                 {{^isPrimitiveType}}
             {{complexType}}_free(node->data);
                 {{/isPrimitiveType}}
+              {{/items}}
         }
             {{/isEnum}}
         OpenAPI_list_free({{classname}}->{{name}});
@@ -303,12 +305,14 @@ void {{classname}}_free({{classname}}_t *{{classname}})
             OpenAPI_map_t *localKeyValue = (OpenAPI_map_t*)node->data;
             ogs_free(localKeyValue->key);
             {{^isEnum}}
+              {{#items}}
                 {{#isPrimitiveType}}
             ogs_free(localKeyValue->value);
                 {{/isPrimitiveType}}
                 {{^isPrimitiveType}}
             {{complexType}}_free(localKeyValue->value);
                 {{/isPrimitiveType}}
+              {{/items}}
             {{/isEnum}}
             OpenAPI_map_free(localKeyValue);
         }
