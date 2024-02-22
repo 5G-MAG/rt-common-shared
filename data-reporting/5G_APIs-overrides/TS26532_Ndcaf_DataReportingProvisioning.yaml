@@ -365,7 +365,9 @@ components:
       type: object
       properties:
         provisioningSessionId:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+          readOnly: true
+          allOf:
+            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
         aspId:
           $ref: 'TS29514_Npcf_PolicyAuthorization.yaml#/components/schemas/AspId'
         externalApplicationId:
@@ -391,7 +393,9 @@ components:
       type: object
       properties:
         dataReportingConfigurationId:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+          readOnly: true
+          allOf:
+            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
         dataCollectionClientType:
           $ref: 'TS26532_CommonData.yaml#/components/schemas/DataCollectionClientType'
         authorizationURL:

@@ -213,7 +213,9 @@ components:
       type: object
       properties:
         sessionId:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+          readOnly: true
+          allOf:
+            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
         validUntil:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/DateTime'
         externalApplicationId:
@@ -224,50 +226,29 @@ components:
             $ref: '#/components/schemas/DataDomain'
           minItems: 0
         samplingRules:
-          type: array
-          items:
-            type: object
-            required:
-              - dataDomain
-              - rules
-            properties:
-              dataDomain:
-                $ref: '#/components/schemas/DataDomain'
-              rules:
-                type: array
-                items:
-                  $ref: 'TS26532_CommonData.yaml#/components/schemas/DataSamplingRule'
-                minItems: 0
+          description: Map(DataDomain ⇒ Array(DataSamplingRule))
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: 'TS26532_CommonData.yaml#/components/schemas/DataSamplingRule'
+            minItems: 0
         reportingConditions:
-          type: array
-          items:
-            type: object
-            required:
-              - dataDomain
-              - conditions
-            properties:
-              dataDomain:
-                $ref: '#/components/schemas/DataDomain'
-              conditions:
-                type: array
-                items:
-                  $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingCondition'
-                minItems: 0
+          description: Map(DataDomain ⇒ Array(DataReportingCondition))
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingCondition'
+            minItems: 0
         reportingRules:
-          type: array
-          items:
-            type: object
-            required:
-              - dataDomain
-              - rules
-            properties:
-              dataDomain:
-                $ref: '#/components/schemas/DataDomain'
-              rules:
-                type: array
-                items:
-                  $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingRule'
-                minItems: 0
+          description: Map(DataDomain ⇒ Array(DataReportingRule))
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingRule'
+            minItems: 0
       required:
         - externalApplicationId
         - supportedDomains
