@@ -217,7 +217,9 @@ components:
           allOf:
             - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
         validUntil:
-          $ref: 'TS29571_CommonData.yaml#/components/schemas/DateTime'
+          readOnly: true
+          allOf:
+            - $ref: 'TS29571_CommonData.yaml#/components/schemas/DateTime'
         externalApplicationId:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/ApplicationId'
         supportedDomains:
@@ -226,6 +228,7 @@ components:
             $ref: '#/components/schemas/DataDomain'
           minItems: 0
         samplingRules:
+          readOnly: true
           description: Map(DataDomain ⇒ Array(DataSamplingRule))
           type: object
           additionalProperties:
@@ -234,6 +237,7 @@ components:
               $ref: 'TS26532_CommonData.yaml#/components/schemas/DataSamplingRule'
             minItems: 0
         reportingConditions:
+          readOnly: true
           description: Map(DataDomain ⇒ Array(DataReportingCondition))
           type: object
           additionalProperties:
@@ -242,6 +246,7 @@ components:
               $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingCondition'
             minItems: 0
         reportingRules:
+          readOnly: true
           description: Map(DataDomain ⇒ Array(DataReportingRule))
           type: object
           additionalProperties:
