@@ -18,7 +18,10 @@ generate_openapi - Generate OpenAPI language bindings from 5G APIs
 .OP \-b branch
 .OP \-c config
 .OP \-d directory
+.OP \-D
 .OP \-g version
+.OP \-o directory\fR[:\fPdirectory...\fR]\fP
+.OP \-p prefix
 .OP \-y executable
 .BI \-a\  api
 .BI \-l\  language \fR[:\fP additional-properties \fR]\fP
@@ -34,7 +37,8 @@ respoitory and then generate language bindings for the requested API.
 .PP
 This script works in a temporary directory where it downloads the
 .I openapi\-generator\-cli
-tool and clones the 5G APIs repository. These are deleted when the command exits.
+tool and clones the 5G APIs repository. These are deleted when the command
+exits.
 .PP
 The
 .I openapi\-generator\-cli
@@ -84,10 +88,17 @@ documentation for further information about this configuration file.
 .IX Item "-d"
 The output directory to use for the generated API bindings. The default is an openapi directory in the current working directory.
 .TP
+.BR "-D" ", " "--debug"
+.IX Item "-D"
+Turn on debugging of the API generation by
+.I openapi\-generator\-cli.
+The log output will then include extra debugging information, including the
+structures passed to the mustache templates.
+.TP
 .BI "-g " "VERSION" ", --openapi-generator-version " "VERSION"
 .IX Item "-g"
 The version of the
-.I opeapi\-generator\-cli
+.I openapi\-generator\-cli
 tool to download and use to generate the API bindings. The default is to use version 6.0.1.
 .TP
 .BR "-h" ", " "--help"
@@ -107,6 +118,21 @@ command line argument. These additional properties are language specific. See th
 generators list
 .UE
 for more information.
+.TP
+.BI "-o " "DIRECTORY[:DIRECTORY...]" ", --overrides-directories " "DIRECTORY[:DIRECTORY...]"
+.IX Item "-o"
+This specifies a colon separated list of directories in which YAML override
+files can be found. Override files will be used from the first directory
+containing an override YAML file of a given name. By default the
+.I ../5G_APIs-overrides
+directory, relative to the generate_openapi script, is used for overrides.
+.TP
+.BI "-p " "API-PREFIX" ", --model-name-prefix " "API-PREFIX"
+.IX Item "-p"
+This will use
+.I API-PREFIX
+as a prefix for all generated API types and model filenames. By default no
+prefix is applied.
 .TP
 .BI "-y " "EXEC" ", --yaml-directory-processor " "EXEC"
 .IX Item "-y"
