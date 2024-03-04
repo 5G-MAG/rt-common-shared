@@ -65,9 +65,26 @@ const char* {{classname}}_{{name}}_ToString(const {{classname}}_{{name}}_e {{nam
 {{/vars}}
 typedef struct {{classname}}_s {
 {{^hasVars}}
-  {{#isString}}
+    {{#isString}}
     char *value;
-  {{/isString}}
+    {{/isString}}{{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{dataType}} *{{name}};
+                {{/isPrimitiveType}}
+                {{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
 {{/hasVars}}
 {{#vars}}
     {{^isContainer}}
@@ -87,10 +104,10 @@ typedef struct {{classname}}_s {
     {{datatype}} *{{name}};
                     {{/isEmail}}
                     {{#isFreeFormObject}}
-    {{datatype}}_t *{{name}};
+    OpenAPI_object_t *{{name}};
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    {{datatype}}_t *{{name}};
+    OpenAPI_any_type_t *{{name}};
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}
@@ -146,9 +163,27 @@ typedef struct {{classname}}_s {
 
 {{classname}}_t *{{classname}}_create(
 {{^hasVars}}
-  {{#isString}}
+    {{#isString}}
     char *value
-  {{/isString}}
+    {{/isString}}
+    {{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{dataType}} *{{name}}{{^-last}},{{/-last}}
+                {{/isPrimitiveType}}
+                {{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
 {{/hasVars}}
 {{#vars}}
     {{^isContainer}}
@@ -168,10 +203,10 @@ typedef struct {{classname}}_s {
     {{datatype}} *{{name}}{{^-last}},{{/-last}}
                     {{/isEmail}}
                     {{#isFreeFormObject}}
-    {{datatype}}_t *{{name}}{{^-last}},{{/-last}}
+    OpenAPI_object_t *{{name}}{{^-last}},{{/-last}}
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    {{datatype}}_t *{{name}}{{^-last}},{{/-last}}
+    OpenAPI_any_type_t *{{name}}{{^-last}},{{/-last}}
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}

@@ -1,0 +1,24 @@
+#include "ogs-core.h"
+#include "../external/cJSON.h"
+
+#include "../include/any_type.h"
+
+OpenAPI_any_type_t *OpenAPI_any_type_create(void *val)
+{
+    return (OpenAPI_any_type_t*)val;
+}
+
+void OpenAPI_any_type_free(OpenAPI_any_type_t *val)
+{
+    cJSON_Delete((cJSON*)val);
+}
+
+cJSON *OpenAPI_any_type_convertToJSON(const OpenAPI_any_type_t *val, bool as_request)
+{
+    return cJSON_Duplicate((cJSON*)val, 1);
+}
+
+OpenAPI_any_type_t *OpenAPI_any_type_parseFromJSON(cJSON *json, bool as_request, const char **parse_error)
+{
+    return (OpenAPI_any_type_t*)cJSON_Duplicate(json, 1);
+}

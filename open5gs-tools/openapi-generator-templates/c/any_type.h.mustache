@@ -1,0 +1,23 @@
+#ifndef OGS_OPENAPI_ANY_TYPE_H
+#define OGS_OPENAPI_ANY_TYPE_H
+
+#include "../external/cJSON.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct OpenAPI_any_type_s OpenAPI_any_type_t;
+
+OpenAPI_any_type_t *OpenAPI_any_type_create(void *val);
+void OpenAPI_any_type_free(OpenAPI_any_type_t *val);
+cJSON *OpenAPI_any_type_convertToJSON(const OpenAPI_any_type_t *val, bool as_request);
+OpenAPI_any_type_t *OpenAPI_any_type_parseFromJSON(cJSON *json, bool as_request, const char **parse_error);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // OGS_OPENAPI_ANY_TYPE_H
+
+

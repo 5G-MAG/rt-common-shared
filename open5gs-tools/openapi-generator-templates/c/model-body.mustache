@@ -84,6 +84,29 @@ const char *{{name}}{{classname}}_ToString(const {{classname}}_{{name}}_e {{name
     {{/isContainer}}
 {{/vars}}
 {{classname}}_t *{{classname}}_create(
+{{^hasVars}}
+    {{#isString}}
+    char *value
+    {{/isString}}
+    {{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{dataType}} *{{name}}{{^-last}},{{/-last}}
+                {{/isPrimitiveType}}
+                {{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
+{{/hasVars}}
 {{#vars}}
     {{^isContainer}}
         {{^isPrimitiveType}}
@@ -102,10 +125,10 @@ const char *{{name}}{{classname}}_ToString(const {{classname}}_{{name}}_e {{name
     {{datatype}} *{{name}}{{^-last}},{{/-last}}
                     {{/isEmail}}
                     {{#isFreeFormObject}}
-    {{datatype}}_t *{{name}}{{^-last}},{{/-last}}
+    OpenAPI_object_t *{{name}}{{^-last}},{{/-last}}
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    {{datatype}}_t *{{name}}{{^-last}},{{/-last}}
+    OpenAPI_any_type_t *{{name}}{{^-last}},{{/-last}}
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}
@@ -156,16 +179,32 @@ const char *{{name}}{{classname}}_ToString(const {{classname}}_{{name}}_e {{name
     OpenAPI_{{datatype}} {{name}}{{^-last}},{{/-last}}
         {{/isMap}}
     {{/isContainer}}
-{{/vars}}{{^hasVars}}
-    {{#isString}}
-    char *value
-    {{/isString}}
-{{/hasVars}})
+{{/vars}})
 {
     {{classname}}_t *{{classname}}_local_var = ogs_malloc(sizeof({{classname}}_t));
     ogs_assert({{classname}}_local_var);
 
-{{#vars}}
+{{^hasVars}}
+    {{#isString}}
+    {{classname}}_local_var->value = value;
+    {{/isString}}{{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{classname}}_local_var->{{name}} = {{name}};
+                {{/isPrimitiveType}}{{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
+{{/hasVars}}{{#vars}}
     {{^isContainer}}
         {{#isPrimitiveType}}
             {{^isEnum}}
@@ -183,11 +222,7 @@ const char *{{name}}{{classname}}_ToString(const {{classname}}_{{name}}_e {{name
         {{/isPrimitiveType}}
     {{/isContainer}}
     {{classname}}_local_var->{{{name}}} = {{{name}}};
-{{/vars}}{{^hasVars}}
-    {{#isString}}
-    {{classname}}_local_var->value = value;
-    {{/isString}}
-{{/hasVars}}
+{{/vars}}
 
     return {{classname}}_local_var;
 }
@@ -222,13 +257,13 @@ void {{classname}}_free({{classname}}_t *{{classname}})
                     {{/isEmail}}
                     {{#isFreeFormObject}}
     if ({{{classname}}}->{{{name}}}) {
-        {{{datatype}}}_free({{{classname}}}->{{{name}}});
+        OpenAPI_object_free({{{classname}}}->{{{name}}});
         {{classname}}->{{name}} = NULL;
     }
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
     if ({{{classname}}}->{{{name}}}) {
-        {{{datatype}}}_free({{{classname}}}->{{{name}}});
+        OpenAPI_any_type_free({{{classname}}}->{{{name}}});
         {{classname}}->{{name}} = NULL;
     }
                     {{/isAnyType}}
@@ -288,7 +323,23 @@ void {{classname}}_free({{classname}}_t *{{classname}})
             ogs_free(node->data);
                 {{/isPrimitiveType}}
                 {{^isPrimitiveType}}
+		  {{#isModel}}
             {{complexType}}_free(node->data);
+		  {{/isModel}}
+		  {{^isModel}}
+		    {{#isUuid}}
+	    ogs_free(node->data);
+                    {{/isUuid}}
+                    {{#isEmail}}
+	    ogs_free(node->data);
+                    {{/isEmail}}
+		    {{#isFreeFormObject}}
+            OpenAPI_object_free(node->data);
+		    {{/isFreeFormObject}}
+		    {{#isAnyType}}
+            OpenAPI_any_type_free(node->data);
+                    {{/isAnyType}}
+                  {{/isModel}}
                 {{/isPrimitiveType}}
               {{/items}}
         }
@@ -322,9 +373,25 @@ void {{classname}}_free({{classname}}_t *{{classname}})
         {{/isMap}}
     {{/isContainer}}
 {{/vars}}{{^hasVars}}
-  {{#isString}}
+    {{#isString}}
     if ({{classname}}->value) ogs_free({{classname}}->value);
-  {{/isString}}
+    {{/isString}}{{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    if ({{classname}}->{{name}}) ogs_free({{classname}}->{{name}});
+                {{/isPrimitiveType}}{{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
 {{/hasVars}}
     ogs_free({{classname}});
 }
@@ -575,12 +642,44 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
                         {{/isBoolean}}
                     {{/isPrimitiveType}}
                     {{^isPrimitiveType}}
+                        {{#isModel}}
             cJSON *itemLocal = {{complexType}}_convertToJSON(node->data, {{classname}}_as_request);
             if (itemLocal == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
             cJSON_AddItemToArray({{{name}}}List, itemLocal);
+                        {{/isModel}}
+                        {{^isModel}}
+                            {{#isUuid}}
+            if (cJSON_AddStringToObject({{{name}}}List, "", (char*)node->data) == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+                            {{/isUuid}}
+                            {{#isEmail}}
+            if (cJSON_AddStringToObject({{{name}}}List, "", (char*)node->data) == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+                            {{/isEmail}}
+                            {{#isFreeFormObject}}
+	    cJSON *itemLocal = OpenAPI_object_convertToJSON(node->data, {{classname}}_as_request);
+	    if (itemLocal == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+            cJSON_AddItemToArray({{{name}}}List, itemLocal);
+                            {{/isFreeFormObject}}
+                            {{#isAnyType}}
+            cJSON *itemLocal = OpenAPI_any_type_convertToJSON(node->data, {{classname}}_as_request);
+            if (itemLocal == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+            cJSON_AddItemToArray({{{name}}}List, itemLocal);
+                            {{/isAnyType}}
+                        {{/isModel}}
                     {{/isPrimitiveType}}
                 {{/items}}
             {{/isEnum}}
@@ -588,61 +687,116 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
     }
         {{/isArray}}
         {{#isMap}}
-    cJSON *{{{name}}} = cJSON_AddObjectToObject(item, "{{{baseName}}}");
-    if ({{{name}}} == NULL) {
+    cJSON *{{{name}}}Map = cJSON_AddObjectToObject(item, "{{{baseName}}}");
+    if ({{{name}}}Map == NULL) {
         ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
         goto end;
     }
-    cJSON *localMapObject = {{{name}}};
     if ({{{classname}}}->{{{name}}}) {
         OpenAPI_lnode_t *node = NULL;
         OpenAPI_list_for_each({{{classname}}}->{{{name}}}, node) {
             OpenAPI_map_t *localKeyValue = (OpenAPI_map_t*)node->data;
             {{#isEnum}}
-            if (cJSON_AddStringToObject(localMapObject, localKeyValue->key, {{{complexType}}}_ToString((intptr_t)localKeyValue->value)) == NULL) {
+            if (cJSON_AddStringToObject({{{name}}}Map, localKeyValue->key, {{{complexType}}}_ToString((intptr_t)localKeyValue->value)) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
             {{/isEnum}}
             {{^isEnum}}
-                {{#items}}
-                    {{#isPrimitiveType}}
-                        {{#isString}}
-            if (cJSON_AddStringToObject(localMapObject, localKeyValue->key, (char*)localKeyValue->value) == NULL) {
+                {{#items.isPrimitiveType}}
+                    {{#items.isString}}
+            if (cJSON_AddStringToObject({{{name}}}Map, localKeyValue->key, (char*)localKeyValue->value) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
-                        {{/isString}}
-                        {{#isByteArray}}
-            if(cJSON_AddStringToObject(localMapObject, localKeyValue->key, (char*)localKeyValue->value) == NULL) {
+                    {{/items.isString}}
+                    {{#items.isByteArray}}
+            if(cJSON_AddStringToObject({{{name}}}Map, localKeyValue->key, (char*)localKeyValue->value) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
-                        {{/isByteArray}}
-                        {{#isNumeric}}
-            if (cJSON_AddNumberToObject(localMapObject, localKeyValue->key, (uintptr_t)localKeyValue->value) == NULL) {
+                    {{/items.isByteArray}}
+                    {{#items.isNumeric}}
+            if (cJSON_AddNumberToObject({{{name}}}Map, localKeyValue->key, (uintptr_t)localKeyValue->value) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
-                        {{/isNumeric}}
-                        {{#isBoolean}}
-            if (cJSON_AddBoolToObject(localMapObject, localKeyValue->key, (uintptr_t)localKeyValue->value) == NULL) {
+                    {{/items.isNumeric}}
+                    {{#items.isBoolean}}
+            if (cJSON_AddBoolToObject({{{name}}}Map, localKeyValue->key, (uintptr_t)localKeyValue->value) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
-                        {{/isBoolean}}
-                    {{/isPrimitiveType}}
-                    {{^isPrimitiveType}}
+                    {{/items.isBoolean}}
+                {{/items.isPrimitiveType}}
+                {{^items.isPrimitiveType}}
+                    {{#items.isModel}}
             cJSON *itemLocal = localKeyValue->value ?
-                {{complexType}}_convertToJSON(localKeyValue->value, {{classname}}_as_request) :
+                {{items.complexType}}_convertToJSON(localKeyValue->value, {{classname}}_as_request) :
                 cJSON_CreateNull();
             if (itemLocal == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
-            cJSON_AddItemToObject(localMapObject, localKeyValue->key, itemLocal);
-                    {{/isPrimitiveType}}
-                {{/items}}
+            cJSON_AddItemToObject({{{name}}}Map, localKeyValue->key, itemLocal);
+                    {{/items.isModel}}
+                    {{^items.isModel}}
+                        {{#items.isUuid}}
+            if (cJSON_AddStringToObject({{{name}}}Map, localKeyValue->key, (char*)localKeyValue->value) == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+                        {{/items.isUuid}}
+                        {{#items.isEmail}}
+            if (cJSON_AddStringToObject({{{name}}}Map, localKeyValue->key, (char*)localKeyValue->value) == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+                        {{/items.isEmail}}
+                        {{#items.isFreeFormObject}}
+            cJSON *itemLocal = localKeyValue->value ?
+                OpenAPI_object_convertToJSON(localKeyValue->value, {{classname}}_as_request) :
+                cJSON_CreateNull();
+            if (itemLocal == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+            cJSON_AddItemToObject({{{name}}}Map, localKeyValue->key, itemLocal);
+                        {{/items.isFreeFormObject}}
+                        {{#items.isAnyType}}
+            cJSON *itemLocal = localKeyValue->value ?
+                OpenAPI_any_type_convertToJSON(localKeyValue->value, {{classname}}_as_request) :
+                cJSON_CreateNull();
+            if (itemLocal == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+            cJSON_AddItemToObject({{{name}}}Map, localKeyValue->key, itemLocal);
+                        {{/items.isAnyType}}
+		        {{#items.isContainer}}
+                            {{#items.isArray}}
+	    cJSON *itemLocal = localKeyValue->value ? cJSON_CreateArray() : cJSON_CreateNull();
+	    if (itemLocal == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+            if (localKeyValue->value) {
+                OpenAPI_list_t *list = (OpenAPI_list_t*)localKeyValue->value;
+                OpenAPI_lnode_t *node = NULL;
+		OpenAPI_list_for_each(list, node) {
+                    {{items.items.dataType}}_t *item = ({{items.items.dataType}}_t*)node->data;
+		    cJSON *item_json = {{items.items.dataType}}_convertToJSON(item, {{classname}}_as_request);
+		    cJSON_AddItemToArray(itemLocal, item_json);
+                }
+            }
+            cJSON_AddItemToObject({{{name}}}Map, localKeyValue->key, itemLocal);
+                            {{/items.isArray}}
+                            {{#items.isMap}}
+#error "Not implemented yet!"
+                            {{/items.isMap}}
+	                {{/items.isContainer}}
+                    {{/items.isModel}}
+                {{/items.isPrimitiveType}}
             {{/isEnum}}
         }
     }
@@ -662,7 +816,33 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
 end:
 {{/hasVars}}
 {{^hasVars}}
+    {{#isString}}
     item = cJSON_CreateString({{classname}}->value);
+    {{/isString}}
+    {{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{^-first}}else {{/-first}}if ({{classname}}->{{name}}) {
+                    {{#isString}}
+        item = cJSON_CreateString({{classname}}->{{name}});
+                    {{/isString}}
+                    {{#isNumeric}}
+        item = cJSON_CreateNumber((double)(*{{classname}}->{{name}}));
+                    {{/isNumeric}}
+    }
+                {{/isPrimitiveType}}{{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
 {{/hasVars}}
     return item;
 }
@@ -682,10 +862,25 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
     {{classname}}_t *{{classname}}_local_var = NULL;
 
 {{^hasVars}}
-  {{#isString}}
+    {{#isString}}
     char *value = NULL;
-  {{/isString}}
-
+    {{/isString}}{{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{dataType}} *{{name}} = NULL;
+                {{/isPrimitiveType}}{{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
 {{/hasVars}}
 {{#vars}}
     cJSON *{{{name}}} = NULL;
@@ -733,15 +928,53 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
     if ({{classname}}_parse_err) *{{classname}}_parse_err = NULL;
 
 {{^hasVars}}
-  {{#isString}}
+    {{#isString}}
     if (!cJSON_IsString({{classname}}JSON)) {
-      ogs_error("{{classname}}_parseFromJSON() failed");
-      if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}} type not a string";
-      goto end;
+        ogs_error("{{classname}}_parseFromJSON() failed");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}} type not a string";
+        goto end;
     }
 
     value = ogs_strdup({{classname}}JSON->valuestring);
-  {{/isString}}
+    {{/isString}}{{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#-first}}
+    bool valid = false;
+                {{/-first}}
+                {{#isPrimitiveType}}
+	            {{#isString}}
+    if (cJSON_IsString({{classname}}JSON)) {
+        {{name}} = ogs_strdup({{classname}}JSON->valuestring);
+        valid = true;
+    }
+                    {{/isString}}
+                    {{#isNumeric}}
+    if (cJSON_IsNumber({{classname}}JSON)) {
+        {{name}} = ogs_malloc(sizeof({{dataType}}));
+        *{{name}} = ({{dataType}}){{classname}}JSON->valuedouble;
+        valid = true;
+    }
+                    {{/isNumeric}}
+                {{/isPrimitiveType}}{{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+                {{#-last}}
+    if (!valid) {
+        ogs_error("{{classname}}_parseFromJSON() failed, anyOf value not recognised");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}} type not a valid value type";
+        goto end;
+    }
+                {{/-last}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
 {{/hasVars}}
 {{#vars}}
     {{#isReadOnly}}
@@ -1043,6 +1276,7 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
                         {{/isBoolean}}
                     {{/isPrimitiveType}}
                     {{^isPrimitiveType}}
+                        {{#isModel}}
             if (!cJSON_IsObject({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not an object";
@@ -1055,6 +1289,48 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
                 goto end;
             }
             OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
+                        {{/isModel}}
+                        {{^isModel}}
+                            {{#isUuid}}
+            if (!cJSON_IsString({{{name}}}_local)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                goto end;
+            }
+            OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
+                            {{/isUuid}}
+                            {{#isEmail}}
+            if (!cJSON_IsString({{{name}}}_local)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                goto end;
+            }
+            OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
+                            {{/isEmail}}
+                            {{#isFreeFormObject}}
+            if (!cJSON_IsObject({{{name}}}_local)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not an object";
+                goto end;
+            }
+            OpenAPI_object_t *{{{name}}}Item = OpenAPI_object_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err);
+            if (!{{{name}}}Item) {
+                ogs_error("No {{{name}}}Item");
+                /* {{classname}}_parse_err given by sub-parser */
+                goto end;
+            }
+            OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
+                            {{/isFreeFormObject}}
+                            {{#isAnyType}}
+	    OpenAPI_any_type_t *{{{name}}}Item = OpenAPI_any_type_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err);
+            if (!{{{name}}}Item) {
+                ogs_error("No {{{name}}}Item");
+                /* {{classname}}_parse_err given by sub-parser */
+                goto end;
+            }
+            OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
+                            {{/isAnyType}}
+                        {{/isModel}}
                     {{/isPrimitiveType}}
                 {{/items}}
             {{/isEnum}}
@@ -1240,7 +1516,25 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
         {{/isMap}}
     {{/isContainer}}
 {{/vars}}{{^hasVars}}
-        value
+    {{#isString}}
+    value
+    {{/isString}}{{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{name}}{{^-last}},{{/-last}}
+                {{/isPrimitiveType}}{{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
 {{/hasVars}}
     );
 
@@ -1259,13 +1553,13 @@ end:
                 {{^isModel}}
                     {{#isFreeFormObject}}
     if ({{{name}}}_local_object) {
-        {{{datatype}}}_free({{{name}}}_local_object);
+        OpenAPI_object_free({{{name}}}_local_object);
         {{{name}}}_local_object = NULL;
     }
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
     if ({{name}}_local_object) {
-        {{{datatype}}}_free({{name}}_local_object);
+        OpenAPI_any_type_free({{name}}_local_object);
         {{name}}_local_object = NULL;
     }
                     {{/isAnyType}}
@@ -1288,7 +1582,17 @@ end:
             ogs_free(node->data);
                 {{/isPrimitiveType}}
                 {{^isPrimitiveType}}
+		    {{#isModel}}
             {{complexType}}_free(node->data);
+                    {{/isModel}}
+		    {{^isModel}}
+	                {{#isFreeFormObject}}
+	    OpenAPI_object_free(node->data);
+			{{/isFreeFormObject}}
+			{{#isAnyType}}
+	    OpenAPI_any_type_free(node->data);
+			{{/isAnyType}}
+		    {{/isModel}}
                 {{/isPrimitiveType}}
         }
             {{/isEnum}}
@@ -1307,7 +1611,17 @@ end:
             ogs_free(localKeyValue->value);
                 {{/isPrimitiveType}}
                 {{^isPrimitiveType}}
+		    {{#isModel}}
             {{complexType}}_free(localKeyValue->value);
+                    {{/isModel}}
+                    {{^isModel}}
+                        {{#isFreeFormObject}}
+            OpenAPI_object_free(localKeyValue->value);
+                        {{/isFreeFormObject}}
+                        {{#isAnyType}}
+            OpenAPI_any_type_free(localKeyValue->value);
+                        {{/isAnyType}}
+                    {{/isModel}}
                 {{/isPrimitiveType}}
             {{/isEnum}}
             OpenAPI_map_free(localKeyValue);
@@ -1318,6 +1632,29 @@ end:
         {{/isMap}}
     {{/isContainer}}
 {{/vars}}
+{{^hasVars}}
+    {{#isString}}
+    if (value) ogs_free(value);
+    {{/isString}}
+    {{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    if ({{name}}) ogs_free({{name}});
+                {{/isPrimitiveType}}
+                {{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
+{{/hasVars}}
     return NULL;
 }
 
