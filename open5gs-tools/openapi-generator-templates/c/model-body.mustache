@@ -1364,25 +1364,25 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), (void *){{{complexType}}}Value);
             {{/isEnum}}
             {{^isEnum}}
-                {{#items}}
-                    {{#isPrimitiveType}}
-                        {{#isString}}
+		{{^items.isContainer}}
+                    {{#items.isPrimitiveType}}
+                        {{#items.isString}}
                 if (!cJSON_IsString(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
                     goto end;
                 }
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), ogs_strdup(localMapObject->valuestring));
-                        {{/isString}}
-                        {{#isByteArray}}
+                        {{/items.isString}}
+                        {{#items.isByteArray}}
                 if (!cJSON_IsString(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
                     goto end;
                 }
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), ogs_strdup(localMapObject->valuestring));
-                        {{/isByteArray}}
-                        {{#isNumeric}}
+                        {{/items.isByteArray}}
+                        {{#items.isNumeric}}
                 if (!cJSON_IsNumber(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a number";
@@ -1398,8 +1398,8 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
                     *localDouble = localMapObject->valuedouble;
                     localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), localDouble);
                 }
-                        {{/isNumeric}}
-                        {{#isBoolean}}
+                        {{/items.isNumeric}}
+                        {{#items.isBoolean}}
                 if (!cJSON_IsBool(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a boolean";
@@ -1415,21 +1415,52 @@ cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
                     *localInt = localMapObject->valueint;
                     localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), localInt);
                 }
-                        {{/isBoolean}}
-                    {{/isPrimitiveType}}
-                    {{^isPrimitiveType}}
+                        {{/items.isBoolean}}
+                    {{/items.isPrimitiveType}}
+                    {{^items.isPrimitiveType}}
                 if (cJSON_IsObject(localMapObject)) {
                     localMapKeyPair = OpenAPI_map_create(
-                        ogs_strdup(localMapObject->string), {{complexType}}_parseFromJSON(localMapObject, {{classname}}_as_request, {{classname}}_parse_err));
+                        ogs_strdup(localMapObject->string), {{items.complexType}}_parseFromJSON(localMapObject, {{classname}}_as_request, {{classname}}_parse_err));
                 } else if (cJSON_IsNull(localMapObject)) {
                     localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), NULL);
                 } else {
-                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
-                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not an object or 'null'";
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}.{{{items.name}}}]");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}/{{{items.baseName}}}\" map value is not an object or 'null'";
                     goto end;
                 }
-                    {{/isPrimitiveType}}
-                {{/items}}
+                    {{/items.isPrimitiveType}}
+                {{/items.isContainer}}
+                {{#items.isContainer}}
+                    {{#items.isArray}}
+		if (cJSON_IsArray(localMapObject)) {
+                    cJSON *json_array_node = NULL;
+                    OpenAPI_list_t *new_array = OpenAPI_list_create();
+                    cJSON_ArrayForEach(json_array_node, localMapObject) {
+                        {{#items.items.isPrimativeType}}
+#error "Not implemented yet"
+                        {{/items.items.isPrimativeType}}
+                        {{^items.items.isPrimativeType}}
+                        {{items.items.dataType}}_t *node_data = {{items.items.dataType}}_parseFromJSON(json_array_node, {{classname}}_as_request, {{classname}}_parse_err);
+                        if (!node_data) {
+			    goto end;
+                        }
+			OpenAPI_list_add(new_array, node_data);
+                            {{/items.items.isPrimativeType}}
+                    }
+                    localMapKeyPair = OpenAPI_map_create(
+                        ogs_strdup(localMapObject->string), new_array);
+		} else if (cJSON_IsNull(localMapObject)) {
+                    localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), NULL);
+		} else {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}.{{{items.name}}}]");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}/{{{items.baseName}}}\" map value is not an array or 'null'";
+                    goto end;
+                }
+                    {{/items.isArray}}
+		    {{#items.isMap}}
+#error "Not implemented yet!"
+                    {{/items.isMap}}
+                {{/items.isContainer}}
             {{/isEnum}}
                 OpenAPI_list_add({{{name}}}List, localMapKeyPair);
             }
@@ -1606,24 +1637,24 @@ end:
         OpenAPI_list_for_each({{{name}}}List, node) {
             OpenAPI_map_t *localKeyValue = (OpenAPI_map_t*) node->data;
             ogs_free(localKeyValue->key);
-            {{^isEnum}}
-                {{#isPrimitiveType}}
+            {{^items.isEnum}}
+                {{#items.isPrimitiveType}}
             ogs_free(localKeyValue->value);
-                {{/isPrimitiveType}}
-                {{^isPrimitiveType}}
-		    {{#isModel}}
-            {{complexType}}_free(localKeyValue->value);
-                    {{/isModel}}
-                    {{^isModel}}
-                        {{#isFreeFormObject}}
+                {{/items.isPrimitiveType}}
+                {{^items.isPrimitiveType}}
+		    {{#items.isModel}}
+            {{items.complexType}}_free(localKeyValue->value);
+                    {{/items.isModel}}
+                    {{^items.isModel}}
+                        {{#items.isFreeFormObject}}
             OpenAPI_object_free(localKeyValue->value);
-                        {{/isFreeFormObject}}
-                        {{#isAnyType}}
+                        {{/items.isFreeFormObject}}
+                        {{#items.isAnyType}}
             OpenAPI_any_type_free(localKeyValue->value);
-                        {{/isAnyType}}
-                    {{/isModel}}
-                {{/isPrimitiveType}}
-            {{/isEnum}}
+                        {{/items.isAnyType}}
+                    {{/items.isModel}}
+                {{/items.isPrimitiveType}}
+            {{/items.isEnum}}
             OpenAPI_map_free(localKeyValue);
         }
         OpenAPI_list_free({{{name}}}List);
