@@ -35,7 +35,7 @@ default_destdir='openapi'
 default_openapi_gen_config=
 default_openapi_gen_version='6.0.1'
 default_yaml_dir_processor=
-default_overrides_dirs="$scriptdir/../5G_APIs-overrides"
+default_overrides_dirs=""
 default_debug=
 default_model_name_prefix=
 
@@ -244,9 +244,13 @@ reverse_paths() {
     echo "${rev%:}"
 }
 
-rev_overrides_dirs=`reverse_paths "$OVERRIDES_DIRS"`
-
-echo "Overrides directories: $rev_overrides_dirs"
+if [ -n "$OVERRIDES_DIRS" ]; then
+    rev_overrides_dirs=`reverse_paths "$OVERRIDES_DIRS"`
+    echo "Overrides directories: $rev_overrides_dirs"
+else
+    rev_overrides_dirs=""
+    echo "No overrides to process"
+fi
 
 # Create temporary directory to work in
 tmpdir=`mktemp -d --tmpdir openapi-generator.XXXXXXXX`
@@ -266,18 +270,20 @@ trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
     fi
     echo "At commit "`cd 5G_APIs; git log -g --pretty='format:%h %d' --max-count=1 HEAD`
     # import overrides
-    (
-        IFS=:
-	for p in $rev_overrides_dirs; do
-	    echo "Copying YAML files from $p..."
-	    find "$p" -maxdepth 1 -type f -name '*.yaml' -print0 | xargs -0 -I ARGS /bin/cp -f ARGS 5G_APIs/
-	done
-    )
+    if [ -n "$rev_overrides_dirs" ]; then
+        (
+	    IFS=:
+	    for p in $rev_overrides_dirs; do
+		echo "Copying YAML files from $p..."
+		find "$p" -maxdepth 1 -type f -name '*.yaml' -print0 | xargs -0 -I ARGS /bin/cp -f ARGS 5G_APIs/
+	    done
+        )
+    fi
     # Make sure we have the APIS requested
     have_apis=1
     for API in $APIS; do
         if [ ! -e "5G_APIs/${API}.yaml" ]; then
-            echo "Error: Could not find API, $API, in the 5G_APIs repository" >&2
+            echo "Error: Could not find requested API, $API, in the 5G_APIs repository" >&2
 	    have_apis=0
 	fi
     done
