@@ -4,7 +4,7 @@ info:
   version: 1.2.1
   description: |
     Data Collection AF: Data Collection and Reporting Configuration API and Data Reporting API
-    © 2023, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
+    © 2024, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
     All rights reserved.
 
 tags:
@@ -12,7 +12,7 @@ tags:
     description: 'Data Collection and Reporting: Client Configuration and Data Reporting (R2/R3/R4) APIs'
 
 externalDocs:
-  description: 'TS 26.532 V18.0.0; Data Collection and Reporting; Protocols and Formats'
+  description: 'TS 26.532 V18.1.0; Data Collection and Reporting; Protocols and Formats'
   url: 'https://www.3gpp.org/ftp/Specs/archive/26_series/26.532/'
 
 servers:
@@ -229,7 +229,6 @@ components:
           minItems: 0
         samplingRules:
           readOnly: true
-          description: Map(DataDomain ⇒ Array(DataSamplingRule))
           type: object
           additionalProperties:
             type: array
@@ -238,7 +237,6 @@ components:
             minItems: 0
         reportingConditions:
           readOnly: true
-          description: Map(DataDomain ⇒ Array(DataReportingCondition))
           type: object
           additionalProperties:
             type: array
@@ -247,7 +245,6 @@ components:
             minItems: 0
         reportingRules:
           readOnly: true
-          description: Map(DataDomain ⇒ Array(DataReportingRule))
           type: object
           additionalProperties:
             type: array
@@ -255,9 +252,13 @@ components:
               $ref: 'TS26532_CommonData.yaml#/components/schemas/DataReportingRule'
             minItems: 0
       required:
+        - sessionId
+        - validUntil
         - externalApplicationId
         - supportedDomains
+        - samplingRules
         - reportingConditions
+        - reportingRules
 
     DataReport:
       description: "A data report sent by a data collection client to the Data Collection AF."
@@ -309,7 +310,14 @@ components:
       description: "A data reporting domain."
       anyOf:
       - type: string
-        enum: [SERVICE_EXPERIENCE, LOCATION, COMMUNICATION, PERFORMANCE, APPLICATION_SPECIFIC, MS_ACCESS_ACTIVITY, PLANNED_TRIPS]
+        enum:
+          - SERVICE_EXPERIENCE
+          - LOCATION
+          - COMMUNICATION
+          - PERFORMANCE
+          - APPLICATION_SPECIFIC
+          - MS_ACCESS_ACTIVITY
+          - PLANNED_TRIPS
       - type: string
         description: >
             This string provides forward-compatibility with future

@@ -1,16 +1,16 @@
 openapi: 3.0.0
 info:
   title: Data Collection and Reporting Common Data Types
-  version: 1.0.1
+  version: 1.0.2
   description: |
     Data Collection and Reporting Common Data Types
-    © 2023, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
+    © 2024, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
     All rights reserved.
 tags:
   - name: Data Collection and Reporting Common Data Types
     description: 'Data Collection and Reporting: Common Data Types'
 externalDocs:
-  description: 'TS 26.532 V17.2.0; Data Collection and Reporting; Protocols and Formats'
+  description: 'TS 26.532 V18.1.0; Data Collection and Reporting; Protocols and Formats'
   url: 'https://www.3gpp.org/ftp/Specs/archive/26_series/26.532/'
 paths: {}
 components:
@@ -69,8 +69,6 @@ components:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Uri'
         dataPackagingStrategy:
           type: string
-      required:
-        - reportingFormat
 
     #####################################
     # Clause 5.4.3: Enumerated data types
@@ -80,7 +78,10 @@ components:
       description: "Indicating a type of data collection client that reports UE data to the Data Collection AF."
       anyOf:
         - type: string
-          enum: [DIRECT, INDIRECT, APPLICATION_SERVER]
+          enum:
+            - DIRECT
+            - INDIRECT
+            - APPLICATION_SERVER
         - type: string
           description: >
             This string provides forward-compatibility with future
@@ -91,7 +92,10 @@ components:
       description: "The type of condition that triggers reporting by a data collection client to the Data Collection AF."
       anyOf:
       - type: string
-        enum: [INTERVAL, THRESHOLD, EVENT]
+        enum:
+          - INTERVAL
+          - THRESHOLD
+          - EVENT
       - type: string
         description: >
             This string provides forward-compatibility with future
@@ -102,7 +106,9 @@ components:
       description: "The type of event that triggers reporting by a data collection client to the Data Collection AF."
       anyOf:
       - type: string
-        enum: [LOCATION, DESTINATION]
+        enum:
+          - LOCATION
+          - DESTINATION
       - type: string
         description: >
             This string provides forward-compatibility with future
