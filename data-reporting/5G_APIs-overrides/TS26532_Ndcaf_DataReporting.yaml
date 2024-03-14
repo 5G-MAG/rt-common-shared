@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Ndcaf_DataReporting
-  version: 1.2.1
+  version: 1.2.2-reftools1
   description: |
     Data Collection AF: Data Collection and Reporting Configuration API and Data Reporting API
     © 2024, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).

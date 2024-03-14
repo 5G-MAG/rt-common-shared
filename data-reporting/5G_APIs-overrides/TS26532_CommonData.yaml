@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Data Collection and Reporting Common Data Types
-  version: 1.0.2
+  version: 1.0.2-reftools1
   description: |
     Data Collection and Reporting Common Data Types
     © 2024, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
