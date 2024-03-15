@@ -1,0 +1,104 @@
+{{#discriminator.mappedModels}}
+{{classname}}_t *{{classname}}_{{#lambda.lowercase}}{{mappingName}}{{/lambda.lowercase}}_create({{modelName}}_t *{{modelName}})
+{
+    {{classname}}_t *{{classname}}_ptr = NULL;
+
+    {{classname}}_ptr = ogs_malloc(sizeof(*{{classname}}_ptr));
+    ogs_assert({{classname}}_ptr);
+
+    {{classname}}_ptr->{{modelName}} = {{modelName}};
+    {{classname}}_ptr->{{discriminator.propertyName}}_ptr = &{{classname}}_ptr->{{modelName}}->{{discriminator.propertyName}};
+    *{{classname}}_ptr->{{discriminator.propertyName}}_ptr = {{#vars}}{{#isDiscriminator}}{{dataType}}{{/isDiscriminator}}{{/vars}}_VAL_{{mappingName}};
+
+    return {{classname}}_ptr;
+}
+
+{{/discriminator.mappedModels}}
+void {{classname}}_free({{classname}}_t *{{classname}})
+{
+    if (!{{classname}}) return;
+
+    switch (*({{classname}}->{{discriminator.propertyName}}_ptr)) {
+{{#discriminator.mappedModels}}
+    case {{#vars}}{{#isDiscriminator}}{{dataType}}{{/isDiscriminator}}{{/vars}}_VAL_{{mappingName}}:
+        {{modelName}}_free({{classname}}->{{modelName}});
+        break;
+{{/discriminator.mappedModels}}
+    default:
+        ogs_error("Unknown value for {{discriminator.propertyName}}, there may be a memory leak");
+    }
+    ogs_free({{classname}});
+}
+
+cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{classname}}_as_request)
+{
+    if (!{{classname}}) return NULL;
+
+    switch (*({{classname}}->{{discriminator.propertyName}}_ptr)) {
+{{#discriminator.mappedModels}}
+    case {{#vars}}{{#isDiscriminator}}{{dataType}}{{/isDiscriminator}}{{/vars}}_VAL_{{mappingName}}:
+        return {{modelName}}_convertToJSON({{classname}}->{{modelName}}, {{classname}}_as_request);
+        break;
+{{/discriminator.mappedModels}}
+    default:
+        ogs_error("Unknown value for {{discriminator.propertyName}}, there may be a memory leak");
+    }
+
+    return NULL;
+}
+
+{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err)
+{
+    {{classname}}_t *{{classname}}_ptr = NULL;
+
+    if (!{{classname}}JSON) {
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Bad JSON object";
+        return NULL;
+    }
+
+    if ({{classname}}_parse_err) *{{classname}}_parse_err = NULL;
+
+    if (!cJSON_IsObject({{classname}}JSON)) {
+	if ({{classname}}_parse_err) *{{classname}}_parse_err = "Expected a JSON Object";
+        return NULL;
+    }
+
+    cJSON *discriminator = cJSON_GetObjectItemCaseSensitive({{classname}}JSON, "{{discriminator.propertyName}}");
+    if (!cJSON_IsString(discriminator)) {
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Discriminator \"{{discriminator.propertyName}}\" is not a string";
+        return NULL;
+    }
+    
+    {{#vars}}{{#isDiscriminator}}{{dataType}}{{/isDiscriminator}}{{/vars}}_e discriminator_val = {{#vars}}{{#isDiscriminator}}{{dataType}}{{/isDiscriminator}}{{/vars}}_FromString(discriminator->valuestring);
+    if (discriminator_val < 0) {
+        ogs_error("{{classname}}_parseFromJSON failed [{{{name}}}]");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Discriminator \"{{discriminator.propertyName}}\" value not recognised";
+	return NULL;
+    }
+
+    {{classname}}_ptr = ogs_malloc(sizeof(*{{classname}}_ptr));
+    ogs_assert({{classname}}_ptr);
+
+    switch (discriminator_val) {
+{{#discriminator.mappedModels}}
+    case {{#vars}}{{#isDiscriminator}}{{dataType}}{{/isDiscriminator}}{{/vars}}_VAL_{{mappingName}}:
+        {{classname}}_ptr->{{modelName}} = {{modelName}}_parseFromJSON({{classname}}JSON, {{classname}}_as_request, {{classname}}_parse_err);
+	if (!{{classname}}_ptr->{{modelName}}) {
+	    ogs_error("{{classname}}_parseFromJSON failed parse of {{modelName}} type");
+            ogs_free({{classname}}_ptr);
+            return NULL;
+        }
+        {{classname}}_ptr->{{discriminator.propertyName}}_ptr = &{{classname}}_ptr->{{modelName}}->{{discriminator.propertyName}};
+	break;
+{{/discriminator.mappedModels}}
+    default:
+        ogs_error("{{classname}}_parseFromJSON failed [{{discriminator.propertyName}}]");
+	if ({{classname}}_parse_err) *{{classname}}_parse_err = "Discriminator \"{{discriminator.propertyName}}\" value not mapped";
+	ogs_free({{classname}}_ptr);
+        return NULL;
+    }
+
+    *({{classname}}_ptr->{{discriminator.propertyName}}_ptr) = discriminator_val;
+
+    return {{classname}}_ptr;
+}
