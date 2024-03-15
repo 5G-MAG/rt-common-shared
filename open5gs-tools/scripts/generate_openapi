@@ -38,13 +38,16 @@ default_yaml_dir_processor=
 default_overrides_dirs=""
 default_debug=
 default_model_name_prefix=
+default_cache_dir=
 
 # script constants
 GIT_5G_APIS_URL='https://forge.3gpp.org/rep/all/5G_APIs.git'
 OPENAPI_GEN_URL_FORMAT='https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_GEN_VERSION}/openapi-generator-cli-${OPENAPI_GEN_VERSION}.jar'
+JMUSTACHE_VERSION=1.16
+MAVEN_SAMSKIVERT_JMUSTACHE_URL_FORMAT='https://repo1.maven.org/maven2/com/samskivert/jmustache/${JMUSTACHE_VERSION}/jmustache-${JMUSTACHE_VERSION}.jar'
 
 # Parse command line arguments
-ARGS=`getopt -n "$scriptname" -o 'a:b:c:l:d:Dg:ho:p:y:' -l 'api:,branch:,generator-config:,language:,directory:,debug,openapi-generator-version:,help,overrides-directories:,model-name-prefix:,yaml-directory-processor:' -s sh -- "$@"`
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:C:l:d:Dg:ho:p:y:' -l 'api:,branch:,generator-config:,cache-dir:,language:,directory:,debug,openapi-generator-version:,help,overrides-directories:,model-name-prefix:,yaml-directory-processor:' -s sh -- "$@"`
 
 if [ $? -ne 0 ]; then
     print_syntax >&2
@@ -82,6 +85,8 @@ Options:
   -c CONFIG  --generator-config CONFIG
                               A configuration file to pass to
                               openapi-generator-cli.
+  -C DIR     --cache-dir DIR  Directory to cache openapi-generator, jmustache
+                              and the 5G_APIs in. [default: use temporary dir]
   -d DIR     --directory DIR  Directory for the OpenAPI bindings.
                               [default: $default_destdir]
   -g VERSION --openapi-generator-version VERSION
@@ -117,6 +122,7 @@ YAML_DIR_PROCESSOR="$default_yaml_dir_processor"
 OVERRIDES_DIRS="$default_overrides_dirs"
 DEBUG="$default_debug"
 MODEL_NAME_PREFIX="$default_model_name_prefix"
+CACHE_DIR="$default_cache_dir"
 
 while true; do
     case "$1" in
@@ -135,6 +141,11 @@ while true; do
 	shift 2
 	continue
 	;;
+    -C|--cache-dir)
+        CACHE_DIR="$2"
+        shift 2
+        continue
+        ;;
     -l|--language)
 	LANGUAGE="$2"
 	shift 2
@@ -252,23 +263,67 @@ else
     echo "No overrides to process"
 fi
 
-# Create temporary directory to work in
-tmpdir=`mktemp -d --tmpdir openapi-generator.XXXXXXXX`
-trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
+if [ -z "$CACHE_DIR" ]; then
+    # Create temporary directory to work in
+    tmpdir=`mktemp -d --tmpdir openapi-generator.XXXXXXXX`
+    trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
+else
+    tmpdir="$CACHE_DIR"
+    if [ ! -d "$tmpdir" ]; then
+        mkdir -p "$tmpdir"
+    fi
+fi
+
+if [ ! -d "$tmpdir" ]; then
+    echo "Error: Unable to create cache directory" >&2
+    exit 1
+fi
+
 (
     cd "$tmpdir"
     # Download openapi-generator-cli
     openapi_gen_url=`eval echo "$OPENAPI_GEN_URL_FORMAT"`
-    if ! wget "$openapi_gen_url" -O openapi-generator-cli.jar; then
-        echo "Error: Failed to fetch openapi-generator-cli" >&2
-        exit 1
+    openapi_gen_jar=`basename "$openapi_gen_url"`
+    if [ ! -e "$openapi_gen_jar" ]; then
+        if ! wget "$openapi_gen_url" -O "$openapi_gen_jar"; then
+            echo "Error: Failed to fetch openapi-generator-cli" >&2
+            exit 1
+        fi
     fi
-    # Clone the 5G APIs git repository
-    if ! git clone -b "$BRANCH" "$GIT_5G_APIS_URL"; then
-        echo "Error: Failed to fetch branch $BRANCH from the 5G_APIs repository" >&2
-        exit 1
+
+    # Download JMustache
+    jmustache_url=`eval echo "$MAVEN_SAMSKIVERT_JMUSTACHE_URL_FORMAT"`
+    jmustache_jar=`basename "$jmustache_url"`
+    if [ ! -e "$jmustache_jar" ]; then
+        if ! wget "$jmustache_url" -O "$jmustache_jar"; then
+            echo "Error: Failed to fetch jmustache" >&2
+            exit 1
+        fi
+    fi
+
+    if [ ! -d 5G_APIs ]; then
+        # Clone the 5G APIs git repository
+        if ! git clone -b "$BRANCH" "$GIT_5G_APIS_URL"; then
+            echo "Error: Failed to fetch branch $BRANCH from the 5G_APIs repository" >&2
+            exit 1
+        fi
+    else
+        (
+	    cd 5G_APIs
+            # Get latest updates
+            if ! git fetch -p --all; then
+                echo "Error: Failed to update local clone of 5G_APIs repository" >&2
+                exit 1
+            fi
+            # clean any local changes
+            git reset --hard HEAD
+            git clean --force -d -x --quiet
+            # change branch
+            git checkout "$BRANCH"
+        )
     fi
     echo "At commit "`cd 5G_APIs; git log -g --pretty='format:%h %d' --max-count=1 HEAD`
+
     # import overrides
     if [ -n "$rev_overrides_dirs" ]; then
         (
@@ -279,6 +334,7 @@ trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
 	    done
         )
     fi
+
     # Make sure we have the APIS requested
     have_apis=1
     for API in $APIS; do
@@ -290,10 +346,12 @@ trap "rm -rf '$tmpdir'" 0 1 2 3 4 5 6 7 8 10 11 12 13 14
     if [ $have_apis = 0 ]; then
 	exit 1
     fi
+
     # Run YAML directory processor if one given
     if [ -n "$YAML_DIR_PROCESSOR" ]; then
 	"$YAML_DIR_PROCESSOR" "$tmpdir/5G_APIs"
     fi
+
     # Prepare for API generation
     unset language
     unset additional_props
@@ -314,7 +372,7 @@ EOF
 	api_name_lower=`echo "$API" | tr 'A-Z' 'a-z'`
 	api_name_upper=`echo "$API" | tr 'a-z' 'A-Z'`
         # bindings
-        "$java" -jar openapi-generator-cli.jar generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}" ${debugmodels} ${MODEL_NAME_PREFIX:+--model-name-prefix $MODEL_NAME_PREFIX}
+        "$java" -classpath "$jmustache_jar":"$openapi_gen_jar" org.openapitools.codegen.OpenAPIGenerator generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}" ${debugmodels} ${MODEL_NAME_PREFIX:+--model-name-prefix $MODEL_NAME_PREFIX}
 	# Rename untagged API files to include the original API name.
 	if [ -d "${destdir}/api" ]; then
 	    find "${destdir}/api" -type f '(' -name '*Default*' -o -name '*DEFAULT*' -o -name '*default*' ')' -print | while read filename; do

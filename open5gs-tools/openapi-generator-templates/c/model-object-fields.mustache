@@ -1,0 +1,95 @@
+{{^hasVars}}
+    {{#isString}}
+    char *value{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+    {{/isString}}{{^isString}}
+        {{#composedSchemas}}
+            {{#allOf}}
+#error "Not implemented yet!"
+            {{/allOf}}
+            {{#anyOf}}
+                {{#isPrimitiveType}}
+    {{dataType}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                {{/isPrimitiveType}}
+                {{^isPrimitiveType}}
+#error "Not implemented yet!"
+                {{/isPrimitiveType}}
+            {{/anyOf}}
+            {{#oneOf}}
+#error "Not implemented yet!"
+            {{/oneOf}}
+        {{/composedSchemas}}
+    {{/isString}}
+{{/hasVars}}
+{{#vars}}
+    {{^isContainer}}
+        {{^isPrimitiveType}}
+            {{#isEnum}}
+    {{datatype}}_e {{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+            {{/isEnum}}
+            {{^isEnum}}
+                {{#isModel}}
+    struct {{datatype}}_s *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                {{/isModel}}
+                {{^isModel}}
+                    {{#isUuid}}
+    {{datatype}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                    {{/isUuid}}
+                    {{#isEmail}}
+    {{datatype}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                    {{/isEmail}}
+                    {{#isFreeFormObject}}
+    OpenAPI_object_t *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                    {{/isFreeFormObject}}
+                    {{#isAnyType}}
+    OpenAPI_any_type_t *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                    {{/isAnyType}}
+                {{/isModel}}
+            {{/isEnum}}
+        {{/isPrimitiveType}}
+        {{#isPrimitiveType}}
+            {{#isEnum}}
+    {{classname}}_{{#lambda.uppercase}}{{baseName}}{{/lambda.uppercase}}_e {{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+            {{/isEnum}}
+            {{^isEnum}}
+                {{#isNumeric}}
+                    {{^required}}
+    bool is_{{name}}{{$sepchar}};{{/sepchar}}
+                    {{/required}}
+    {{datatype}} {{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                {{/isNumeric}}
+                {{#isBoolean}}
+                    {{^required}}
+    bool is_{{name}}{{$sepchar}};{{/sepchar}}
+                    {{/required}}
+    {{datatype}} {{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                {{/isBoolean}}
+                {{#isString}}
+    {{datatype}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                {{/isString}}
+                {{#isModel}}
+    {{datatype}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+                {{/isModel}}
+            {{/isEnum}}
+            {{#isByteArray}}
+    {{datatype}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+            {{/isByteArray}}
+            {{#isBinary}}
+    OpenAPI_{{datatype}} {{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+            {{/isBinary}}
+            {{#isDate}}
+    {{datatype}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+            {{/isDate}}
+            {{#isDateTime}}
+    {{datatype}} *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+            {{/isDateTime}}
+        {{/isPrimitiveType}}
+    {{/isContainer}}
+    {{#isContainer}}
+        {{#isArray}}
+    OpenAPI_{{datatype}}_t *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+        {{/isArray}}
+        {{#isMap}}
+    OpenAPI_{{datatype}} {{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+        {{/isMap}}
+    {{/isContainer}}
+{{/vars}}

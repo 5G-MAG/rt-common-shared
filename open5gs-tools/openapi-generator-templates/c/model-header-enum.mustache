@@ -1,0 +1,10 @@
+{{#allowableValues}}
+typedef enum {
+    {{$classname}}{{classname}}{{/classname}}_NULL = 0{{#enumVars}},
+    {{$classname}}{{classname}}{{/classname}}_VAL_{{{value}}}{{/enumVars}}{{^enumVars}}{{#values}},
+    {{$classname}}{{classname}}{{/classname}}_VAL_{{{.}}}{{/values}}{{/enumVars}}
+} {{$classname}}{{classname}}{{/classname}}_e;
+{{/allowableValues}}
+
+const char* {{$classname}}{{classname}}{{/classname}}_ToString(const {{$classname}}{{classname}}{{/classname}}_e {{$classname}}{{classname}}{{/classname}});
+{{$classname}}{{classname}}{{/classname}}_e {{$classname}}{{classname}}{{/classname}}_FromString(const char* {{$classname}}{{classname}}{{/classname}});

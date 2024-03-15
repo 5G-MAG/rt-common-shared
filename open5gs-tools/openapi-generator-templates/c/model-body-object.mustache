@@ -1,0 +1,83 @@
+{{#vars}}
+    {{^isContainer}}
+        {{#isPrimitiveType}}
+            {{#isEnum}}
+{{<model-body-enum}}
+{{$classname}}{{classname}}_{{#lambda.uppercase}}{{baseName}}{{/lambda.uppercase}}{{/classname}}
+{{/model-body-enum}}
+
+            {{/isEnum}}
+        {{/isPrimitiveType}}
+    {{/isContainer}}
+{{/vars}}
+{{#discriminator}}
+{{>model-body-polymorphic}}
+{{/discriminator}}
+{{^discriminator}}
+{{>model-body-object-defs}}
+{{/discriminator}}
+
+cJSON *{{classname}}_convertRequestToJSON(const {{classname}}_t *{{classname}})
+{
+    return {{classname}}_convertToJSON({{classname}}, true);
+}
+
+cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}})
+{
+    return {{classname}}_convertToJSON({{classname}}, false);
+}
+
+{{classname}}_t *{{classname}}_parseRequestFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err)
+{
+    return {{classname}}_parseFromJSON({{classname}}JSON, true, {{classname}}_parse_err);
+}
+
+{{classname}}_t *{{classname}}_parseResponseFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err)
+{
+    return {{classname}}_parseFromJSON({{classname}}JSON, false, {{classname}}_parse_err);
+}
+
+{{classname}}_t *{{classname}}_copy({{classname}}_t *dst, const {{classname}}_t *src, bool {{classname}}_as_request)
+{
+    cJSON *item = NULL;
+    char *content = NULL;
+
+    ogs_assert(src);
+    item = {{classname}}_convertToJSON(src, {{classname}}_as_request);
+    if (!item) {
+        ogs_error("{{classname}}_convertToJSON() failed");
+        return NULL;
+    }
+
+    content = cJSON_Print(item);
+    cJSON_Delete(item);
+
+    if (!content) {
+        ogs_error("cJSON_Print() failed");
+        return NULL;
+    }
+
+    item = cJSON_Parse(content);
+    ogs_free(content);
+    if (!item) {
+        ogs_error("cJSON_Parse() failed");
+        return NULL;
+    }
+
+    {{classname}}_free(dst);
+    dst = {{classname}}_parseFromJSON(item, {{classname}}_as_request, NULL);
+    cJSON_Delete(item);
+
+    return dst;
+}
+
+{{classname}}_t *{{classname}}_copyRequest({{classname}}_t *dst, const {{classname}}_t *src)
+{
+    return {{classname}}_copy(dst, src, true);
+}
+
+{{classname}}_t *{{classname}}_copyResponse({{classname}}_t *dst, const {{classname}}_t *src)
+{
+    return {{classname}}_copy(dst, src, false);
+}
+

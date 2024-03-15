@@ -1,0 +1,6 @@
+    {{#vars}}{{#isDiscriminator}}{{dataType}}_e{{/isDiscriminator}}{{/vars}}* {{discriminator.propertyName}}_ptr;
+    union {
+{{#discriminator.mappedModels}}
+        {{modelName}}_t* {{modelName}};
+{{/discriminator.mappedModels}}
+    };

@@ -1,0 +1,26 @@
+const char* {{$classname}}{{classname}}{{/classname}}_ToString(const {{$classname}}{{classname}}{{/classname}}_e {{$classname}}{{classname}}{{/classname}})
+{
+    static const char * const {{$classname}}{{classname}}{{/classname}}Array[] =  { NULL{{#allowableValues}}{{#values}}, "{{.}}"{{/values}}{{/allowableValues}} };
+    static const size_t sizeofArray = sizeof({{$classname}}{{classname}}{{/classname}}Array) / sizeof({{$classname}}{{classname}}{{/classname}}Array[0]);
+    if ({{$classname}}{{classname}}{{/classname}} == 0) {
+        return "<null>";
+    } else if ({{$classname}}{{classname}}{{/classname}} > 0 && {{$classname}}{{classname}}{{/classname}} < sizeofArray) {
+        return {{$classname}}{{classname}}{{/classname}}Array[{{$classname}}{{classname}}{{/classname}}];
+    } else {
+        return "<unknown>";
+    }
+}
+
+{{$classname}}{{classname}}{{/classname}}_e {{$classname}}{{classname}}{{/classname}}_FromString(const char* {{$classname}}{{classname}}{{/classname}})
+{
+    int stringToReturn;
+    static const char * const {{$classname}}{{classname}}{{/classname}}Array[] =  { NULL{{#allowableValues}}{{#values}}, "{{.}}"{{/values}}{{/allowableValues}} };
+    static const size_t sizeofArray = sizeof({{$classname}}{{classname}}{{/classname}}Array) / sizeof({{$classname}}{{classname}}{{/classname}}Array[0]);
+    if ({{$classname}}{{classname}}{{/classname}} == NULL) return 0;
+    for (stringToReturn = 1; stringToReturn < sizeofArray; stringToReturn++) {
+        if (strcmp({{$classname}}{{classname}}{{/classname}}, {{$classname}}{{classname}}{{/classname}}Array[stringToReturn]) == 0) {
+            return stringToReturn;
+        }
+    }
+    return -1;
+}
