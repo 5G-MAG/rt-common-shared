@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: M1_MetricsReportingProvisioning
-  version: 2.1.0
+  version: 2.1.0-reftools1
   description: |
     5GMS AF M1 Metrics Reporting Provisioning API
     © 2023, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
@@ -125,13 +125,18 @@ components:
         - samplingPeriod
       properties:
         metricsReportingConfigurationId:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+          readOnly: true
+          allOf:
+            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
         scheme:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Uri'
         dataNetworkName:
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Dnn'
         reportingInterval:
-          $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
+          minimum: 0
+          exclusiveMinimum: true
+          allOf:
+            - $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
         samplePercentage:
           $ref: 'TS26512_CommonData.yaml#/components/schemas/Percentage'
         urlFilters:
@@ -140,7 +145,10 @@ components:
             type: string
           minItems: 1
         samplingPeriod:
-          $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
+          minimum: 0
+          exclusiveMinimum: true
+          allOf:
+            - $ref: 'TS29571_CommonData.yaml#/components/schemas/DurationSec'
         metrics:
           type: array
           items:
