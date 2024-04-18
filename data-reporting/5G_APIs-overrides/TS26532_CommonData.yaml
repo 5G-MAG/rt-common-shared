@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Data Collection and Reporting Common Data Types
-  version: 1.0.2-reftools1
+  version: 2.0.0
   description: |
     Data Collection and Reporting Common Data Types
     © 2024, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
@@ -10,7 +10,7 @@ tags:
   - name: Data Collection and Reporting Common Data Types
     description: 'Data Collection and Reporting: Common Data Types'
 externalDocs:
-  description: 'TS 26.532 V18.1.0; Data Collection and Reporting; Protocols and Formats'
+  description: 'TS 26.532 V18.2.0; Data Collection and Reporting; Protocols and Formats'
   url: 'https://www.3gpp.org/ftp/Specs/archive/26_series/26.532/'
 paths: {}
 components:
@@ -66,6 +66,7 @@ components:
         reportingProbability:
           $ref: 'TS26512_CommonData.yaml#/components/schemas/Percentage'
         reportingFormat:
+          deprected: true
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Uri'
         dataPackagingStrategy:
           type: string
