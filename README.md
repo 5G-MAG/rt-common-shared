@@ -17,6 +17,6 @@ The 5gms directory contains example configurations and common scripts for the
 ### MBMS
 
 The mbms directory contains:
-* example configurations for the LTE-based 5G
+* Example configurations for the LTE-based 5G
 Broadcast (rt-mbms-\*) Reference tools.
 * Information on MBMS Service Announcement formats can be found [here](https://5g-mag.github.io/Getting-Started/pages/lte-based-5g-broadcast/rt-common-shared/MBMS-service-announcement-files.html)
