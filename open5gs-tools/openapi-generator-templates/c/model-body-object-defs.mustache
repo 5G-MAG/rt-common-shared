@@ -1,3 +1,5 @@
+#define _OPENAPI_DATE_REGEX "^\\d{4}-\\d{2}-\\d{2}$"
+#define _OPENAPI_DATE_TIME_REGEX "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:.\\d+)?(?:Z|[-+]\\d{2}:\\d{2})$"
 {{classname}}_t *{{classname}}_create(
 {{^hasVars}}
     {{#isString}}
@@ -43,7 +45,7 @@
     OpenAPI_object_t *{{name}}{{^-last}},{{/-last}}
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    OpenAPI_any_type_t *{{name}}{{^-last}},{{/-last}}
+    {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{name}}{{^-last}},{{/-last}}
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}
@@ -178,7 +180,7 @@ void {{classname}}_free({{classname}}_t *{{classname}})
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
     if ({{{classname}}}->{{{name}}}) {
-        OpenAPI_any_type_free({{{classname}}}->{{{name}}});
+        {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_free({{{classname}}}->{{{name}}});
         {{classname}}->{{name}} = NULL;
     }
                     {{/isAnyType}}
@@ -252,7 +254,7 @@ void {{classname}}_free({{classname}}_t *{{classname}})
             OpenAPI_object_free(node->data);
 		    {{/isFreeFormObject}}
 		    {{#isAnyType}}
-            OpenAPI_any_type_free(node->data);
+            {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_free(node->data);
                     {{/isAnyType}}
                   {{/isModel}}
                 {{/isPrimitiveType}}
@@ -497,7 +499,7 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
     }
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    cJSON *{{{name}}}_object = OpenAPI_any_type_convertToJSON({{{classname}}}->{{{name}}}, {{classname}}_as_request);
+    cJSON *{{{name}}}_object = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_convertToJSON({{{classname}}}->{{{name}}}, {{classname}}_as_request);
     if ({{{name}}}_object == NULL) {
         ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
         goto end;
@@ -587,7 +589,7 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
             cJSON_AddItemToArray({{{name}}}List, itemLocal);
                             {{/isFreeFormObject}}
                             {{#isAnyType}}
-            cJSON *itemLocal = OpenAPI_any_type_convertToJSON(node->data, {{classname}}_as_request);
+            cJSON *itemLocal = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_convertToJSON(node->data, {{classname}}_as_request);
             if (itemLocal == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
@@ -680,7 +682,7 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
                         {{/items.isFreeFormObject}}
                         {{#items.isAnyType}}
             cJSON *itemLocal = localKeyValue->value ?
-                OpenAPI_any_type_convertToJSON(localKeyValue->value, {{classname}}_as_request) :
+                {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_convertToJSON(localKeyValue->value, {{classname}}_as_request) :
                 cJSON_CreateNull();
             if (itemLocal == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
@@ -814,7 +816,7 @@ end:
     OpenAPI_object_t *{{name}}_local_object = NULL;
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    OpenAPI_any_type_t *{{name}}_local_object = NULL;
+    {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{name}}_local_object = NULL;
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}
@@ -840,6 +842,23 @@ end:
         goto end;
     }
 
+    {{#pattern}}
+    static OpenAPI_regex_t *{{{classname}}}_regex = NULL;
+    if (!{{{classname}}}_regex) {
+        {{{classname}}}_regex = OpenAPI_regex_register("{{{pattern}}}");
+        if (!{{{classname}}}_regex) {
+            ogs_warn("{{classname}}_parseFromJSON(): Bad regex pattern in OpenAPI for {{title}}, will not use for validation");
+        }
+    }
+    if ({{{classname}}}_regex) {
+        if (!OpenAPI_regex_match({{{classname}}}_regex, value)) {
+            ogs_error("{{classname}}_parseFromJSON() failed, did not match pattern");
+            if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}}";
+            goto end;
+        }
+    }   
+    {{/pattern}}
+
     value = ogs_strdup({{classname}}JSON->valuestring);
     {{/isString}}{{^isString}}
         {{#composedSchemas}}
@@ -851,9 +870,27 @@ end:
     bool valid = false;
                 {{/-first}}
                 {{#isPrimitiveType}}
-	            {{#isString}}
+                    {{#isString}}
     if (cJSON_IsString({{classname}}JSON)) {
+                        {{#pattern}}
+        static OpenAPI_regex_t *{{name}}_regex = NULL;
+        if (!{{name}}_regex) {
+            {{name}}_regex = OpenAPI_regex_register("{{{pattern}}}");
+            if (!{{name}}_regex) {
+                ogs_warn("{{classname}}_parseFromJSON(): Bad regex pattern in OpenAPI for {{title}}, will not use for validation");
+            }
+        }
+                        {{/pattern}}
         {{name}} = ogs_strdup({{classname}}JSON->valuestring);
+                        {{#pattern}}
+        if ({{name}}_regex) {
+            if (!OpenAPI_regex_match({{name}}_regex, {{name}})) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{name}}] did not match pattern");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}}.{{baseName}} did not match validation pattern";
+                goto end;
+            }
+        }
+                        {{/pattern}}
         valid = true;
     }
                     {{/isString}}
@@ -979,6 +1016,21 @@ end:
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
         goto end;
     }
+
+                    {{#pattern}}
+    static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+    if (!{{{name}}}_regex) {
+	{{{name}}}_regex = OpenAPI_regex_register("{{{pattern}}}");
+        if (!{{{name}}}_regex) {
+            ogs_warn("{{classname}}_parseFromJSON(): Bad regex pattern in {{title}}.{{baseName}}, will not validate strings");
+        }
+    }
+    if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: pattern does not match");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match the validation pattern";
+        goto end;
+    }
+                    {{/pattern}}
                 {{/isString}}
                 {{#isByteArray}}
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
@@ -986,7 +1038,53 @@ end:
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
         goto end;
     }
+
+    /* TODO: insert check for base64 */
                 {{/isByteArray}}
+                {{#isDate}}
+    if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        goto end;
+    }
+
+    static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+    if (!{{{name}}}_regex) {
+        {{{name}}}_regex = OpenAPI_regex_register_named("date",_OPENAPI_DATE_REGEX);
+        if (!{{{name}}}_regex) {
+            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile date regex");
+            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the date validation regex for \"{{{baseName}}}\"";
+            goto end;
+        }
+    }
+    if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match date format");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match date format";
+        goto end;
+    }
+                {{/isDate}}
+                {{#isDateTime}}
+    if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        goto end;
+    }
+
+    static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+    if (!{{{name}}}_regex) {
+        {{{name}}}_regex = OpenAPI_regex_register_named("date-time",_OPENAPI_DATE_TIME_REGEX);
+        if (!{{{name}}}_regex) {
+            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile date-time regex");
+            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the date-time validation regex for \"{{{baseName}}}\"";
+            goto end;
+        }
+    }
+    if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match date-time format");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match date-time format";
+        goto end;
+    }
+                {{/isDateTime}}
                 {{#isNumeric}}
     if (!cJSON_IsNumber({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
@@ -1076,6 +1174,8 @@ end:
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string";
         goto end;
     }
+
+    /* TODO: check string is UUID format */
                     {{/isUuid}}
                     {{#isEmail}}
     if (!cJSON_IsString({{{name}}})) {
@@ -1083,6 +1183,8 @@ end:
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string";
         goto end;
     }
+
+    /* TODO: check string is email format */
                     {{/isEmail}}
                     {{#isFreeFormObject}}
     if (!cJSON_IsObject({{{name}}})) {
@@ -1093,7 +1195,7 @@ end:
     {{{name}}}_local_object = OpenAPI_object_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err);
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    {{{name}}}_local_object = OpenAPI_any_type_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err);
+    {{{name}}}_local_object = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err);
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}
@@ -1135,6 +1237,20 @@ end:
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
                 goto end;
             }
+                            {{#pattern}}
+            static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+            if (!{{{name}}}_regex) {
+                {{{name}}}_regex = OpenAPI_regex_register("{{{pattern}}}");
+                if (!{{{name}}}_regex) {
+                    ogs_warn("{{classname}}_parseFromJSON(): Bad regex pattern for {{title}}.{{baseName}}, will not validate the format");
+                }
+            }
+            if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: pattern does not match");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element does not match string validation pattern";
+                goto end;
+            }
+                            {{/pattern}}
             OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
                         {{/isString}}
                         {{#isByteArray}}
@@ -1143,8 +1259,54 @@ end:
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
                 goto end;
             }
+            /* TODO: check that byte array string is base64 (and decode??) */
             OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
                         {{/isByteArray}}
+                        {{#isDate}}
+            if (!cJSON_IsString({{{name}}}_local)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                goto end;
+            }
+
+            static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+            if (!{{{name}}}_regex) {
+		{{{name}}}_regex = OpenAPI_regex_register_named("date", _OPENAPI_DATE_REGEX);
+		if (!{{{name}}}_regex) {
+		    ogs_error("{{classname}}_parseFromJSON(): Bad date format regex, please fix");
+		    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile date regex for \"{{{baseName}}}\" array element";
+		    goto end;
+		}
+            }
+            if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a date string");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a date string";
+                goto end;
+            }
+                        {{/isDate}}
+                        {{#isDateTime}}
+            if (!cJSON_IsString({{{name}}}_local)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                goto end;
+            }
+
+            static OpenAPI_regex_t *{{{name}}}_regex = iNULL;
+            if (!{{{name}}}_regex) {
+                {{{name}}}_regex = OpenAPI_regex_register_named("date-time", _OPENAPI_DATE_TIME_REGEX);
+                if (!{{{name}}}_regex) {
+                    ogs_error("{{classname}}_parseFromJSON(): Bad date-time format regex, please fix");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile date-time regex for \"{{{baseName}}}\" array element";
+                    goto end;
+                }
+            }
+            if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a date-time string");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a date-time string
+";
+                goto end;
+            }
+                        {{/isDateTime}}
                         {{#isNumeric}}
             if (!cJSON_IsNumber({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
@@ -1227,7 +1389,7 @@ end:
             OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
                             {{/isFreeFormObject}}
                             {{#isAnyType}}
-	    OpenAPI_any_type_t *{{{name}}}Item = OpenAPI_any_type_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err);
+            {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{{name}}}Item = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err);
             if (!{{{name}}}Item) {
                 ogs_error("No {{{name}}}Item");
                 /* {{classname}}_parse_err given by sub-parser */
@@ -1269,7 +1431,7 @@ end:
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), (void *){{{complexType}}}Value);
             {{/isEnum}}
             {{^isEnum}}
-		{{^items.isContainer}}
+                {{^items.isContainer}}
                     {{#items.isPrimitiveType}}
                         {{#items.isString}}
                 if (!cJSON_IsString(localMapObject)) {
@@ -1277,6 +1439,20 @@ end:
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
                     goto end;
                 }
+                            {{#items.pattern}}
+                static OpenAPI_regex_t *localMapValueRegex = NULL;
+                if (!localMapValueRegex) {
+                    localMapValueRegex = OpenAPI_regex_register("{{{items.pattern}}}");
+                    if (!localMapValueRegex) {
+                        ogs_warn("{{classname}}_parseFromJSON(): Bad regex for [{{{name}}}] field, ignoring validation");
+                    }
+                }
+                if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: pattern does not match");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value does not match string validation pattern";
+                    goto end;
+                }
+                            {{/items.pattern}}
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), ogs_strdup(localMapObject->valuestring));
                         {{/items.isString}}
                         {{#items.isByteArray}}
@@ -1287,6 +1463,48 @@ end:
                 }
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), ogs_strdup(localMapObject->valuestring));
                         {{/items.isByteArray}}
+                        {{#items.isDate}}
+                if (!cJSON_IsString(localMapObject)) {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
+                    goto end;
+                }
+                static OpenAPI_regex_t *localMapValueRegex = NULL;
+                if (!localMapValueRegex) {
+                    localMapValueRegex = OpenAPI_regex_register_named("date", _OPENAPI_DATE_REGEX);
+                    if (!localMapValueRegex) {
+                        ogs_error("{{classname}}_parseFromJSON(): Unable to compile date validation regex for [{{{name}}}]");
+                        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to initialise date validation for \"{{{baseName}}}\" map value";
+                        goto end;
+                    }
+                }
+                if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: map value is not a date string");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a date string";
+                    goto end;
+                }
+                        {{/items.isDate}}
+                        {{#items.isDateTime}}
+                if (!cJSON_IsString(localMapObject)) {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
+                    goto end;
+                }
+                static OpenAPI_regex_t *localMapValueRegex = NULL;
+                if (!localMapValueRegex) {
+                    localMapValueRegex =OpenAPI_regex_register_named("date-time", _OPENAPI_DATE_TIME_REGEX);
+                    if (!localMapValueRegex) {
+                        ogs_error("{{classname}}_parseFromJSON(): Unable to compile date-time validation regex for [{{{name}}}]");
+                        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to initialise date-time validation for \"{{{baseName}}}\" map value";
+                        goto end;
+                    }
+                }
+                if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: map value is not a date-time string");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a date-time string";
+                    goto end;
+                }
+                        {{/items.isDateTime}}
                         {{#items.isNumeric}}
                 if (!cJSON_IsNumber(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
@@ -1337,7 +1555,7 @@ end:
                 {{/items.isContainer}}
                 {{#items.isContainer}}
                     {{#items.isArray}}
-		if (cJSON_IsArray(localMapObject)) {
+                if (cJSON_IsArray(localMapObject)) {
                     cJSON *json_array_node = NULL;
                     OpenAPI_list_t *new_array = OpenAPI_list_create();
                     cJSON_ArrayForEach(json_array_node, localMapObject) {
@@ -1347,22 +1565,22 @@ end:
                         {{^items.items.isPrimativeType}}
                         {{items.items.dataType}}_t *node_data = {{items.items.dataType}}_parseFromJSON(json_array_node, {{classname}}_as_request, {{classname}}_parse_err);
                         if (!node_data) {
-			    goto end;
+                            goto end;
                         }
-			OpenAPI_list_add(new_array, node_data);
+                        OpenAPI_list_add(new_array, node_data);
                             {{/items.items.isPrimativeType}}
                     }
                     localMapKeyPair = OpenAPI_map_create(
                         ogs_strdup(localMapObject->string), new_array);
-		} else if (cJSON_IsNull(localMapObject)) {
+                } else if (cJSON_IsNull(localMapObject)) {
                     localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), NULL);
-		} else {
+                } else {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}.{{{items.name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}/{{{items.baseName}}}\" map value is not an array or 'null'";
                     goto end;
                 }
                     {{/items.isArray}}
-		    {{#items.isMap}}
+                    {{#items.isMap}}
 #error "Not implemented yet!"
                     {{/items.isMap}}
                 {{/items.isContainer}}
@@ -1495,7 +1713,7 @@ end:
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
     if ({{name}}_local_object) {
-        OpenAPI_any_type_free({{name}}_local_object);
+        {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_free({{name}}_local_object);
         {{name}}_local_object = NULL;
     }
                     {{/isAnyType}}
@@ -1518,17 +1736,17 @@ end:
             ogs_free(node->data);
                 {{/isPrimitiveType}}
                 {{^isPrimitiveType}}
-		    {{#isModel}}
+                    {{#isModel}}
             {{complexType}}_free(node->data);
                     {{/isModel}}
-		    {{^isModel}}
-	                {{#isFreeFormObject}}
-	    OpenAPI_object_free(node->data);
-			{{/isFreeFormObject}}
-			{{#isAnyType}}
-	    OpenAPI_any_type_free(node->data);
-			{{/isAnyType}}
-		    {{/isModel}}
+                    {{^isModel}}
+                        {{#isFreeFormObject}}
+            OpenAPI_object_free(node->data);
+                        {{/isFreeFormObject}}
+                        {{#isAnyType}}
+            {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_free(node->data);
+                        {{/isAnyType}}
+                    {{/isModel}}
                 {{/isPrimitiveType}}
         }
             {{/isEnum}}
@@ -1547,7 +1765,7 @@ end:
             ogs_free(localKeyValue->value);
                 {{/items.isPrimitiveType}}
                 {{^items.isPrimitiveType}}
-		    {{#items.isModel}}
+                    {{#items.isModel}}
             {{items.complexType}}_free(localKeyValue->value);
                     {{/items.isModel}}
                     {{^items.isModel}}
@@ -1555,7 +1773,7 @@ end:
             OpenAPI_object_free(localKeyValue->value);
                         {{/items.isFreeFormObject}}
                         {{#items.isAnyType}}
-            OpenAPI_any_type_free(localKeyValue->value);
+            {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_free(localKeyValue->value);
                         {{/items.isAnyType}}
                     {{/items.isModel}}
                 {{/items.isPrimitiveType}}

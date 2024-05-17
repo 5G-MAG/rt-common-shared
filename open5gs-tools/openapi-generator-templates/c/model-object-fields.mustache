@@ -41,7 +41,7 @@
     OpenAPI_object_t *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    OpenAPI_any_type_t *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
+    {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{name}}{{$sep}}{{$sepchar}};{{/sepchar}}{{/sep}}
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}
