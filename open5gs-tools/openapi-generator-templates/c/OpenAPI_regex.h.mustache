@@ -1,0 +1,39 @@
+/**************************************************************************
+ * OpenAPI_regex.h : Regex management for generated OpenAPI objects
+ **************************************************************************
+ * OpenAPI regex management for C templates
+ **************************************************************************
+ * Regex interface template file
+ * =============================
+ * License: 5G-MAG Public License (v1.0)
+ * Author: David Waring
+ * Copyright: (C)2024 British Broadcasting Corporation
+ *
+ * For full license terms please see the LICENSE file distributed with this
+ * program. If this file is missing then the license can be retrieved from
+ * https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+ */
+
+#ifndef _OPENAPI_REGEX_H_
+#define _OPENAPI_REGEX_H_
+
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef pcre2_code OpenAPI_regex_t;
+
+OpenAPI_regex_t *OpenAPI_regex_register(const char *pattern);
+OpenAPI_regex_t *OpenAPI_regex_register_named(const char *name, const char *pattern);
+bool OpenAPI_regex_match(OpenAPI_regex_t *regex, const char *string);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _OPENAPI_REGEX_H_ */

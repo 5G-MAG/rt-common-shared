@@ -1,0 +1,202 @@
+/**************************************************************************
+ * OpenAPI_regex.c : Regex management for generated OpenAPI objects
+ **************************************************************************
+ * OpenAPI regex management for C templates
+ **************************************************************************
+ * Regex interface template file
+ * =============================
+ * License: 5G-MAG Public License (v1.0)
+ * Author: David Waring
+ * Copyright: (C)2024 British Broadcasting Corporation
+ *
+ * For full license terms please see the LICENSE file distributed with this
+ * program. If this file is missing then the license can be retrieved from
+ * https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+ */
+
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+#include "ogs-core.h"
+
+#include "OpenAPI_regex.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct regex_lnode_s {
+    ogs_lnode_t node;
+    pcre2_code *regex;
+} regex_lnode_t;
+
+static ogs_list_t *unnamed_compiled_regexs = NULL;
+static ogs_hash_t *named_compiled_regexs = NULL;
+static pcre2_general_context *pcre2_ctx = NULL;
+static pcre2_compile_context *pcre2_comp_ctx = NULL;
+static bool _exit_registered = false;
+
+static void *_pcre2_malloc(PCRE2_SIZE sz, void *data);
+static void _pcre2_free(void *ptr, void *data);
+static pcre2_general_context *_get_pcre2_ctx();
+static pcre2_compile_context *_get_pcre2_comp_ctx();
+static ogs_list_t *_get_unnamed_regexes();
+static ogs_hash_t *_get_named_regexes();
+static void _register_at_exit();
+static void _exit_callback();
+static OpenAPI_regex_t *_compile_regex(const char *pattern);
+
+OpenAPI_regex_t *OpenAPI_regex_register(const char *pattern)
+{
+    OpenAPI_regex_t *ret = _compile_regex(pattern);
+    if (ret) {
+        regex_lnode_t *node = ogs_calloc(1, sizeof(*node));
+        ogs_assert(node);
+        node->regex = ret;
+        ogs_list_add(_get_unnamed_regexes(), node);
+    }
+    return ret;
+}
+
+OpenAPI_regex_t *OpenAPI_regex_register_named(const char *name, const char *pattern)
+{
+    OpenAPI_regex_t *ret = NULL;
+
+    if (named_compiled_regexs) {
+        /* Check if we've already compiled this regex, if so just return the existing pointer */
+        ret = (OpenAPI_regex_t*)ogs_hash_get(named_compiled_regexs, name, OGS_HASH_KEY_STRING);
+        if (ret) return ret;
+    }
+
+    ret = _compile_regex(pattern);
+    if (ret) {
+        ogs_hash_set(_get_named_regexes(), name, OGS_HASH_KEY_STRING, ret);
+    }
+    return ret;
+}
+
+bool OpenAPI_regex_match(OpenAPI_regex_t *regex, const char *string)
+{
+    int rc;
+    pcre2_match_data *md = pcre2_match_data_create(1, _get_pcre2_ctx());
+    pcre2_match_context *mc = pcre2_match_context_create(_get_pcre2_ctx());
+    rc = pcre2_match(regex, (PCRE2_SPTR)string, PCRE2_ZERO_TERMINATED, 0, 0, md, mc);
+    pcre2_match_data_free(md);
+    pcre2_match_context_free(mc);
+    return rc >= 0;
+}
+
+static OpenAPI_regex_t *_compile_regex(const char *pattern)
+{
+    int errorcode;
+    PCRE2_SIZE erroroffset;
+    char *pattern_copy = NULL;
+    size_t pattern_len = strlen(pattern);
+
+    /* Remove start and end '/' chars that openapi-generator has added to the regex */
+    if (pattern[0] == '/' && pattern_len > 1 && pattern[pattern_len-1] == '/') {
+        pattern_copy = ogs_strndup(pattern+1, pattern_len-2);
+        pattern = pattern_copy;
+    }
+    OpenAPI_regex_t *ret = pcre2_compile((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, 0, &errorcode, &erroroffset, _get_pcre2_comp_ctx());
+    if (!ret) {
+        ogs_error("Failed to compile regex at char offset %zu", erroroffset);
+    }
+    if (pattern_copy) ogs_free(pattern_copy);
+    return ret;
+}
+
+static void *_pcre2_malloc(PCRE2_SIZE sz, void *data)
+{
+    return ogs_malloc(sz);
+}
+
+static void _pcre2_free(void *ptr, void *data)
+{
+    ogs_free(ptr);
+}
+
+static pcre2_general_context *_get_pcre2_ctx()
+{
+    if (!pcre2_ctx) {
+        pcre2_ctx = pcre2_general_context_create(_pcre2_malloc, _pcre2_free, NULL);
+        _register_at_exit();
+    }
+    return pcre2_ctx;
+}
+
+static pcre2_compile_context *_get_pcre2_comp_ctx()
+{
+    if (!pcre2_comp_ctx) {
+        pcre2_comp_ctx = pcre2_compile_context_create(_get_pcre2_ctx());
+        _register_at_exit();
+    }
+    return pcre2_comp_ctx;
+}
+
+static ogs_list_t *_get_unnamed_regexes()
+{
+    if (!unnamed_compiled_regexs) {
+        unnamed_compiled_regexs = ogs_malloc(sizeof(*unnamed_compiled_regexs));
+        ogs_list_init(unnamed_compiled_regexs);
+        _register_at_exit();
+    }
+    return unnamed_compiled_regexs;
+}
+
+static ogs_hash_t *_get_named_regexes()
+{
+    if (!named_compiled_regexs) {
+        named_compiled_regexs = ogs_hash_make();
+        _register_at_exit();
+    }
+    return named_compiled_regexs;
+}
+
+static void _register_at_exit()
+{
+    if (!_exit_registered) {
+        atexit(_exit_callback);
+        _exit_registered = true;
+    }
+}
+
+static void _exit_callback()
+{
+    if (unnamed_compiled_regexs) {
+        regex_lnode_t *node, *next;
+        ogs_list_for_each_safe(unnamed_compiled_regexs, next, node) {
+            ogs_list_remove(unnamed_compiled_regexs, node);
+            pcre2_code_free(node->regex);
+            ogs_free(node);
+        }
+        ogs_free(unnamed_compiled_regexs);
+        unnamed_compiled_regexs = NULL;
+    }
+
+    if (named_compiled_regexs) {
+        ogs_hash_index_t *idx;
+        for (idx = ogs_hash_first(named_compiled_regexs); idx; idx = ogs_hash_next(idx)) {
+            pcre2_code_free(ogs_hash_this_val(idx));
+            ogs_hash_set(named_compiled_regexs, ogs_hash_this_key(idx), ogs_hash_this_key_len(idx), NULL);
+        }
+        ogs_hash_destroy(named_compiled_regexs);
+        named_compiled_regexs = NULL;
+    }
+
+    if (pcre2_comp_ctx) {
+        pcre2_compile_context_free(pcre2_comp_ctx);
+        pcre2_comp_ctx = NULL;
+    }
+
+    if (pcre2_ctx) {
+        pcre2_general_context_free(pcre2_ctx);
+        pcre2_ctx = NULL;
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+/* vim:ts=8:sts=4:sw=4:expandtab:
+ */
