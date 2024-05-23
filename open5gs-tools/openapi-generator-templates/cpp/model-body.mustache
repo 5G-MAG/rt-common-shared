@@ -1,0 +1,264 @@
+{{#models}}{{#model}}/**************************************************************************
+ * {{classname}}.cc : {{classname}} object model implementation
+ *    generated from openapi-generator C++ language Mustache template
+ *    for object model implementation
+ **************************************************************************
+ * {{description}}
+ **************************************************************************
+ * Template file
+ * =============
+ * License: 5G-MAG Public License (v1.0)
+ * Author: David Waring
+ * Copyright: (C)2023 British Broadcasting Corporation
+ *
+ * For full license terms please see the LICENSE file distributed with this
+ * program. If this file is missing then the license can be retrieved from
+ * https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+ */
+#include <string>
+#include <memory>
+
+#include "CJson.hh"
+#include "ModelObject.hh"
+#include "ModelException.hh"
+#include "OgsAllocator.hh"
+
+#include "{{classname}}.h"
+
+using namespace fiveg_mag_reftools;
+
+{{#modelNamePrefix}}
+namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
+{{/modelNamePrefix}}
+
+{{classname}}::{{classname}}()
+    :ModelObject()
+    {{#vars}},m_{{name}}()
+{{/vars}}
+{
+}
+
+{{classname}}::{{classname}}(const {{classname}} &other)
+    :ModelObject(other)
+    {{#vars}},m_{{name}}(other.m_{{name}})
+{{/vars}}
+{
+}
+
+{{classname}}::{{classname}}({{classname}} &&other)
+    :ModelObject(std::move(other))
+    {{#vars}},m_{{name}}(std::move(other.m_{{name}}))
+{{/vars}}
+{
+}
+
+{{classname}}::{{classname}}(const std::string &json, bool as_request)
+    :ModelObject()
+    {{#vars}},m_{{name}}()
+{{/vars}}
+{
+    CJson jtree = CJson::parse(json);
+    this->fromJSON(jtree, as_request);
+}
+
+{{classname}}::{{classname}}(const CJson &json, bool as_request)
+    :ModelObject()
+    {{#vars}},m_{{name}}()
+{{/vars}}
+{
+    this->fromJSON(json, as_request);
+}
+
+{{classname}}::~{{classname}}()
+{
+}
+
+{{classname}} &{{classname}}::operator=(const {{classname}} &other)
+{
+    {{#vars}}
+    m_{{name}} = other.m_{{name}};
+    {{/vars}}
+
+    return *this;
+}
+
+{{classname}} &{{classname}}::operator=({{classname}} &&other)
+{
+    {{#vars}}
+    m_{{name}} = std::move(other.m_{{name}});
+    {{/vars}}
+
+    return *this;
+}
+
+void {{classname}}::fromJSON(const CJson &json, bool as_request)
+{
+    {{#vars}}
+    static const char *{{name}}_key = "{{baseName}}";
+    CJson {{name}}_json = CJson::Null;
+    {{#isReadOnly}}
+    if (!as_request) {
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    if (as_request) {
+    {{/isWriteOnly}}
+
+    {{name}}_json = json.getObjectItemCaseSensitive({{name}}_key);
+    if (!{{name}}_json.isNull()) {
+        {{#isContainer}}
+        {{#isArray}}
+	if (!{{name}}_json.isArray()) {
+	    throw ModelException("Field \"{{{baseName}}}\" is not an array", "{{classname}}", {{name}}_key);
+	}
+        {{name}}Type {{name}}_list;
+        {{name}}Type::value_type element;
+        for (auto var : {{name}}_json) {
+            {{#items}}
+            {{#isPrimitiveType}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isPrimitiveType}}
+            {{^isPrimitiveType}}
+            try {
+                element.reset(new {{name}}Type::value_type::element_type(var, as_request));
+            } catch (ModelException ex) {
+                throw ModelException(ex.what(), "{{classname}}", std::string({{name}}_key) + "." + ex.parameter);
+            }
+            {{/isPrimitiveType}}
+            {{/items}}
+            {{name}}_list.push_back(std::move(element));
+        }
+        m_{{name}} = {{name}}_list;
+        {{/isArray}}
+
+        {{#isMap}}
+        if (!{{name}}_json.isObject()) {
+            throw ModelException("Field \"{{{baseName}}}\" is not an object", "{{classname}}", {{name}}_key);
+        }
+
+        {{name}}Type {{name}}_map;
+        {{name}}Type::value_type element;
+        for (auto var : {{name}}_json) {
+            {{#items}}
+            {{#isPrimitiveType}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isPrimitiveType}}
+            {{^isPrimitiveType}}
+            try {
+                element.reset(new {{name}}Type::value_type::element_type(var, as_request));
+            } catch (ModelException ex) {
+                throw ModelException(ex.what(), "{{classname}}", std::string({{name}}_key) + "." + ex.parameter);
+            }
+            {{/isPrimitiveType}}
+            {{/items}}
+            {{name}}_map.insert(std::make_pair(var.key, element));
+        }
+        m_{{name}} = {{name}}_map;
+        {{/isMap}}
+        {{/isContainer}}
+        {{^isContainer}}
+        {{#isPrimitiveType}}
+        m_{{name}} = static_cast<{{name}}Type>({{name}}_json);
+        {{/isPrimitiveType}}
+        {{^isPrimitiveType}}
+        m_{{name}}.reset(new {{name}}Type::element_type({{name}}_json, as_request));
+        {{/isPrimitiveType}}
+        {{/isContainer}}
+    }
+
+    {{#isReadOnly}}
+    }
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    }
+    {{/isWriteOnly}}
+    {{/vars}}
+}
+
+CJson {{classname}}::toJSON(bool as_request) const
+{
+    CJson object = CJson::newObject();
+
+    {{#vars}}
+    {{#isReadOnly}}
+    if (!as_request) {
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    if (as_request) {
+    {{/isWriteOnly}}
+
+    {{#isContainer}}
+
+    {{#isArray}}
+    {{#items}}
+    auto &{{name}}_list = {{getter}}();
+    CJson {{name}}_arr = CJson::newArray();
+
+    for(auto& var : {{name}}_list) {
+        {{#isPrimitiveType}}
+        {{name}}_arr.append(var);
+        {{/isPrimitiveType}}
+        {{^isPrimitiveType}}
+        {{name}}_arr.append(var->toJSON(as_request));
+        {{/isPrimitiveType}}
+    }
+    object.set("{{name}}", {{name}}_arr);
+    {{/items}}
+    {{/isArray}}
+
+    {{#isMap}}
+    {{#items}}
+    auto &{{name}}_map = {{getter}}();
+    CJson {{name}}_obj = CJson::newObject();
+
+    for(auto& var : {{name}}_map) {
+        {{name}}_obj.set(var.first, CJson::wrap(var.second, as_request));
+    }
+    object.set("{{name}}", {{name}}_obj);
+    {{/items}}
+    {{/isMap}}
+
+    {{/isContainer}}
+    {{^isContainer}}
+    object.set("{{name}}", CJson::wrap({{getter}}(), as_request));
+    {{/isContainer}}
+
+    {{#isReadOnly}}
+    }
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    }
+    {{/isWriteOnly}}
+    {{/vars}}
+
+    return object;
+}
+
+{{#vars}}
+const {{classname}}::{{name}}Type &{{classname}}::{{getter}}() const
+{
+    return m_{{name}};
+}
+
+bool {{classname}}::{{setter}}(const {{classname}}::{{name}}Type &{{name}})
+{
+    m_{{name}} = {{name}};
+    return true;
+}
+
+bool {{classname}}::{{setter}}({{classname}}::{{name}}Type &&{{name}})
+{
+    m_{{name}} = std::move({{name}});
+    return true;
+}
+
+{{/vars}}
+
+{{#modelNamePrefix}}
+} /* end namespace */
+{{/modelNamePrefix}}
+
+{{/model}}
+{{/models}}
+
+/* vim:ts=8:sts=4:sw=4:expandtab:
+ */

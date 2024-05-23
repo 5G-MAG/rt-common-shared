@@ -1,0 +1,77 @@
+{{#models}}{{#model}}/**************************************************************************
+ * {{classname}}.h : {{classname}} object model prototypes
+ *    generated from openapi-generator C language Mustache template 
+ *    for object model implementation
+ **************************************************************************
+ * {{description}}
+ **************************************************************************
+ * Template file
+ * =============
+ * License: 5G-MAG Public License (v1.0)
+ * Author: David Waring
+ * Copyright: (C)2023 British Broadcasting Corporation
+ *
+ * For full license terms please see the LICENSE file distributed with this
+ * program. If this file is missing then the license can be retrieved from
+ * https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+ */
+
+#ifndef _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_HH_
+#define _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_HH_
+
+#include <string>
+#include "CJson.hh"
+#include "ModelObject.hh"
+#include "ModelException.hh"
+#include "OgsAllocator.hh"
+{{/model}}{{/models}}
+{{#imports}}
+{{{import}}}
+{{/imports}}
+{{#models}}{{#model}}
+{{#modelNamePrefix}}
+
+namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
+{{/modelNamePrefix}}
+
+class {{classname}} : public fiveg_mag_reftools::ModelObject {
+public:
+    {{classname}}();
+    {{classname}}(const {{classname}} &other);
+    {{classname}}({{classname}} &&other);
+    {{classname}}(const std::string &json, bool as_request = true);
+    {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+    virtual ~{{classname}}();
+
+    {{classname}} &operator=(const {{classname}} &other);
+    {{classname}} &operator=({{classname}} &&other);
+
+    virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
+    {{#vars}}
+
+    {{#isContainer}}typedef {{#items}}{{^isPrimitiveType}}std::shared_ptr< {{/isPrimitiveType}}{{dataType}}{{^isPrimitiveType}} >{{/isPrimitiveType}}{{/items}} {{name}}ItemType;{{/isContainer}}
+    typedef {{^isContainer}}{{^isPrimitiveType}}std::shared_ptr< {{/isPrimitiveType}}{{/isContainer}}{{dataType}}{{#isContainer}}{{#isMap}}<std::string, {{name}}ItemType, std::less<std::string>, fiveg_mag_reftools::OgsAllocator<{{name}}ItemType> >{{/isMap}}{{#isArray}}<{{name}}ItemType, fiveg_mag_reftools::OgsAllocator<{{name}}ItemType> >{{/isArray}}{{/isContainer}}{{^isContainer}}{{^isPrimitiveType}} >{{/isPrimitiveType}}{{/isContainer}} {{name}}Type;
+    const {{name}}Type &{{getter}}() const;
+    bool {{setter}}(const {{name}}Type &{{name}});
+    bool {{setter}}({{name}}Type &&{{name}});
+    {{/vars}}
+
+    void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+private:
+    {{#vars}}
+    {{name}}Type m_{{name}};
+    {{/vars}}
+};
+
+{{#modelNamePrefix}}
+} /* end namespace */
+{{/modelNamePrefix}}
+
+/* vim:ts=8:sts=4:sw=4:expandtab:
+ */
+
+#endif /* _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_HH_ */
+{{/model}}
+{{/models}}

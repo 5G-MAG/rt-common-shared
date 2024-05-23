@@ -1,0 +1,29 @@
+enablePostProcessFile: true
+templateDir: "."
+reservedWordsMappings:
+  3GPP_ACCESS: "3GPP_ACCESS"
+  5G_EIR: "5G_EIR"
+  5G_AKA: "5G_AKA"
+  5G_HE_AKA: "5G_HE_AKA"
+  5GMM: "5GMM"
+files:
+  CJson.cc:
+    folder: lib/Models
+  CJson.hh:
+    folder: lib/Models
+  ModelException.hh:
+    folder: lib/Models
+  ModelObject.hh:
+    folder: lib/Models
+  OgsAllocator.cc:
+    folder: lib/Models
+  OgsAllocator.hh:
+    folder: lib/Models
+  model-header.mustache:
+    templateType: Model
+    folder: lib/Models
+    destinationFilename: .h
+  model-body.mustache:
+    templateType: Model
+    folder: lib/Models
+    destinationFilename: .cc
