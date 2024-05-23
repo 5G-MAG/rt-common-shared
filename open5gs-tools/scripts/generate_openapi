@@ -237,7 +237,7 @@ fi
 
 # Debug flags
 if [ "$DEBUG" = "Y" ]; then
-    debugmodels="--global-property debugModels,debugOperations,debugOpenAPI,debugSupportingFiles"
+    debugmodels="--global-property verbose=true,debugModels,debugOperations,debugOpenAPI,debugSupportingFiles"
 fi
 
 # Find JAVA
@@ -281,6 +281,17 @@ fi
 
 (
     cd "$tmpdir"
+
+    # Check for relative templates path in provided config file
+    if [ -f "$OPENAPI_GEN_CONFIG" ]; then
+	ogen_templateDir=`sed -n 's/^templateDir:\s*\("\)\{0,1\}\(.*\)\1\s*$/\2/p' "$OPENAPI_GEN_CONFIG"`
+	if echo "$ogen_templateDir" | grep -q '^[^/]'; then
+            # templateDir is relative so convert it to absolute in a copy of the config
+	    sed 's@^templateDir:.*@templateDir: "'`dirname "$OPENAPI_GEN_CONFIG"`"/$ogen_templateDir"'"@' "$OPENAPI_GEN_CONFIG" > oapi_gen_config.yaml
+	    OPENAPI_GEN_CONFIG="$tmpdir/oapi_gen_config.yaml"
+	fi
+    fi
+
     # Download openapi-generator-cli
     openapi_gen_url=`eval echo "$OPENAPI_GEN_URL_FORMAT"`
     openapi_gen_jar=`basename "$openapi_gen_url"`
