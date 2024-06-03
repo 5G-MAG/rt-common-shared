@@ -16,19 +16,21 @@
  * https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
  */
 
-#ifndef _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_HH_
-#define _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_HH_
+#ifndef _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_H_
+#define _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_H_
 
 #include <string>
+#include <list>
+#include <map>
 #include "CJson.hh"
 #include "ModelObject.hh"
 #include "ModelException.hh"
 #include "OgsAllocator.hh"
-{{/model}}{{/models}}
-{{#imports}}
-{{{import}}}
+{{#imports}}{{{this}}}
 {{/imports}}
-{{#models}}{{#model}}
+{{#interfaces}}
+#include "{{{this}}}.h"
+{{/interfaces}}
 {{#modelNamePrefix}}
 
 namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
@@ -50,8 +52,8 @@ public:
     virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
     {{#vars}}
 
-    {{#isContainer}}typedef {{#items}}{{^isPrimitiveType}}std::shared_ptr< {{/isPrimitiveType}}{{dataType}}{{^isPrimitiveType}} >{{/isPrimitiveType}}{{/items}} {{name}}ItemType;{{/isContainer}}
-    typedef {{^isContainer}}{{^isPrimitiveType}}std::shared_ptr< {{/isPrimitiveType}}{{/isContainer}}{{dataType}}{{#isContainer}}{{#isMap}}<std::string, {{name}}ItemType, std::less<std::string>, fiveg_mag_reftools::OgsAllocator<{{name}}ItemType> >{{/isMap}}{{#isArray}}<{{name}}ItemType, fiveg_mag_reftools::OgsAllocator<{{name}}ItemType> >{{/isArray}}{{/isContainer}}{{^isContainer}}{{^isPrimitiveType}} >{{/isPrimitiveType}}{{/isContainer}} {{name}}Type;
+    {{#isContainer}}typedef {{#items}}{{>model-type}}{{/items}} {{name}}ItemType;{{/isContainer}}
+    typedef {{>model-type}} {{name}}Type;
     const {{name}}Type &{{getter}}() const;
     bool {{setter}}(const {{name}}Type &{{name}});
     bool {{setter}}({{name}}Type &&{{name}});

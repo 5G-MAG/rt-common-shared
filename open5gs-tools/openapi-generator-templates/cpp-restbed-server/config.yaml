@@ -7,23 +7,27 @@ reservedWordsMappings:
   5G_HE_AKA: "5G_HE_AKA"
   5GMM: "5GMM"
 files:
+  AnyType.hh:
+    folder: model
+  AnyType.h:
+    folder: model
   CJson.cc:
-    folder: lib/Models
+    folder: model
   CJson.hh:
-    folder: lib/Models
+    folder: model
   ModelException.hh:
-    folder: lib/Models
+    folder: model
   ModelObject.hh:
-    folder: lib/Models
+    folder: model
   OgsAllocator.cc:
-    folder: lib/Models
+    folder: model
   OgsAllocator.hh:
-    folder: lib/Models
+    folder: model
   model-header.mustache:
     templateType: Model
-    folder: lib/Models
+    folder: model
     destinationFilename: .h
-  model-body.mustache:
+  model-source.mustache:
     templateType: Model
-    folder: lib/Models
+    folder: model
     destinationFilename: .cc

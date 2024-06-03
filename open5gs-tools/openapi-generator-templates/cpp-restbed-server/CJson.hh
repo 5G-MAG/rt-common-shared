@@ -144,7 +144,7 @@ public:
 
     CJson &set(const std::string &key, const CJson &node) {
         return set(key, std::move(CJson(node)));
-    }
+    };
     CJson &set(const std::string &key, CJson &&node) {
         if (!isObject()) throw ModelException("Attempt to set object parameter on non-object", "CJson");
         if (node.m_node) {
@@ -163,7 +163,7 @@ public:
 
     CJson &append(const CJson &node) {
         return append(std::move(CJson(node)));
-    }
+    };
     CJson &append(CJson &&node) {
         if (!isArray()) throw ModelException("Attempt to append to non-array object", "CJson");
         if (node.m_node) {
@@ -178,7 +178,16 @@ public:
             cJSON_AddItemToArray(m_node, cJSON_CreateNull());
         }
         return *this;
-    }
+    };
+    CJson &append(const std::string &str) {
+        return append(std::move(std::string(str)));
+    };
+    CJson &append(std::string &&str) {
+        if (!isArray()) throw ModelException("Attempt to append to non-array object", "CJson");
+        cJSON_AddItemToArray(m_node, cJSON_CreateString(str.c_str()));
+        return *this;
+    };
+        
 
     const char *stringValue() const { return isString()?cJSON_GetStringValue(m_node):nullptr; };
 

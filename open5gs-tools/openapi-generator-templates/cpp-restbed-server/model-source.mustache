@@ -118,11 +118,25 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
             element = static_cast<{{name}}Type::value_type>(var);
             {{/isPrimitiveType}}
             {{^isPrimitiveType}}
+            {{#isString}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isString}}
+            {{#isDate}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isDate}}
+            {{#isDateTime}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isDateTime}}
+            {{#isByteArray}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isByteArray}}
+            {{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
             try {
                 element.reset(new {{name}}Type::value_type::element_type(var, as_request));
             } catch (ModelException ex) {
                 throw ModelException(ex.what(), "{{classname}}", std::string({{name}}_key) + "." + ex.parameter);
             }
+            {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}
             {{/isPrimitiveType}}
             {{/items}}
             {{name}}_list.push_back(std::move(element));
@@ -143,11 +157,25 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
             element = static_cast<{{name}}Type::value_type>(var);
             {{/isPrimitiveType}}
             {{^isPrimitiveType}}
+            {{#isString}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isString}}
+            {{#isDate}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isDate}}
+            {{#isDateTime}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isDateTime}}
+            {{#isByteArray}}
+            element = static_cast<{{name}}Type::value_type>(var);
+            {{/isByteArray}}
+            {{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
             try {
                 element.reset(new {{name}}Type::value_type::element_type(var, as_request));
             } catch (ModelException ex) {
                 throw ModelException(ex.what(), "{{classname}}", std::string({{name}}_key) + "." + ex.parameter);
             }
+            {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}
             {{/isPrimitiveType}}
             {{/items}}
             {{name}}_map.insert(std::make_pair(var.key, element));
@@ -160,7 +188,21 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
         m_{{name}} = static_cast<{{name}}Type>({{name}}_json);
         {{/isPrimitiveType}}
         {{^isPrimitiveType}}
+        {{#isString}}
+        m_{{name}} = static_cast<{{name}}Type>({{name}}_json);
+        {{/isString}}
+        {{#isDate}}
+        m_{{name}} = static_cast<{{name}}Type>({{name}}_json);
+        {{/isDate}}
+        {{#isDateTime}}
+        m_{{name}} = static_cast<{{name}}Type>({{name}}_json);
+        {{/isDateTime}}
+        {{#isByteArray}}
+        m_{{name}} = static_cast<{{name}}Type>({{name}}_json);
+        {{/isByteArray}}
+        {{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
         m_{{name}}.reset(new {{name}}Type::element_type({{name}}_json, as_request));
+        {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}
         {{/isPrimitiveType}}
         {{/isContainer}}
     }
@@ -198,7 +240,21 @@ CJson {{classname}}::toJSON(bool as_request) const
         {{name}}_arr.append(var);
         {{/isPrimitiveType}}
         {{^isPrimitiveType}}
+        {{#isString}}
+        {{name}}_arr.append(var);
+        {{/isString}}
+        {{#isDate}}
+        {{name}}_arr.append(var);
+        {{/isDate}}
+        {{#isDateTime}}
+        {{name}}_arr.append(var);
+        {{/isDateTime}}
+        {{#isByteArray}}
+        {{name}}_arr.append(var);
+        {{/isByteArray}}
+        {{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
         {{name}}_arr.append(var->toJSON(as_request));
+        {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}
         {{/isPrimitiveType}}
     }
     object.set("{{name}}", {{name}}_arr);
