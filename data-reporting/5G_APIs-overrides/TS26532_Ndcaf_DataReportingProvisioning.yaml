@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Ndcaf_DataReportingProvisioning
-  version: 1.3.0
+  version: 2.0.0
   description: |
     Data Collection AF: Provisioning Sessions API
     © 2024, 3GPP Organizational Partners (ARIB, ATIS, CCSA, ETSI, TSDSI, TTA, TTC).
@@ -45,7 +45,7 @@ paths:
               description: 'URL including the resource identifier of the newly created Data Reporting Provisioning Session.'
               required: true
               schema:
-                $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+                $ref: 'TS26510_CommonData.yaml#/components/schemas/Url'
           content:
             application/json:
               schema:
@@ -78,7 +78,7 @@ paths:
           in: path
           required: true
           schema:
-            $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
           description: 'The resource identifier of an existing Data Reporting Provisioning Session.'
     get:
       operationId: RetrieveSession
@@ -139,20 +139,14 @@ paths:
           $ref: 'TS29571_CommonData.yaml#/components/responses/503'
         default:
           $ref: 'TS29571_CommonData.yaml#/components/responses/default'
-  /sessions/{sessionId}/configurations/{configurationId}:
+  /sessions/{sessionId}/configurations:
     parameters:
         - name: sessionId
           in: path
           required: true
           schema:
-            $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
           description: 'The resource identifier of an existing Data Reporting Provisioning Session.'
-        - name: configurationId
-          in: path
-          required: true
-          schema:
-            $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
-          description: 'The resource identifier of an existing Data Reporting Configuration.'
     post:
       operationId: CreateConfiguration
       summary: 'Create a new Data Reporting Configuration subresource within the scope of an existing Data Reporting Provisioning Session'
@@ -170,7 +164,7 @@ paths:
               description: 'URL including the resource identifier of the newly created Data Reporting Configuration.'
               required: true
               schema:
-                $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+                $ref: 'TS26510_CommonData.yaml#/components/schemas/Url'
           content:
             application/json:
               schema:
@@ -197,6 +191,20 @@ paths:
           $ref: 'TS29571_CommonData.yaml#/components/responses/503'
         default:
           $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+  /sessions/{sessionId}/configurations/{configurationId}:
+    parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
+          description: 'The resource identifier of an existing Data Reporting Provisioning Session.'
+        - name: configurationId
+          in: path
+          required: true
+          schema:
+            $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
+          description: 'The resource identifier of an existing Data Reporting Configuration.'
     get:
       operationId: RetrieveConfiguration
       summary: 'Retrieve an existing Data Reporting Configuration'
@@ -367,7 +375,7 @@ components:
         provisioningSessionId:
           readOnly: true
           allOf:
-            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            - $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
         aspId:
           $ref: 'TS29514_Npcf_PolicyAuthorization.yaml#/components/schemas/AspId'
         externalApplicationId:
@@ -380,7 +388,7 @@ components:
           readOnly: true
           type: array
           items:
-            $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
           minItems: 0
       required:
         - provisioningSessionId
@@ -396,11 +404,11 @@ components:
         dataReportingConfigurationId:
           readOnly: true
           allOf:
-            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            - $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
         dataCollectionClientType:
           $ref: 'TS26532_CommonData.yaml#/components/schemas/DataCollectionClientType'
         authorizationURL:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+          $ref: 'TS26510_CommonData.yaml#/components/schemas/Url'
         dataSamplingRules:
           type: array
           items:
@@ -432,7 +440,7 @@ components:
       type: object
       properties:
         authorizationURL:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+          $ref: 'TS26510_CommonData.yaml#/components/schemas/Url'
         dataSamplingRules:
           type: array
           items:

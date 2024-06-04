@@ -64,9 +64,9 @@ components:
       type: object
       properties:
         reportingProbability:
-          $ref: 'TS26512_CommonData.yaml#/components/schemas/Percentage'
+          $ref: 'TS26510_CommonData.yaml#/components/schemas/Percentage'
         reportingFormat:
-          deprected: true
+          deprecated: true
           $ref: 'TS29571_CommonData.yaml#/components/schemas/Uri'
         dataPackagingStrategy:
           type: string

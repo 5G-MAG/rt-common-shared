@@ -45,7 +45,7 @@ paths:
               description: 'URL including the resource identifier of the newly created Data Reporting Session.'
               required: true
               schema:
-                $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+                $ref: 'TS26510_CommonData.yaml#/components/schemas/Url'
           content:
             application/json:
               schema:
@@ -78,7 +78,7 @@ paths:
           in: path
           required: true
           schema:
-            $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
           description: 'The resource identifier of an existing Data Reporting Session.'
     get:
       operationId: RetrieveSession
@@ -145,7 +145,7 @@ paths:
           in: path
           required: true
           schema:
-            $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
           description: 'The resource identifier of an existing Data Reporting Session.'
     post:
       operationId: Report
@@ -164,7 +164,7 @@ paths:
               description: 'URL including the resource identifier of the returned Data Reporting Session.'
               required: true
               schema:
-                $ref: 'TS26512_CommonData.yaml#/components/schemas/Url'
+                $ref: 'TS26510_CommonData.yaml#/components/schemas/Url'
           content:
             application/json:
               schema:
@@ -215,8 +215,9 @@ components:
         sessionId:
           readOnly: true
           allOf:
-            - $ref: 'TS26512_CommonData.yaml#/components/schemas/ResourceId'
+            - $ref: 'TS26510_CommonData.yaml#/components/schemas/ResourceId'
         validUntil:
+          deprecated: true
           readOnly: true
           allOf:
             - $ref: 'TS29571_CommonData.yaml#/components/schemas/DateTime'
@@ -253,7 +254,6 @@ components:
             minItems: 0
       required:
         - sessionId
-        - validUntil
         - externalApplicationId
         - supportedDomains
         - samplingRules
@@ -386,6 +386,15 @@ components:
           properties:
             timeInterval:
               $ref: 'TS29122_CommonData.yaml#/components/schemas/TimeWindow'
+            sliceInfo:
+              $ref: 'TS29571_CommonData.yaml#/components/schemas/Snssai'
+            dataNetworkName:
+              $ref: 'TS29571_CommonData.yaml#/components/schemas/Dnn'
+            location:
+              type: array
+              minItems: 1
+              items:
+                $ref: 'TS29122_CommonData.yaml#/components/schemas/LocationArea5G'
             uplinkVolume:
               $ref: 'TS29122_CommonData.yaml#/components/schemas/Volume'
             downlinkVolume:
