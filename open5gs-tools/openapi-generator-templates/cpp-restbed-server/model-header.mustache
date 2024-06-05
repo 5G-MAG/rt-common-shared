@@ -1,9 +1,9 @@
 {{#models}}{{#model}}/**************************************************************************
  * {{classname}}.h : {{classname}} object model prototypes
- *    generated from openapi-generator C language Mustache template 
+ *    generated from openapi-generator C++ language Mustache template 
  *    for object model implementation
  **************************************************************************
- * {{description}}
+    ///{{#lambda.multiline_comment_4}}{{appDescriptionWithNewLines}}{{/lambda.multiline_comment_4}}
  **************************************************************************
  * Template file
  * =============
@@ -26,6 +26,7 @@
 #include "ModelObject.hh"
 #include "ModelException.hh"
 #include "OgsAllocator.hh"
+#include "Validator.hh"
 {{#imports}}{{{this}}}
 {{/imports}}
 {{#interfaces}}
@@ -38,6 +39,11 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 class {{classname}} : public fiveg_mag_reftools::ModelObject {
 public:
+    static constexpr const char * const apiName = "{{appName}}";
+    static constexpr const char * const apiVersion = "{{appVersion}}";
+    static constexpr const char * const apiDescription = "{{appDescription}}";
+    static constexpr const char * const inputSpec = "{{inputSpec}}";
+
     {{classname}}();
     {{classname}}(const {{classname}} &other);
     {{classname}}({{classname}} &&other);
@@ -52,8 +58,10 @@ public:
     virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
     {{#vars}}
 
-    {{#isContainer}}typedef {{#items}}{{>model-type}}{{/items}} {{name}}ItemType;{{/isContainer}}
+    {{#isContainer}}typedef {{#items}}{{>model-type}}{{/items}} {{name}}ItemType;
+    typedef {{#items}}{{<model-validator}}{{$type}}{{name}}ItemType{{/type}}{{/model-validator}}{{/items}} {{name}}ItemValidator;{{/isContainer}}
     typedef {{>model-type}} {{name}}Type;
+    typedef {{<model-validator}}{{/model-validator}} {{name}}Validator;
     const {{name}}Type &{{getter}}() const;
     bool {{setter}}(const {{name}}Type &{{name}});
     bool {{setter}}({{name}}Type &&{{name}});
@@ -64,6 +72,7 @@ public:
 private:
     {{#vars}}
     {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
     {{/vars}}
 };
 

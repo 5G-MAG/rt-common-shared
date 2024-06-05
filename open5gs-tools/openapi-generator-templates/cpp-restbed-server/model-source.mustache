@@ -33,28 +33,32 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}}::{{classname}}()
     :ModelObject()
-    {{#vars}},m_{{name}}()
+{{#vars}}    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}})
 {{/vars}}
 {
 }
 
 {{classname}}::{{classname}}(const {{classname}} &other)
     :ModelObject(other)
-    {{#vars}},m_{{name}}(other.m_{{name}})
+{{#vars}}    ,m_{{name}}(other.m_{{name}})
+    ,m_{{name}}_validator(other.m_{{name}}_validator)
 {{/vars}}
 {
 }
 
 {{classname}}::{{classname}}({{classname}} &&other)
     :ModelObject(std::move(other))
-    {{#vars}},m_{{name}}(std::move(other.m_{{name}}))
+{{#vars}}    ,m_{{name}}(std::move(other.m_{{name}}))
+    ,m_{{name}}_validator(std::move(other.m_{{name}}_validator))
 {{/vars}}
 {
 }
 
 {{classname}}::{{classname}}(const std::string &json, bool as_request)
     :ModelObject()
-    {{#vars}},m_{{name}}()
+{{#vars}}    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}})
 {{/vars}}
 {
     CJson jtree = CJson::parse(json);
@@ -63,7 +67,8 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}}::{{classname}}(const CJson &json, bool as_request)
     :ModelObject()
-    {{#vars}},m_{{name}}()
+{{#vars}}    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}})
 {{/vars}}
 {
     this->fromJSON(json, as_request);
@@ -77,6 +82,7 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 {
     {{#vars}}
     m_{{name}} = other.m_{{name}};
+    m_{{name}}_validator = other.m_{{name}}_validator;
     {{/vars}}
 
     return *this;
@@ -86,6 +92,7 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 {
     {{#vars}}
     m_{{name}} = std::move(other.m_{{name}});
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);
     {{/vars}}
 
     return *this;
@@ -205,6 +212,8 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
         {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}
         {{/isPrimitiveType}}
         {{/isContainer}}
+
+        m_{{name}}_validator.validate(m_{{name}});
     }
 
     {{#isReadOnly}}

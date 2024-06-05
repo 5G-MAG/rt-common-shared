@@ -6,10 +6,15 @@ reservedWordsMappings:
   5G_AKA: "5G_AKA"
   5G_HE_AKA: "5G_HE_AKA"
   5GMM: "5GMM"
+additionalProperties:
+  customlambda:
+    indent_star_1: !!org.openapitools.codegen.templating.mustache.IndentedLambda {prefixSpaceCount: 1, prefix: "* ", spaceCode: 32, indentFirstLine: false, skipEmptyLines: false}
 files:
   AnyType.hh:
     folder: model
   AnyType.h:
+    folder: model
+  Boundary.hh:
     folder: model
   CJson.cc:
     folder: model
@@ -23,6 +28,8 @@ files:
     folder: model
   OgsAllocator.hh:
     folder: model
+  Validator.hh:
+    folder: model
   model-header.mustache:
     templateType: Model
     folder: model
@@ -31,3 +38,7 @@ files:
     templateType: Model
     folder: model
     destinationFilename: .cc
+  model-json.mustache:
+    templateType: Model
+    folder: model
+    destinationFilename: .json
