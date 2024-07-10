@@ -1,6 +1,6 @@
 {{#models}}{{#model}}/**************************************************************************
  * {{classname}}.h : {{classname}} object model prototypes
- *    generated from openapi-generator C++ language Mustache template 
+ *    generated from openapi-generator C++ language Mustache template
  *    for object model implementation
  **************************************************************************
     ///{{#lambda.multiline_comment_4}}{{appDescriptionWithNewLines}}{{/lambda.multiline_comment_4}}
@@ -16,8 +16,8 @@
  * https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
  */
 
-#ifndef _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_H_
-#define _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_H_
+#ifndef _{{#modelPackage}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{#lambda.camelcase}}{{modelPackage}}{{/lambda.camelcase}}{{/lambda.snakecase}}{{/lambda.uppercase}}_{{/modelPackage}}{{classname}}_H_
+#define _{{#modelPackage}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{#lambda.camelcase}}{{modelPackage}}{{/lambda.camelcase}}{{/lambda.snakecase}}{{/lambda.uppercase}}_{{/modelPackage}}{{classname}}_H_
 
 #include <string>
 #include <list>
@@ -32,10 +32,10 @@
 {{#interfaces}}
 #include "{{{this}}}.h"
 {{/interfaces}}
-{{#modelNamePrefix}}
+{{#modelNamespace}}
 
-namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
-{{/modelNamePrefix}}
+namespace {{modelNamespace}} {
+{{/modelNamespace}}
 
 class {{classname}} : public fiveg_mag_reftools::ModelObject {
 public:
@@ -43,6 +43,34 @@ public:
     static constexpr const char * const apiVersion = "{{appVersion}}";
     static constexpr const char * const apiDescription = "{{appDescription}}";
     static constexpr const char * const inputSpec = "{{inputSpec}}";
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+
+    typedef enum {
+        NO_VAL,
+{{#values}}        VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}}{{^-last}},{{/-last}}
+{{/values}}
+    } Enum;
+    typedef fiveg_mag_reftools::StringValidator Validator;
+
+{{#values}}
+    static constexpr const char * const STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}} = "{{.}}";
+{{/values}}
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+
+{{#anyOf.0}}
+    typedef enum {
+        NO_VAL,
+{{#allowableValues}}{{#values}}        VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}},
+{{/values}}{{/allowableValues}}
+	OTHER
+    } Enum;
+    typedef typename fiveg_mag_reftools::NullValidator<{{classname}}> Validator;
+
+{{#allowableValues}}{{#values}}    static constexpr const char * const STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}} = "{{.}}";
+{{/values}}{{/allowableValues}}
+
+{{/anyOf.0}}
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
 
     {{classname}}();
     {{classname}}(const {{classname}} &other);
@@ -64,25 +92,68 @@ public:
     typedef {{<model-validator}}{{/model-validator}} {{name}}Validator;
     const {{name}}Type &{{getter}}() const;
     bool {{setter}}(const {{name}}Type &{{name}});
-    bool {{setter}}({{name}}Type &&{{name}});
+    bool {{setter}}({{name}}Type &&{{name}});{{#isContainer}}
+    bool add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{name}}ItemType &item);
+    bool add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{name}}ItemType &&item);
+    bool remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{name}}ItemType &item{{/isMap}});{{#isMap}}
+    const std::string &keyFor{{name}}(const {{name}}ItemType &item);{{/isMap}}
+    bool clear{{name}}();{{/isContainer}}
+
     {{/vars}}
 
     void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+
+    Enum getValue() const { return m_value; };
+    const std::string &getString() const;
+    const Validator &validator() const { return m_validator; };
+
+    {{classname}} &operator=(Enum value) { m_value=value; return *this; };
+    {{classname}} &operator=(const std::string &value) { return this->fromString(value); };
+
+    {{classname}} &fromString(const std::string &value);
+
+    operator Enum() const { return m_value; };
+    operator const std::string &() const { return getString(); };
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+
+    Enum getValue() const { return m_value; };
+    const std::string &getString() const { return m_strValue; };
+    const Validator &validator() const { return m_validator; };
+
+    {{classname}} &operator=(Enum value) { m_value=value; m_strValue=__toString(value); return *this; };
+    {{classname}} &operator=(const std::string &value) { return this->fromString(value); };
+
+    {{classname}} &fromString(const std::string &value);
+
+    operator Enum() const { return m_value; };
+    operator const std::string &() const { return m_strValue; };
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
 
 private:
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    Enum m_value;
+    Validator m_validator;
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    static std::string __toString(Enum value);
+
+    Enum m_value;
+    std::string m_strValue;
+    Validator m_validator;
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
     {{#vars}}
     {{name}}Type m_{{name}};
     {{name}}Validator m_{{name}}_validator;
     {{/vars}}
 };
+{{#modelNamespace}}
 
-{{#modelNamePrefix}}
 } /* end namespace */
-{{/modelNamePrefix}}
+{{/modelNamespace}}
 
 /* vim:ts=8:sts=4:sw=4:expandtab:
  */
 
-#endif /* _{{#modelNamePrefix}}{{#lambda.uppercase}}{{modelNamePrefix}}{{/lambda.uppercase}}_{{/modelNamePrefix}}{{classname}}_HH_ */
+#endif /* _{{#modelPackage}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{#lambda.camelcase}}{{modelPackage}}{{/lambda.camelcase}}{{/lambda.snakecase}}{{/lambda.uppercase}}_{{/modelPackage}}{{classname}}_HH_ */
 {{/model}}
 {{/models}}

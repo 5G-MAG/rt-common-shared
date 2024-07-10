@@ -8,7 +8,10 @@ reservedWordsMappings:
   5GMM: "5GMM"
 additionalProperties:
   customlambda:
-    indent_star_1: !!org.openapitools.codegen.templating.mustache.IndentedLambda {prefixSpaceCount: 1, prefix: "* ", spaceCode: 32, indentFirstLine: false, skipEmptyLines: false}
+    indent_star_1: !!js/function |
+      function(data){
+        return data;
+      }
 files:
   AnyType.hh:
     folder: model

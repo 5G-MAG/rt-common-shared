@@ -19,7 +19,7 @@
 #include <iterator>
 #include <memory>
 
-#include "cJSON.h"
+#include "sbi/openapi/external/cJSON.h"
 #include "ModelException.hh"
 
 namespace fiveg_mag_reftools {
@@ -209,7 +209,12 @@ public:
             return CJson(cJSON_GetObjectItemCaseSensitive(m_node, key.c_str()), false);
         }
         return Null;
-    }
+    };
+
+    cJSON *exportCJSON() {
+        m_owner = false;
+        return m_node;
+    };
 
 private:
     CJson();

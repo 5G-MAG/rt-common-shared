@@ -26,13 +26,21 @@
 #include "{{classname}}.h"
 
 using namespace fiveg_mag_reftools;
+{{#modelNamespace}}
 
-{{#modelNamePrefix}}
-namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
-{{/modelNamePrefix}}
+namespace {{modelNamespace}} {
+{{/modelNamespace}}
 
 {{classname}}::{{classname}}()
     :ModelObject()
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    ,m_value({{classname}}::Enum::NO_VAL)
+    ,m_validator("{{classname}}",nullptr,"/^({{#values}}|{{{.}}}{{/values}})$/")
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    ,m_value({{classname}}::Enum::NO_VAL)
+    ,m_strValue()
+    ,m_validator("{{classname}}",nullptr)
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
 {{#vars}}    ,m_{{name}}()
     ,m_{{name}}_validator({{>model-validator-params}})
 {{/vars}}
@@ -41,6 +49,14 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}}::{{classname}}(const {{classname}} &other)
     :ModelObject(other)
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    ,m_value(other.m_value)
+    ,m_validator(other.m_validator)
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    ,m_value(other.m_value)
+    ,m_strValue(other.m_strValue)
+    ,m_validator(other.m_validator)
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
 {{#vars}}    ,m_{{name}}(other.m_{{name}})
     ,m_{{name}}_validator(other.m_{{name}}_validator)
 {{/vars}}
@@ -49,6 +65,14 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}}::{{classname}}({{classname}} &&other)
     :ModelObject(std::move(other))
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    ,m_value(std::move(other.m_value))
+    ,m_validator(std::move(other.m_validator))
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    ,m_value(std::move(other.m_value))
+    ,m_strValue(std::move(other.m_strValue))
+    ,m_validator(std::move(other.m_validator))
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
 {{#vars}}    ,m_{{name}}(std::move(other.m_{{name}}))
     ,m_{{name}}_validator(std::move(other.m_{{name}}_validator))
 {{/vars}}
@@ -57,6 +81,14 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}}::{{classname}}(const std::string &json, bool as_request)
     :ModelObject()
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    ,m_value()
+    ,m_validator("{{classname}}",nullptr,"/^({{#values}}|{{{.}}}{{/values}})$/")
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    ,m_value()
+    ,m_strValue()
+    ,m_validator("{{classname}}",nullptr)
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
 {{#vars}}    ,m_{{name}}()
     ,m_{{name}}_validator({{>model-validator-params}})
 {{/vars}}
@@ -67,6 +99,14 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}}::{{classname}}(const CJson &json, bool as_request)
     :ModelObject()
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    ,m_value()
+    ,m_validator("{{classname}}",nullptr,"/^({{#values}}|{{{.}}}{{/values}})$/")
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    ,m_value()
+    ,m_strValue()
+    ,m_validator("{{classname}}",nullptr)
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
 {{#vars}}    ,m_{{name}}()
     ,m_{{name}}_validator({{>model-validator-params}})
 {{/vars}}
@@ -80,7 +120,14 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}} &{{classname}}::operator=(const {{classname}} &other)
 {
-    {{#vars}}
+    {{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    m_value = other.m_value;
+    m_validator = other.m_validator;
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    m_value = other.m_value;
+    m_strValue = other.m_strValue;
+    m_validator = other.m_validator;
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#vars}}
     m_{{name}} = other.m_{{name}};
     m_{{name}}_validator = other.m_{{name}}_validator;
     {{/vars}}
@@ -90,7 +137,14 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 {{classname}} &{{classname}}::operator=({{classname}} &&other)
 {
-    {{#vars}}
+    {{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    m_value = std::move(other.m_value);
+    m_validator = std::move(other.m_validator);
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    m_value = std::move(other.m_value);
+    m_strValue = std::move(other.m_strValue);
+    m_validator = std::move(other.m_validator);
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#vars}}
     m_{{name}} = std::move(other.m_{{name}});
     m_{{name}}_validator = std::move(other.m_{{name}}_validator);
     {{/vars}}
@@ -100,7 +154,11 @@ namespace {{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}} {
 
 void {{classname}}::fromJSON(const CJson &json, bool as_request)
 {
-    {{#vars}}
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    fromString(static_cast<std::string>(json));
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    fromString(static_cast<std::string>(json));
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#vars}}
     static const char *{{name}}_key = "{{baseName}}";
     CJson {{name}}_json = CJson::Null;
     {{#isReadOnly}}
@@ -227,9 +285,13 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
 
 CJson {{classname}}::toJSON(bool as_request) const
 {
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+    return CJson::newString(getString());
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+    return CJson::newString(getString());
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#vars}}
     CJson object = CJson::newObject();
 
-    {{#vars}}
     {{#isReadOnly}}
     if (!as_request) {
     {{/isReadOnly}}
@@ -298,7 +360,63 @@ CJson {{classname}}::toJSON(bool as_request) const
     return object;
 }
 
-{{#vars}}
+{{^hasVars}}{{#isEnum}}{{#allowableValues}}
+const std::string &{{classname}}::getString() const
+{
+    static const std::string s_null();
+
+    switch(m_value) {
+{{#values}}
+    case Enum::VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}}:
+        return STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}};
+{{/values}}
+    }
+    return s_null;
+}
+
+{{classname}} &{{classname}}::fromString(const std::string &value)
+{
+    if (value.empty()) {
+        m_value = Enum::NO_VAL;
+{{#values}}
+    } elif (value == STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}}) {
+        m_value = Enum::VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}};
+{{/values}}
+    }
+    return *this;
+}
+
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+
+{{classname}} &{{classname}}::fromString(const std::string &value)
+{
+    m_strValue = value;
+    m_value = Enum::OTHER;
+    if (value.empty()) {
+        m_value = Enum::NO_VAL;
+{{#anyOf.0.allowableValues.values}}
+    } elif (value == STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}}) {
+        m_value = Enum::VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}};
+{{/anyOf.0.allowableValues.values}}
+    }
+    return *this;
+}
+
+std::string {{classname}}::__toString({{classname}}::Enum value)
+{
+    std::string ret;
+
+    switch(value) {
+{{#anyOf.0.allowableValues.values}}
+    case {{classname}}::Enum::VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}}:
+        return {{classname}}::STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}};
+{{/anyOf.0.allowableValues.values}}
+    }
+
+    return ret;
+}
+
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#vars}}
 const {{classname}}::{{name}}Type &{{classname}}::{{getter}}() const
 {
     return m_{{name}};
@@ -316,11 +434,56 @@ bool {{classname}}::{{setter}}({{classname}}::{{name}}Type &&{{name}})
     return true;
 }
 
-{{/vars}}
+{{#isContainer}}
+bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{classname}}::{{name}}ItemType &item)
+{
+    {{#isMap}}{{name}}ItemType::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(item));{{/isMap}}
+    {{#isMap}}const auto [it, success] = {{/isMap}}m_{{name}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}.end(), item{{/isMap}});
+    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
+}
 
-{{#modelNamePrefix}}
+bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{classname}}::{{name}}ItemType &&item)
+{
+    {{#isMap}}{{name}}ItemType::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(std::move(item)));{{/isMap}}
+    {{#isMap}}const auto [it, success] = {{/isMap}}m_{{name}}.insert({{#isMap}}std::make_pair(key,std::move(item)){{/isMap}}{{^isMap}}m_{{name}}.end(), std::move(item){{/isMap}});
+    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
+}
+
+bool {{classname}}::remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{classname}}::{{name}}ItemType &item{{/isMap}})
+{
+    {{#isMap}}
+    return m_{{name}}.erase(key) == 1;
+    {{/isMap}}{{^isMap}}
+    m_{{name}}.remove(item);
+    return true;
+    {{/isMap}}
+}
+
+{{#isMap}}
+const std::string &{{classname}}::keyFor{{name}}(const {{classname}}::{{name}}ItemType &item)
+{
+    static const std::string s_null;
+
+    for (auto it : m_{{name}}) {
+        if (it.second == item) return it.first;
+    }
+
+    return s_null;
+}
+
+{{/isMap}}
+bool {{classname}}::clear{{name}}()
+{
+    m_{{name}}.clear();
+    return true;
+}
+
+{{/isContainer}}
+{{/vars}}
+{{#modelNamespace}}
+
 } /* end namespace */
-{{/modelNamePrefix}}
+{{/modelNamespace}}
 
 {{/model}}
 {{/models}}
