@@ -38,6 +38,7 @@ default_yaml_dir_processor=
 default_overrides_dirs=""
 default_debug=
 default_model_name_prefix=
+default_model_package=
 default_cache_dir=
 
 # script constants
@@ -47,7 +48,7 @@ JMUSTACHE_VERSION=1.16
 MAVEN_SAMSKIVERT_JMUSTACHE_URL_FORMAT='https://repo1.maven.org/maven2/com/samskivert/jmustache/${JMUSTACHE_VERSION}/jmustache-${JMUSTACHE_VERSION}.jar'
 
 # Parse command line arguments
-ARGS=`getopt -n "$scriptname" -o 'a:b:c:C:l:d:Dg:ho:p:y:' -l 'api:,branch:,generator-config:,cache-dir:,language:,directory:,debug,openapi-generator-version:,help,overrides-directories:,model-name-prefix:,yaml-directory-processor:' -s sh -- "$@"`
+ARGS=`getopt -n "$scriptname" -o 'a:b:c:C:l:d:Dg:ho:p:P:y:' -l 'api:,branch:,generator-config:,cache-dir:,language:,directory:,debug,openapi-generator-version:,help,overrides-directories:,model-name-prefix:,model-package:,yaml-directory-processor:' -s sh -- "$@"`
 
 if [ $? -ne 0 ]; then
     print_syntax >&2
@@ -59,7 +60,7 @@ print_syntax() {
     echo '                    [-c <openapi-generator-config>] [-g <version>]'
     echo '                    [-o <overrides-dir>[:<overrides-dir>...]]'
     echo '                    [-y <yaml-dir-processor>] [-p <prefix>]'
-    echo '                    -a <API-name>'
+    echo '                    [-P <package>] -a <API-name>'
     echo '                    -l <language>[:<additional-properties>]'
 }
 
@@ -101,6 +102,8 @@ Options:
                               files before the 5G APIs repository versions.
   -p PREFIX  --model-name-prefix PREFIX
                               Name to prefix generated model names with.
+  -P PACKAGE --model-package PACKAGE
+                              Name of package/namespace to use for the model.
   -y EXE     --yaml-directory-processor EXE
                               Executable to run to process the 5G API yaml
                               directory before the generator is run. EXE will
@@ -122,6 +125,7 @@ YAML_DIR_PROCESSOR="$default_yaml_dir_processor"
 OVERRIDES_DIRS="$default_overrides_dirs"
 DEBUG="$default_debug"
 MODEL_NAME_PREFIX="$default_model_name_prefix"
+MODEL_PACKAGE="$default_model_package"
 CACHE_DIR="$default_cache_dir"
 
 while true; do
@@ -177,6 +181,11 @@ while true; do
 	;;
     -p|--model-name-prefix)
         MODEL_NAME_PREFIX="$2"
+        shift 2
+        continue
+        ;;
+    -P|--model-package)
+        MODEL_PACKAGE="$2"
         shift 2
         continue
         ;;
@@ -284,7 +293,7 @@ fi
 
     # Check for relative templates path in provided config file
     if [ -f "$OPENAPI_GEN_CONFIG" ]; then
-	ogen_templateDir=`sed -n 's/^templateDir:\s*\("\)\{0,1\}\(.*\)\1\s*$/\2/p' "$OPENAPI_GEN_CONFIG"`
+	ogen_templateDir=`sed -n 's/\s*$//;s/^templateDir:\s*\(["'\'']\{0,1\}\)\(.*\)\1$/\2/p' "$OPENAPI_GEN_CONFIG"`
 	if echo "$ogen_templateDir" | grep -q '^[^/]'; then
             # templateDir is relative so convert it to absolute in a copy of the config
 	    sed 's@^templateDir:.*@templateDir: "'`dirname "$OPENAPI_GEN_CONFIG"`"/$ogen_templateDir"'"@' "$OPENAPI_GEN_CONFIG" > oapi_gen_config.yaml
@@ -383,7 +392,7 @@ EOF
 	api_name_lower=`echo "$API" | tr 'A-Z' 'a-z'`
 	api_name_upper=`echo "$API" | tr 'a-z' 'A-Z'`
         # bindings
-        "$java" -classpath "$jmustache_jar":"$openapi_gen_jar" org.openapitools.codegen.OpenAPIGenerator generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}" ${debugmodels} ${MODEL_NAME_PREFIX:+--model-name-prefix $MODEL_NAME_PREFIX}
+        "$java" -classpath "$jmustache_jar":"$openapi_gen_jar" org.openapitools.codegen.OpenAPIGenerator generate -i "5G_APIs/${API}.yaml" ${OPENAPI_GEN_CONFIG:+-c $OPENAPI_GEN_CONFIG} -g ${language} ${additional_props:+--additional-properties $additional_props} -o "${destdir}" ${debugmodels} ${MODEL_NAME_PREFIX:+--model-name-prefix $MODEL_NAME_PREFIX} ${MODEL_PACKAGE:+--model-package $MODEL_PACKAGE}
 	# Rename untagged API files to include the original API name.
 	if [ -d "${destdir}/api" ]; then
 	    find "${destdir}/api" -type f '(' -name '*Default*' -o -name '*DEFAULT*' -o -name '*default*' ')' -print | while read filename; do
