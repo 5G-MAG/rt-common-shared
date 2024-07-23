@@ -6,6 +6,12 @@ reservedWordsMappings:
   5G_AKA: "5G_AKA"
   5G_HE_AKA: "5G_HE_AKA"
   5GMM: "5GMM"
+typeMappings:
+  array: std::list
+  ByteArray: "std::basic_string<unsigned char>"
+importMappings:
+  "std::list": "#include <list>"
+  "std::basic_string<unsigned char>": "#include <string>"
 files:
   AnyType.hh:
     folder: model
@@ -18,6 +24,8 @@ files:
   CJson.hh:
     folder: model
   ModelException.hh:
+    folder: model
+  ModelMacros.hh:
     folder: model
   ModelObject.hh:
     folder: model
@@ -38,4 +46,4 @@ files:
   model-json.mustache:
     templateType: Model
     folder: model
-    destinationFilename: .json
+    destinationFilename: .model

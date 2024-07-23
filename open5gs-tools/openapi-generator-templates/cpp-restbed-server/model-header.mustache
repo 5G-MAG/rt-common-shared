@@ -27,6 +27,7 @@
 #include "ModelException.hh"
 #include "OgsAllocator.hh"
 #include "Validator.hh"
+#include "ModelMacros.hh"
 {{#imports}}{{{this}}}
 {{/imports}}
 {{#interfaces}}
@@ -47,26 +48,26 @@ public:
 
     typedef enum {
         NO_VAL,
-{{#values}}        VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}}{{^-last}},{{/-last}}
+{{#values}}        VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}},{{/-last}}
 {{/values}}
     } Enum;
     typedef fiveg_mag_reftools::StringValidator Validator;
 
 {{#values}}
-    static constexpr const char * const STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}} = "{{.}}";
+    static constexpr const char * const STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}} = "{{{.}}}";
 {{/values}}
 {{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
 
 {{#anyOf.0}}
     typedef enum {
         NO_VAL,
-{{#allowableValues}}{{#values}}        VAL_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}},
+{{#allowableValues}}{{#values}}        VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}},
 {{/values}}{{/allowableValues}}
 	OTHER
     } Enum;
     typedef typename fiveg_mag_reftools::NullValidator<{{classname}}> Validator;
 
-{{#allowableValues}}{{#values}}    static constexpr const char * const STR_{{#lambda.uppercase}}{{.}}{{/lambda.uppercase}} = "{{.}}";
+{{#allowableValues}}{{#values}}    static constexpr const char * const STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}} = "{{{.}}}";
 {{/values}}{{/allowableValues}}
 
 {{/anyOf.0}}
@@ -86,11 +87,12 @@ public:
     virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
     {{#vars}}
 
-    {{#isContainer}}typedef {{#items}}{{>model-type}}{{/items}} {{name}}ItemType;
-    typedef {{#items}}{{<model-validator}}{{$type}}{{name}}ItemType{{/type}}{{/model-validator}}{{/items}} {{name}}ItemValidator;{{/isContainer}}
     typedef {{>model-type}} {{name}}Type;
-    typedef {{<model-validator}}{{/model-validator}} {{name}}Validator;
-    const {{name}}Type &{{getter}}() const;
+    {{#isContainer}}typedef typename {{#isMap}}{{name}}Type::mapped_type{{/isMap}}{{#isArray}}{{name}}Type::value_type{{/isArray}} {{name}}ItemType;
+    {{/isContainer}}typedef {{<model-validator}}{{/model-validator}} {{name}}Validator;
+    {{#isContainer}}typedef typename {{name}}Validator::item_validator {{name}}ItemValidator;
+    {{/isContainer}}{{^isBoolean}}const {{name}}Type &{{getter}}() const;{{/isBoolean}}{{#isBoolean}}{{name}}Type {{getter}}() const;
+    const {{name}}Type &get{{name}}() const;{{/isBoolean}}
     bool {{setter}}(const {{name}}Type &{{name}});
     bool {{setter}}({{name}}Type &&{{name}});{{#isContainer}}
     bool add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{name}}ItemType &item);
