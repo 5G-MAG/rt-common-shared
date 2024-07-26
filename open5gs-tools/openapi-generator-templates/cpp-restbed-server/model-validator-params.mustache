@@ -1,13 +1,29 @@
-{{#composedSchemas}}{{^oneOf}}{{^not}}{{^anyOf}}{{^allOf.2}}
+{{#composedSchemas}}{{#allOf.0.name}}{{^allOf.1.name}}
 #define DATA_COLLECTION_PARAM_NAME {{{name}}}
 #define DATA_COLLECTION_PARAM_NAME_STR "{{{name}}}"
-{{#allOf}}{{<model-validator-params}}{{$pname}}DATA_COLLECTION_PARAM_NAME_STR{{/pname}}{{/model-validator-params}}{{/allOf}}
+{{#allOf}}{{<model-validator-params}}{{$pname}}DATA_COLLECTION_PARAM_NAME_STR{{/pname}}{{$name}}DATA_COLLECTION_PARAM_NAME{{/name}}{{/model-validator-params}}{{/allOf}}
 #undef DATA_COLLECTION_PARAM_NAME_STR
 #undef DATA_COLLECTION_PARAM_NAME
-{{/allOf.2}}{{#allOf.2.name}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{/allOf.2.name}}{{/anyOf}}{{^allOf}}{{^anyOf.2}}
+{{/allOf.1.name}}{{#allOf.1.name}}
+#error "Not implemented allOf yet!"
+{{/allOf.1.name}}{{/allOf.0.name}}{{#anyOf.0.name}}{{^anyOf.1.name}}
 #define DATA_COLLECTION_PARAM_NAME {{{name}}}
 #define DATA_COLLECTION_PARAM_NAME_STR "{{{name}}}"
 {{#anyOf}}{{<model-validator-params}}{{$pname}}DATA_COLLECTION_PARAM_NAME_STR{{/pname}}{{$name}}DATA_COLLECTION_PARAM_NAME{{/name}}{{/model-validator-params}}{{/anyOf}}
 #undef DATA_COLLECTION_PARAM_NAME_STR
 #undef DATA_COLLECTION_PARAM_NAME
-{{/anyOf.2}}{{^anyOf.3}}{{#anyOf.2.isString}}{{#anyOf.1.isEnum}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{/anyOf.1.isEnum}}{{/anyOf.2.isString}}{{^anyOf.1.isEnum}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{/anyOf.1.isEnum}}{{^anyOf.2.isString}}{{#anyOf.1.isEnum}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{/anyOf.1.isEnum}}{{/anyOf.2.isString}}{{/anyOf.3}}{{#anyOf.3.name}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{/anyOf.3.name}}{{/allOf}}{{/not}}{{/oneOf}}{{/composedSchemas}}{{^composedSchemas}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{#isContainer}}, new CONCAT({{$name}}{{name}}{{/name}},ItemValidator)({{#items}}{{>model-validator-params}}{{/items}}){{/isContainer}}{{^isContainer}}{{^isPrimitiveType}}{{#isString}}{{#pattern}}, "{{pattern}}"{{/pattern}}{{/isString}}{{#isDate}}, "/^\\d{4}-\\d{2}-\\d{2}$/"{{/isDate}}{{#isDateTime}}, "/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:.\\d+)?(?:Z|[-+]\\d{2}:\\d{2})$/"{{/isDateTime}}{{/isPrimitiveType}}{{#isPrimitiveType}}{{#isNumeric}}, {{#minimum}}new fiveg_mag_reftools::Boundary<CONCAT({{$name}}{{name}}{{/name}},Type)>({{minimum}}, {{#excludesMinimum}}false{{/excludesMinimum}}{{^excludesMinimum}}true{{/excludesMinimum}}){{/minimum}}{{^minimum}}nullptr{{/minimum}}{{#maximum}}, new fiveg_mag_reftools::Boundary<CONCAT({{$name}}{{name}}{{/name}},Type)>({{maximum}}, {{#excludesMaximum}}false{{/excludesMaximum}}{{^excludesMaximum}}true{{/excludesMaximum}}){{/maximum}}{{/isNumeric}}{{/isPrimitiveType}}{{/isContainer}}{{/composedSchemas}}
+{{/anyOf.1.name}}{{#anyOf.1.name}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnum}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{/anyOf.0.isEnum}}{{^anyOf.0.isEnum}}
+#error "Not implemented non-enum anyOf yet!"
+{{/anyOf.0.isEnum}}{{/anyOf.1.isString}}{{^anyOf.1.isString}}
+#error "Not implemented non-enum anyOf yet!"
+{{/anyOf.1.isString}}{{/anyOf.2.name}}{{#anyOf.2.name}}
+#error "Not implemented non-enum anyOf yet!"
+{{/anyOf.2.name}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}
+#define DATA_COLLECTION_PARAM_NAME {{{name}}}
+#define DATA_COLLECTION_PARAM_NAME_STR "{{{name}}}"
+{{#oneOf}}{{<model-validator-params}}{{$pname}}DATA_COLLECTION_PARAM_NAME_STR{{/pname}}{{$name}}DATA_COLLECTION_PARAM_NAME{{/name}}{{/model-validator-params}}{{/oneOf}}
+#undef DATA_COLLECTION_PARAM_NAME_STR
+#undef DATA_COLLECTION_PARAM_NAME
+{{/oneOf.1.name}}{{#oneOf.1.name}}
+#error "Not implemented oneOf yet!"
+{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}"{{{classname}}}", {{$pname}}"{{{name}}}"{{/pname}}{{#isContainer}}, new {{#items}}{{>model-validator}}({{>model-validator-params}}){{/items}}{{/isContainer}}{{^isContainer}}{{^isPrimitiveType}}{{#isString}}{{#pattern}}, "{{pattern}}"{{/pattern}}{{/isString}}{{#isDate}}, "/^\\d{4}-\\d{2}-\\d{2}$/"{{/isDate}}{{#isDateTime}}, "/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:.\\d+)?(?:Z|[-+]\\d{2}:\\d{2})$/"{{/isDateTime}}{{/isPrimitiveType}}{{#isPrimitiveType}}{{#isNumeric}}, {{#minimum}}new fiveg_mag_reftools::Boundary<{{>model-type}} >({{minimum}}, {{#excludesMinimum}}false{{/excludesMinimum}}{{^excludesMinimum}}true{{/excludesMinimum}}){{/minimum}}{{^minimum}}nullptr{{/minimum}}{{#maximum}}, new fiveg_mag_reftools::Boundary<{{>model-type}}>({{maximum}}, {{#excludesMaximum}}false{{/excludesMaximum}}{{^excludesMaximum}}true{{/excludesMaximum}}){{/maximum}}{{/isNumeric}}{{/isPrimitiveType}}{{/isContainer}}{{/composedSchemas}}

@@ -223,14 +223,16 @@ private:
 };
 
 template<class T>
-class ModelValidator : public Validator<T> {
+class ModelValidator : public Validator<std::shared_ptr<T> > {
 public:
+    typedef T model_type;
     ModelValidator(const char *classname = nullptr, const char *fieldname = nullptr)
-        :Validator<T>(classname, fieldname)
+        :Validator<std::shared_ptr<T> >(classname, fieldname)
     {};
 
     virtual ~ModelValidator() {};
-    virtual bool validate(const T &value) const { return true; };
+    virtual bool validate(const std::shared_ptr<T> &ptr) const { return validate(*ptr); };
+    bool validate(const model_type &value) const { return true; };
 };
 
 template <class T>

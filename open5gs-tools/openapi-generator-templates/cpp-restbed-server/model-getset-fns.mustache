@@ -1,0 +1,13 @@
+typedef {{>model-type}} {{name}}Type;
+{{#isContainer}}typedef typename {{#isMap}}{{name}}Type::mapped_type{{/isMap}}{{#isArray}}{{name}}Type::value_type{{/isArray}} {{name}}ItemType;
+{{/isContainer}}typedef {{<model-validator}}{{/model-validator}} {{name}}Validator;
+{{#isContainer}}typedef typename {{name}}Validator::item_validator {{name}}ItemValidator;
+{{/isContainer}}{{^isBoolean}}const {{name}}Type &{{getter}}() const;{{/isBoolean}}{{#isBoolean}}{{name}}Type {{getter}}() const;
+const {{name}}Type &get{{name}}() const;{{/isBoolean}}
+bool {{setter}}(const {{name}}Type &{{name}});
+bool {{setter}}({{name}}Type &&{{name}});{{#isContainer}}
+bool add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{name}}ItemType &item);
+bool add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{name}}ItemType &&item);
+bool remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{name}}ItemType &item{{/isMap}});{{#isMap}}
+const std::string &keyFor{{name}}(const {{name}}ItemType &item);{{/isMap}}
+bool clear{{name}}();{{/isContainer}}

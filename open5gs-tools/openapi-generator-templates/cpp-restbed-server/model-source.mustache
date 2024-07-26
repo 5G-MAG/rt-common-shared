@@ -31,6 +31,62 @@ using namespace fiveg_mag_reftools;
 namespace {{modelNamespace}} {
 {{/modelNamespace}}
 
+{{#isString}}
+bool {{classname}}::validate()
+{
+{{^composedSchemas}}{{#pattern}}
+    {   
+        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+    }
+{{/pattern}}
+    return true;
+{{/composedSchemas}}{{#composedSchemas}}{{#allOf.0.name}}{{#allOf}}{{#pattern}}
+    {
+        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+    }
+{{/pattern}}{{/allOf}}
+    return true;
+{{/allOf.0.name}}{{#anyOf.0.name}}{{#anyOf}}{{#pattern}}
+    try {
+        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+        return true;
+    } catch (ModelException &ex) {
+    }
+{{/pattern}}{{/anyOf}}
+    throw ModelException("String did not match any of the validation patterns", "{{{classname}}}", nullptr);
+{{/anyOf.0.name}}{{#oneOf.0.name}}
+    std::size_t count = 0;
+{{#oneOf}}
+    if (count < 2) {
+        try {
+            static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+            validator.validate(*this);
+            count++;
+        } catch (ModelException &ex) {
+        }
+    }
+{{/oneOf}}
+    if (count != 1) {
+        throw ModelException("String did not validate", "{{{classname}}}", nullptr);
+    }
+    return true;
+{{/oneOf.0.name}}{{/composedSchemas}}
+}
+
+void {{classname}}::fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request)
+{
+    *this = static_cast<std::string>(json);
+    this->validate();
+}
+
+CJson {{classname}}::toJSON(bool as_request) const
+{
+    return CJson::newString(*this);
+}
+{{/isString}}{{^isString}}
 {{classname}}::{{classname}}()
     :ModelObject()
 {{^hasVars}}{{#isEnum}}{{#allowableValues}}
@@ -198,7 +254,7 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
             {{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
             try {
                 element.reset(new {{name}}Type::value_type::element_type(var, as_request));
-            } catch (ModelException ex) {
+            } catch (ModelException &ex) {
                 throw ModelException(ex.what(), "{{classname}}", std::string({{name}}_key) + "." + ex.parameter);
             }
             {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}
@@ -237,7 +293,7 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
             {{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
             try {
                 element.reset(new {{name}}Type::value_type::element_type(var, as_request));
-            } catch (ModelException ex) {
+            } catch (ModelException &ex) {
                 throw ModelException(ex.what(), "{{classname}}", std::string({{name}}_key) + "." + ex.parameter);
             }
             {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}
@@ -286,12 +342,12 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
 CJson {{classname}}::toJSON(bool as_request) const
 {
 {{^hasVars}}{{#isEnum}}{{#allowableValues}}
-    return CJson::newString(getString());
+    return CJson::newString(getStringConst());
 {{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
     return CJson::newString(getString());
-{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#vars}}
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}
     CJson object = CJson::newObject();
-
+    {{#vars}}
     {{#isReadOnly}}
     if (!as_request) {
     {{/isReadOnly}}
@@ -308,20 +364,20 @@ CJson {{classname}}::toJSON(bool as_request) const
 
     for(auto& var : {{name}}_list) {
         {{#isPrimitiveType}}
-        {{name}}_arr.append(var);
+        {{name}}_arr.append(CJson::wrap(var));
         {{/isPrimitiveType}}
         {{^isPrimitiveType}}
         {{#isString}}
-        {{name}}_arr.append(var);
+        {{name}}_arr.append(CJson::wrap(var));
         {{/isString}}
         {{#isDate}}
-        {{name}}_arr.append(var);
+        {{name}}_arr.append(CJson::wrap(var));
         {{/isDate}}
         {{#isDateTime}}
-        {{name}}_arr.append(var);
+        {{name}}_arr.append(CJson::wrap(var));
         {{/isDateTime}}
         {{#isByteArray}}
-        {{name}}_arr.append(var);
+        {{name}}_arr.append(CJson::wrap(var));
         {{/isByteArray}}
         {{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
         {{name}}_arr.append(var->toJSON(as_request));
@@ -358,28 +414,42 @@ CJson {{classname}}::toJSON(bool as_request) const
     {{/vars}}
 
     return object;
+    {{/hasVars}}
 }
 
 {{^hasVars}}{{#isEnum}}{{#allowableValues}}
-const std::string &{{classname}}::getString() const
+std::string {{classname}}::getString() const
 {
-    static const std::string s_null();
+    switch(m_value) {
+{{#values}}
+    case Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}:
+        return std::string(STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}});
+{{/values}}
+    default:
+        break;
+    }
+    return std::string();
+}
 
+const char *{{classname}}::getStringConst() const
+{
     switch(m_value) {
 {{#values}}
     case Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}:
         return STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
 {{/values}}
+    default:
+        break;
     }
-    return s_null;
-}
+    return nullptr;
+}   
 
 {{classname}} &{{classname}}::fromString(const std::string &value)
 {
     if (value.empty()) {
         m_value = Enum::NO_VAL;
 {{#values}}
-    } elif (value == STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
+    } else if (value == STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
         m_value = Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
 {{/values}}
     }
@@ -395,7 +465,7 @@ const std::string &{{classname}}::getString() const
     if (value.empty()) {
         m_value = Enum::NO_VAL;
 {{#anyOf.0.allowableValues.values}}
-    } elif (value == STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
+    } else if (value == STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
         m_value = Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
 {{/anyOf.0.allowableValues.values}}
     }
@@ -411,6 +481,8 @@ std::string {{classname}}::__toString({{classname}}::Enum value)
     case {{classname}}::Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}:
         return {{classname}}::STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
 {{/anyOf.0.allowableValues.values}}
+    default:
+        break;
     }
 
     return ret;
@@ -484,7 +556,7 @@ bool {{classname}}::clear{{name}}()
 }
 
 {{/isContainer}}
-{{/vars}}
+{{/vars}}{{/isString}}
 {{#modelNamespace}}
 
 } /* end namespace */

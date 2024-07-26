@@ -39,7 +39,7 @@ public:
         typedef T &reference;
         typedef std::forward_iterator_tag iterator_type;
 
-        Iterator(T *node, int index = 0) : m_node(node), m_index(index) {};
+        Iterator(T *node, std::size_t index = 0) : m_node(node), m_index(index) {};
 
         bool operator==(const Iterator<T> &other) const { return other.m_node == m_node && other.m_index == m_index; };
         bool operator!=(const Iterator<T> &other) const { return other.m_node != m_node || other.m_index != m_index; };
@@ -57,13 +57,13 @@ public:
         };
 
         Iterator<T> operator+(std::size_t n) {
-            int new_index = m_index + n;
+            std::size_t new_index = m_index + n;
             if (new_index > m_node->arraySize()) new_index = m_node->arraySize();
             return Iterator<T>(m_node, new_index);
         };
     private:
         T *m_node;
-        int m_index;
+        std::size_t m_index;
     };
     typedef Iterator<CJson> iterator;
     typedef Iterator<const CJson> const_iterator;
@@ -73,10 +73,11 @@ public:
     CJson(CJson &&other) : m_owner(other.m_owner), m_node(other.m_node) {other.m_node = nullptr;};
 
     static CJson newObject() {return CJson(cJSON_CreateObject()); };
-    static CJson newArray() {return CJson(cJSON_CreateObject()); };
-    static CJson newString() {return CJson(cJSON_CreateObject()); };
-    static CJson newNumber() {return CJson(cJSON_CreateObject()); };
-    static CJson newBool() {return CJson(cJSON_CreateObject()); };
+    static CJson newArray() {return CJson(cJSON_CreateArray()); };
+    static CJson newString(const std::string &str) {return CJson(cJSON_CreateString(str.c_str())); };
+    static CJson newString(const char *value) {return CJson(cJSON_CreateString(value)); };
+    static CJson newNumber(double value) {return CJson(cJSON_CreateNumber(value)); };
+    static CJson newBool(bool value) {return CJson(cJSON_CreateBool(value?1:0)); };
     static CJson newNull() { return Null; };
 
     static CJson parse(const std::string &json_string) {

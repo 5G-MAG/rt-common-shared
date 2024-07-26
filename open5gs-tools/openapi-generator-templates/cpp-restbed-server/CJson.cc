@@ -15,7 +15,6 @@
 #include <cmath>
 #include <iterator>
 
-#include "cJSON.h"
 #include "ModelException.hh"
 #include "ModelObject.hh"
 #include "CJson.hh"

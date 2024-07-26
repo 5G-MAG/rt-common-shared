@@ -38,6 +38,35 @@
 namespace {{modelNamespace}} {
 {{/modelNamespace}}
 
+{{#isString}}
+class {{classname}} : public std::string {
+public:
+    {{classname}}() : std::string() {};
+    explicit {{classname}}(const std::string::allocator_type &alloc) : std::string(alloc) {};
+    {{classname}}(std::string::size_type count, std::string::value_type ch, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(count, ch, alloc) {};
+    {{classname}}(const std::string &other, std::string::size_type pos, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(other, pos, alloc) {};
+    {{classname}}(const std::string::value_type* s, std::string::size_type count, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(s, count, alloc) {};
+    {{classname}}(const std::string::value_type* s, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(s, alloc) {};
+    template <class InputIt>
+    {{classname}}(InputIt first, InputIt last, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(first, last, alloc) {};
+    {{classname}}(const std::string &other) : std::string(other) {};
+    {{classname}}(const std::string &other, const std::string::allocator_type &alloc) : std::string(other, alloc) {};
+    {{classname}}(std::string &&other) : std::string(std::move(other)) {};
+    {{classname}}(std::string &&other, const std::string::allocator_type &alloc) : std::string(std::move(other), alloc) {};
+    {{classname}}(std::initializer_list<std::string::value_type> ilist, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(ilist, alloc) {};
+    template <class StringViewLike>
+    explicit {{classname}}(const StringViewLike& t, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(t, alloc) {};
+    template <class StringViewLike>
+    explicit {{classname}}(const StringViewLike& t, std::string::size_type pos, std::string::size_type n, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(t, pos, n, alloc) {};
+    {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true) : std::string() { fromJSON(json, as_request); };
+
+    virtual ~{{classname}}() {};
+
+    bool validate();
+    void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+    fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
+};
+{{/isString}}{{^isString}}
 class {{classname}} : public fiveg_mag_reftools::ModelObject {
 public:
     static constexpr const char * const apiName = "{{appName}}";
@@ -67,7 +96,7 @@ public:
     } Enum;
     typedef typename fiveg_mag_reftools::NullValidator<{{classname}}> Validator;
 
-{{#allowableValues}}{{#values}}    static constexpr const char * const STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}} = "{{{.}}}";
+{{#allowableValues}}{{#values}}    static constexpr const char STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}[] = "{{{.}}}";
 {{/values}}{{/allowableValues}}
 
 {{/anyOf.0}}
@@ -85,29 +114,26 @@ public:
     {{classname}} &operator=({{classname}} &&other);
 
     virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
-    {{#vars}}
-
-    typedef {{>model-type}} {{name}}Type;
-    {{#isContainer}}typedef typename {{#isMap}}{{name}}Type::mapped_type{{/isMap}}{{#isArray}}{{name}}Type::value_type{{/isArray}} {{name}}ItemType;
-    {{/isContainer}}typedef {{<model-validator}}{{/model-validator}} {{name}}Validator;
-    {{#isContainer}}typedef typename {{name}}Validator::item_validator {{name}}ItemValidator;
-    {{/isContainer}}{{^isBoolean}}const {{name}}Type &{{getter}}() const;{{/isBoolean}}{{#isBoolean}}{{name}}Type {{getter}}() const;
-    const {{name}}Type &get{{name}}() const;{{/isBoolean}}
-    bool {{setter}}(const {{name}}Type &{{name}});
-    bool {{setter}}({{name}}Type &&{{name}});{{#isContainer}}
-    bool add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{name}}ItemType &item);
-    bool add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{name}}ItemType &&item);
-    bool remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{name}}ItemType &item{{/isMap}});{{#isMap}}
-    const std::string &keyFor{{name}}(const {{name}}ItemType &item);{{/isMap}}
-    bool clear{{name}}();{{/isContainer}}
-
-    {{/vars}}
+    {{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+    {{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}
+    {{>model-getset-fns}}
+    {{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}
+    {{>model-getset-fns}}
+    {{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}
+    {{>model-getset-fns}}
+    {{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}
+    {{>model-getset-fns}}
+    {{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}
+    {{>model-getset-fns}}
+    {{/vars}}{{/hasVars}}
 
     void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
 {{^hasVars}}{{#isEnum}}{{#allowableValues}}
 
     Enum getValue() const { return m_value; };
-    const std::string &getString() const;
+    std::string getString() const;
+    const char *getStringConst() const;
     const Validator &validator() const { return m_validator; };
 
     {{classname}} &operator=(Enum value) { m_value=value; return *this; };
@@ -116,7 +142,8 @@ public:
     {{classname}} &fromString(const std::string &value);
 
     operator Enum() const { return m_value; };
-    operator const std::string &() const { return getString(); };
+    operator std::string() const { return getString(); };
+    operator const char *() const { return getStringConst(); };
 {{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
 
     Enum getValue() const { return m_value; };
@@ -136,18 +163,43 @@ private:
 {{^hasVars}}{{#isEnum}}{{#allowableValues}}
     Enum m_value;
     Validator m_validator;
-{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{^oneOf}}{{^allOf}}{{^anyOf.2.name}}{{#anyOf.1.isString}}{{#anyOf.0.isEnumRef}}
+{{/allowableValues}}{{/isEnum}}{{^isEnum}}{{#composedSchemas}}{{#anyOf.0.name}}{{#anyOf.2.name}}{{#anyOf}}
+    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+{{/anyOf}}{{/anyOf.2.name}}{{^anyOf.2.name}}{{#anyOf.1.name}}{{^anyOf.1.isString}}{{#anyOf}}
+    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+{{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{^anyOf.0.isEnumRef}}{{#anyOf}}
+    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+{{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}
     static std::string __toString(Enum value);
 
     Enum m_value;
     std::string m_strValue;
     Validator m_validator;
-{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.2.name}}{{/allOf}}{{/oneOf}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}
-    {{#vars}}
+{{/anyOf.0.isEnumRef}}{{/anyOf.1.isString}}{{/anyOf.1.name}}{{^anyOf.1.name}}{{#anyOf}}
     {{name}}Type m_{{name}};
     {{name}}Validator m_{{name}}_validator;
-    {{/vars}}
+{{/anyOf}}{{/anyOf.1.name}}{{/anyOf.2.name}}{{/anyOf.0.name}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+    union {
+{{#oneOf}}        {{name}}Type m_{{name}};
+{{/oneOf}}
+    };
+{{#oneOf}}    {{name}}Validator m_{{name}}_validator;
+{{/oneOf}}
+    {{/oneOf.0.name}}{{#allOf.0.name}}
+#error "Not implemented allOf yet!"
+{{#allOf}}    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+{{/allOf}}
+    {{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}
+    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+    {{/vars}}{{/hasVars}}
 };
+{{/isString}}
 {{#modelNamespace}}
 
 } /* end namespace */

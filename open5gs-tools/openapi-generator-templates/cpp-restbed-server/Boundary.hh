@@ -57,6 +57,44 @@ private:
     bool m_include;
 };
 
+template <class T>
+class Boundary<std::list<T, fiveg_mag_reftools::OgsAllocator<T> > >  {
+public:
+    typedef std::size_t value_type;
+    Boundary(const std::size_t value = 0, bool include = true)
+        :m_value(value)
+        ,m_include(include)
+    {};
+    Boundary(const Boundary &other)
+        :m_value(other.m_value)
+        ,m_include(other.m_include)
+    {};
+    Boundary(Boundary &&other)
+        :m_value(other.m_value)
+        ,m_include(other.m_include)
+    {};
+
+    virtual ~Boundary() {};
+
+    bool isLessThan(const std::list<T> &list) {
+        if (m_include) {
+            return (m_value <= list.size());
+        }
+        return (m_value < list.size());
+    };
+
+    bool isGreaterThan(const std::list<T> &list) {
+        if (m_include) {
+            return (m_value >= list.size());
+        }
+        return (m_value > list.size());
+    };
+
+private:
+    std::size_t m_value;
+    bool m_include;
+};
+
 } /* end namespace */
 
 /* vim:ts=8:sts=4:sw=4:expandtab:
