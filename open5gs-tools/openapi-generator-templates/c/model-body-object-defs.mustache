@@ -1,5 +1,7 @@
 #define _OPENAPI_DATE_REGEX "^\\d{4}-\\d{2}-\\d{2}$"
 #define _OPENAPI_DATE_TIME_REGEX "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:.\\d+)?(?:Z|[-+]\\d{2}:\\d{2})$"
+#define _OPENAPI_URI_REGEX "^(?:[^:/?#]+:)?(?://[^/?#]*)?(?:[^?#]*)(?:\\?[^#]*)?(?:#.*)?$"
+#define _OPENAPI_UUID_REGEX "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 {{classname}}_t *{{classname}}_create(
 {{^hasVars}}
     {{#isString}}
@@ -1085,6 +1087,50 @@ end:
         goto end;
     }
                 {{/isDateTime}}
+                {{#isUri}}
+    if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        goto end;
+    }
+
+    static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+    if (!{{{name}}}_regex) {
+        {{{name}}}_regex = OpenAPI_regex_register_named("uri",_OPENAPI_URI_REGEX);
+        if (!{{{name}}}_regex) {
+            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile uri regex");
+            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the uri validation regex for \"{{{baseName}}}\"";
+            goto end;
+        }
+    }
+    if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match uri format");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match uri format";
+        goto end;
+    }
+                {{/isUri}}
+                {{#isUuid}}
+    if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        goto end;
+    }
+
+    static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+    if (!{{{name}}}_regex) {
+        {{{name}}}_regex = OpenAPI_regex_register_named("uuid",_OPENAPI_UUID_REGEX);
+        if (!{{{name}}}_regex) {
+            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile uuid regex");
+            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the uuid validation regex for \"{{{baseName}}}\"";
+            goto end;
+        }
+    }
+    if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match uuid format"); 
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match uuid format";
+        goto end;
+    }
+                {{/isUuid}}
                 {{#isNumeric}}
     if (!cJSON_IsNumber({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
