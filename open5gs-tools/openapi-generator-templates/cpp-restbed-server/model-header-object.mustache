@@ -1,0 +1,59 @@
+class {{classname}} : public fiveg_mag_reftools::ModelObject {
+public:
+    static constexpr const char * const apiName = "{{appName}}";
+    static constexpr const char * const apiVersion = "{{appVersion}}";
+    static constexpr const char * const apiDescription = "{{appDescription}}";
+    static constexpr const char * const inputSpec = "{{inputSpec}}";
+
+    {{classname}}();
+    {{classname}}(const {{classname}} &other);
+    {{classname}}({{classname}} &&other);
+    {{classname}}(const std::string &json, bool as_request = true);
+    {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+    virtual ~{{classname}}();
+
+    {{classname}} &operator=(const {{classname}} &other);
+    {{classname}} &operator=({{classname}} &&other);
+
+    virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
+    void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+    {{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+    {{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}
+    {{>model-getset-fns}}
+    {{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}
+    {{>model-getset-fns}}
+    {{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}
+    {{>model-getset-fns}}
+    {{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}
+    {{>model-getset-fns}}
+    {{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}
+    {{>model-getset-fns}}
+    {{/vars}}{{/hasVars}}
+
+private:
+{{^hasVars}}{{#composedSchemas}}{{#anyOf.0.name}}{{#anyOf}}
+    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+{{/anyOf}}{{/anyOf.0.name}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+    union {
+{{#oneOf}}        {{name}}Type m_{{name}};
+{{/oneOf}}
+    };
+{{#oneOf}}    {{name}}Validator m_{{name}}_validator;
+{{/oneOf}}
+    {{/oneOf.0.name}}{{#allOf.0.name}}
+#error "Not implemented allOf yet!"
+{{#allOf}}    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+{{/allOf}}
+{{/allOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}
+#error "Not implemented yet!"
+{{/composedSchemas}}{{/hasVars}}{{#hasVars}}{{#vars}}
+    {{name}}Type m_{{name}};
+    {{name}}Validator m_{{name}}_validator;
+{{/vars}}{{/hasVars}}
+};

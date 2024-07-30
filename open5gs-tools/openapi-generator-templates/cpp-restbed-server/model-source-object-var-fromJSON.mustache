@@ -1,0 +1,84 @@
+{{#isContainer}}{{#isArray}}
+        if (!json_obj.isArray()) {
+            throw ModelException("Field \"" _FIELD_NAME "\" is not an array", "{{classname}}", obj_key);
+        }
+        _PropertyType field_list;
+        _PropertyType::value_type element;
+        for (auto var : json_obj) {
+{{#items}}{{#isPrimitiveType}}
+            element = static_cast<_PropertyType::value_type>(var);
+{{/isPrimitiveType}}{{^isPrimitiveType}}{{#isString}}
+            element = static_cast<_PropertyType::value_type>(var);
+{{/isString}}{{#isDate}}
+            element = static_cast<_PropertyType::value_type>(var);
+{{/isDate}}{{#isDateTime}}
+            element = static_cast<_PropertyType::value_type>(var);
+{{/isDateTime}}{{#isByteArray}}
+            element = static_cast<_PropertyType::value_type>(var);
+{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}{{#isContainer}}
+            typedef _PropertyType::value_type _ElementType;
+            {
+                typedef _ElementType _PropertyType;
+                auto &json_obj = var;
+                auto &member_var = element;
+                {{>model-source-object-var-fromJSON}}
+            }
+{{/isContainer}}{{^isContainer}}
+            try {
+                element.reset(new _PropertyType::value_type::element_type(var, as_request));
+            } catch (ModelException &ex) {
+                throw ModelException(ex.what(), "{{classname}}", std::string(obj_key) + "." + ex.parameter);
+            }
+{{/isContainer}}{{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isPrimitiveType}}{{/items}}
+            field_list.push_back(std::move(element));
+        }
+        member_var = field_list;
+{{/isArray}}{{#isMap}}
+        if (!json_obj.isObject()) {
+            throw ModelException("Field \"" _FIELD_NAME "\" is not an object", "{{classname}}", obj_key);
+        }
+
+        _PropertyType field_map;
+        _PropertyType::mapped_type element;
+        for (auto var : json_obj) {
+{{#items}}{{#isPrimitiveType}}
+            element = static_cast<_PropertyType::mapped_type>(var);
+{{/isPrimitiveType}}{{^isPrimitiveType}}{{#isString}}
+            element = static_cast<_PropertyType::mapped_type>(var);
+{{/isString}}{{#isDate}}
+            element = static_cast<_PropertyType::mapped_type>(var);
+{{/isDate}}{{#isDateTime}}
+            element = static_cast<_PropertyType::mapped_type>(var);
+{{/isDateTime}}{{#isByteArray}}
+            element = static_cast<_PropertyType::mapped_type>(var);
+{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}{{#isContainer}}
+            typedef _PropertyType::mapped_type _ElementType;
+            {
+                typedef _ElementType _PropertyType;
+                auto &json_obj = var;
+                auto &member_var = element;
+                {{>model-source-object-var-fromJSON}}
+            }
+{{/isContainer}}{{^isContainer}}
+            try {
+                element.reset(new _PropertyType::value_type::element_type(var, as_request));
+            } catch (ModelException &ex) {
+                throw ModelException(ex.what(), "{{classname}}", std::string(obj_key) + "." + ex.parameter);
+            }
+{{/isContainer}}{{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isPrimitiveType}}{{/items}}
+            field_map.insert(std::make_pair(std::string(var.key()), element));
+        }
+        member_var = field_map;
+{{/isMap}}{{/isContainer}}{{^isContainer}}{{#isPrimitiveType}}
+        member_var = static_cast<_PropertyType>(json_obj);
+{{/isPrimitiveType}}{{^isPrimitiveType}}{{#isString}}
+        member_var = static_cast<_PropertyType>(json_obj);
+{{/isString}}{{#isDate}}
+        member_var = static_cast<_PropertyType>(json_obj);
+{{/isDate}}{{#isDateTime}}
+        member_var = static_cast<_PropertyType>(json_obj);
+{{/isDateTime}}{{#isByteArray}}
+        member_var = static_cast<_PropertyType>(json_obj);
+{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
+        member_var.reset(new _PropertyType::element_type(json_obj, as_request));
+{{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isPrimitiveType}}{{/isContainer}}

@@ -1,0 +1,54 @@
+bool {{classname}}::validate()
+{
+{{^composedSchemas}}{{#pattern}}
+    {   
+        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+    }
+{{/pattern}}
+    return true;
+{{/composedSchemas}}{{#composedSchemas}}{{#allOf.0.name}}{{#allOf}}{{#pattern}}
+    {
+        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+    }
+{{/pattern}}{{/allOf}}
+    return true;
+{{/allOf.0.name}}{{#anyOf.0.name}}{{#anyOf}}{{#pattern}}
+    try {
+        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+        return true;
+    } catch (ModelException &ex) {
+    }
+{{/pattern}}{{/anyOf}}
+    throw ModelException("String did not match any of the validation patterns", "{{{classname}}}", nullptr);
+{{/anyOf.0.name}}{{#oneOf.0.name}}
+    std::size_t count = 0;
+{{#oneOf}}
+    if (count < 2) {
+        try {
+            static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+            validator.validate(*this);
+            count++;
+        } catch (ModelException &ex) {
+        }
+    }
+{{/oneOf}}
+    if (count != 1) {
+        throw ModelException("String did not validate", "{{{classname}}}", nullptr);
+    }
+    return true;
+{{/oneOf.0.name}}{{/composedSchemas}}
+}
+
+void {{classname}}::fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request)
+{
+    *this = static_cast<std::string>(json);
+    this->validate();
+}
+
+CJson {{classname}}::toJSON(bool as_request) const
+{
+    return CJson::newString(*this);
+}

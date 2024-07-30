@@ -1,0 +1,104 @@
+{{classname}}::{{classname}}()
+    :ModelObject()
+    ,m_value({{classname}}::Enum::NO_VAL)
+    ,m_strValue()
+    ,m_validator("{{classname}}",nullptr)
+{
+}
+
+{{classname}}::{{classname}}(const {{classname}} &other)
+    :ModelObject(other)
+    ,m_value(other.m_value)
+    ,m_strValue(other.m_strValue)
+    ,m_validator(other.m_validator)
+{
+}
+
+{{classname}}::{{classname}}({{classname}} &&other)
+    :ModelObject(std::move(other))
+    ,m_value(std::move(other.m_value))
+    ,m_strValue(std::move(other.m_strValue))
+    ,m_validator(std::move(other.m_validator))
+{
+}
+
+{{classname}}::{{classname}}(const std::string &json, bool as_request)
+    :ModelObject()
+    ,m_value()
+    ,m_strValue()
+    ,m_validator("{{classname}}",nullptr)
+{
+    CJson jtree = CJson::parse(json);
+    this->fromJSON(jtree, as_request);
+}
+
+{{classname}}::{{classname}}(const CJson &json, bool as_request)
+    :ModelObject()
+    ,m_value()
+    ,m_strValue()
+    ,m_validator("{{classname}}",nullptr)
+{
+    this->fromJSON(json, as_request);
+}
+
+{{classname}}::~{{classname}}()
+{
+}
+
+{{classname}} &{{classname}}::operator=(const {{classname}} &other)
+{
+    m_value = other.m_value;
+    m_strValue = other.m_strValue;
+    m_validator = other.m_validator;
+
+    return *this;
+}
+
+{{classname}} &{{classname}}::operator=({{classname}} &&other)
+{
+    m_value = std::move(other.m_value);
+    m_strValue = std::move(other.m_strValue);
+    m_validator = std::move(other.m_validator);
+
+    return *this;
+}
+
+void {{classname}}::fromJSON(const CJson &json, bool as_request)
+{
+    fromString(static_cast<std::string>(json));
+}
+
+CJson {{classname}}::toJSON(bool as_request) const
+{
+    return CJson::newString(getString());
+}
+
+{{classname}} &{{classname}}::fromString(const std::string &value)
+{
+    m_strValue = value;
+    m_value = Enum::OTHER;
+    if (value.empty()) {
+        m_value = Enum::NO_VAL;
+{{#anyOf.0.allowableValues.values}}
+    } else if (value == STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
+        m_value = Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
+{{/anyOf.0.allowableValues.values}}
+    }
+    return *this;
+}
+
+std::string {{classname}}::__toString({{classname}}::Enum value)
+{
+    std::string ret;
+
+    switch(value) {
+{{#anyOf.0.allowableValues.values}}
+    case {{classname}}::Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}:
+        return {{classname}}::STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
+{{/anyOf.0.allowableValues.values}}
+    default:
+        break;
+    }
+
+    return ret;
+}

@@ -1,0 +1,54 @@
+class {{classname}} : public fiveg_mag_reftools::ModelObject {
+public:
+    static constexpr const char * const apiName = "{{appName}}";
+    static constexpr const char * const apiVersion = "{{appVersion}}";
+    static constexpr const char * const apiDescription = "{{appDescription}}";
+    static constexpr const char * const inputSpec = "{{inputSpec}}";
+
+{{#anyOf.0}}
+    typedef enum {
+        NO_VAL,
+{{#allowableValues}}{{#values}}        VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}},
+{{/values}}{{/allowableValues}}
+	OTHER
+    } Enum;
+    typedef typename fiveg_mag_reftools::NullValidator<{{classname}}> Validator;
+
+{{#allowableValues}}{{#values}}    static constexpr const char STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}[] = "{{{.}}}";
+{{/values}}{{/allowableValues}}
+
+{{/anyOf.0}}
+
+    {{classname}}();
+    {{classname}}(const {{classname}} &other);
+    {{classname}}({{classname}} &&other);
+    {{classname}}(const std::string &json, bool as_request = true);
+    {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+    virtual ~{{classname}}();
+
+    {{classname}} &operator=(const {{classname}} &other);
+    {{classname}} &operator=({{classname}} &&other);
+
+    virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
+    void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+    Enum getValue() const { return m_value; };
+    const std::string &getString() const { return m_strValue; };
+    const Validator &validator() const { return m_validator; };
+
+    {{classname}} &operator=(Enum value) { m_value=value; m_strValue=__toString(value); return *this; };
+    {{classname}} &operator=(const std::string &value) { return this->fromString(value); };
+
+    {{classname}} &fromString(const std::string &value);
+
+    operator Enum() const { return m_value; };
+    operator const std::string &() const { return m_strValue; };
+
+private:
+    static std::string __toString(Enum value);
+
+    Enum m_value;
+    std::string m_strValue;
+    Validator m_validator;
+};

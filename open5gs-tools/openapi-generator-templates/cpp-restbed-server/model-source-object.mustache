@@ -1,0 +1,183 @@
+{{classname}}::{{classname}}()
+    :ModelObject(){{#vars}}
+    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}}){{/vars}}
+{
+}
+
+{{classname}}::{{classname}}(const {{classname}} &other)
+    :ModelObject(other){{#vars}}
+    ,m_{{name}}(other.m_{{name}})
+    ,m_{{name}}_validator(other.m_{{name}}_validator){{/vars}}
+{
+}
+
+{{classname}}::{{classname}}({{classname}} &&other)
+    :ModelObject(std::move(other)){{#vars}}
+    ,m_{{name}}(std::move(other.m_{{name}}))
+    ,m_{{name}}_validator(std::move(other.m_{{name}}_validator)){{/vars}}
+{
+}
+
+{{classname}}::{{classname}}(const std::string &json, bool as_request)
+    :ModelObject(){{#vars}}
+    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}}){{/vars}}
+{
+    CJson jtree = CJson::parse(json);
+    this->fromJSON(jtree, as_request);
+}
+
+{{classname}}::{{classname}}(const CJson &json, bool as_request)
+    :ModelObject(){{#vars}}
+    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}}){{/vars}}
+{
+    this->fromJSON(json, as_request);
+}
+
+{{classname}}::~{{classname}}()
+{
+}
+
+{{classname}} &{{classname}}::operator=(const {{classname}} &other)
+{
+{{#vars}}
+    m_{{name}} = other.m_{{name}};
+    m_{{name}}_validator = other.m_{{name}}_validator;{{/vars}}
+
+    return *this;
+}
+
+{{classname}} &{{classname}}::operator=({{classname}} &&other)
+{
+{{#vars}}
+    m_{{name}} = std::move(other.m_{{name}});
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);{{/vars}}
+
+    return *this;
+}
+
+void {{classname}}::fromJSON(const CJson &json, bool as_request)
+{
+{{#vars}}
+    static const char *{{name}}_key = "{{baseName}}";
+    CJson {{name}}_json = CJson::Null;
+    {{#isReadOnly}}
+    if (!as_request) {
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    if (as_request) {
+    {{/isWriteOnly}}
+
+    {{name}}_json = json.getObjectItemCaseSensitive({{name}}_key);
+    if (!{{name}}_json.isNull()) {
+        auto &json_obj = {{name}}_json;{{#isContainer}}
+        const char *obj_key = {{name}}_key;{{/isContainer}}
+        typedef {{name}}Type _PropertyType;
+        auto &member_var = m_{{name}};
+#define _FIELD_NAME "{{baseName}}"
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}#undef _FIELD_NAME
+        m_{{name}}_validator.validate(m_{{name}});
+    }{{#isReadOnly}}
+    }{{/isReadOnly}}{{#isWriteOnly}}
+    }{{/isWriteOnly}}
+
+{{/vars}}
+}
+
+CJson {{classname}}::toJSON(bool as_request) const
+{
+    CJson object = CJson::newObject();
+    {{#vars}}
+    {{#isReadOnly}}
+    if (!as_request) {
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    if (as_request) {
+    {{/isWriteOnly}}
+
+    const auto &{{name}}_val = {{getter}}();
+    {
+        const auto &from_value = {{name}}_val;
+        {{>model-source-object-var-toJSON}}
+        object.set("{{name}}", to_json);
+    }
+
+    {{#isReadOnly}}
+    }
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    }
+    {{/isWriteOnly}}
+    {{/vars}}
+
+    return object;
+}
+{{#vars}}
+
+{{#isBoolean}}const {{classname}}::{{name}}Type &{{classname}}::get{{name}}() const
+{
+    return m_{{name}};
+}
+
+{{classname}}::{{name}}Type {{classname}}::{{getter}}() const{{/isBoolean}}{{^isBoolean}}const {{classname}}::{{name}}Type &{{classname}}::{{getter}}() const{{/isBoolean}}
+{
+    return m_{{name}};
+}
+
+bool {{classname}}::{{setter}}(const {{classname}}::{{name}}Type &{{name}})
+{
+    m_{{name}} = {{name}};
+    return true;
+}
+
+bool {{classname}}::{{setter}}({{classname}}::{{name}}Type &&{{name}})
+{
+    m_{{name}} = std::move({{name}});
+    return true;
+}
+
+{{#isContainer}}
+bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{classname}}::{{name}}ItemType &item)
+{
+    {{#isMap}}{{name}}Type::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(item));
+    const auto [it, success] = {{/isMap}}m_{{name}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}.end(), item{{/isMap}});
+    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
+}
+
+bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{classname}}::{{name}}ItemType &&item)
+{
+    {{#isMap}}{{name}}Type::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(std::move(item)));
+    const auto [it, success] = {{/isMap}}m_{{name}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}.end(), std::move(item){{/isMap}});
+    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
+}
+
+bool {{classname}}::remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{classname}}::{{name}}ItemType &item{{/isMap}})
+{
+    {{#isMap}}
+    return m_{{name}}.erase(key) == 1;
+    {{/isMap}}{{^isMap}}
+    m_{{name}}.remove(item);
+    return true;
+    {{/isMap}}
+}
+
+{{#isMap}}
+const std::string &{{classname}}::keyFor{{name}}(const {{classname}}::{{name}}ItemType &item)
+{
+    static const std::string s_null;
+
+    for (auto &it : m_{{name}}) {
+        if (it.second == item) return it.first;
+    }
+
+    return s_null;
+}
+
+{{/isMap}}
+bool {{classname}}::clear{{name}}()
+{
+    m_{{name}}.clear();
+    return true;
+}{{/isContainer}}{{/vars}}

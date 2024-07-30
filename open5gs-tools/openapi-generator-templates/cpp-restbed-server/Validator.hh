@@ -276,10 +276,36 @@ private:
 };
 
 template <class V>
-using ListValidator = ContainerValidator<std::list<typename V::value_type, OgsAllocator<typename V::value_type> >, V>;
+class MapValidator : public Validator<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<typename V::value_type> > > {
+public:
+    typedef std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<typename V::value_type> > container_type;
+    typedef V item_validator;
+    typedef typename V::value_type item_type;
+
+    MapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr)
+        :Validator<container_type>(classname, fieldname)
+        ,m_itemValidator(item_validator)
+    {};
+
+    virtual ~MapValidator() {
+        if (m_itemValidator) delete m_itemValidator;
+    };
+
+    virtual bool validate(const container_type &value) const {
+        if (m_itemValidator) {
+            for (auto &var : value) {
+                m_itemValidator->validate(var.second);
+            }
+        }
+        return true;
+    }
+
+private:
+    item_validator *m_itemValidator;
+};
 
 template <class V>
-using MapValidator = ContainerValidator<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<typename V::value_type> >, V>;
+using ListValidator = ContainerValidator<std::list<typename V::value_type, OgsAllocator<typename V::value_type> >, V>;
 
 } /* end namespace */
 

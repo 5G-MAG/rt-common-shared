@@ -94,6 +94,7 @@ public:
     static CJson wrap(float val, bool as_request = false) { return CJson(cJSON_CreateNumber(val)); };
     static CJson wrap(double val, bool as_request = false) { return CJson(cJSON_CreateNumber(val)); };
     static CJson wrap(const std::string &val, bool as_request = false) { return CJson(cJSON_CreateString(val.c_str())); };
+    static CJson wrap(const std::basic_string<unsigned char> &val, bool as_request = false) { return CJson(cJSON_CreateString(reinterpret_cast<const char *>(val.c_str()))); };
     static CJson wrap(const char *val, bool as_request = false) { return CJson(cJSON_CreateString(val)); };
     static CJson wrap(bool val, bool as_request = false) { return CJson(cJSON_CreateBool(val)); };
     static CJson wrap(const ModelObject &obj, bool as_request = false);
@@ -191,10 +192,10 @@ public:
         
 
     const char *stringValue() const { return isString()?cJSON_GetStringValue(m_node):nullptr; };
-
     double numberValue() const { return isNumber()?cJSON_GetNumberValue(m_node):NAN; };
-
     bool boolValue() const { return isBool()?cJSON_IsTrue(m_node):false; };
+
+    const char *key() const { return m_node->string; };
 
     operator int() const { return static_cast<int>(numberValue()); };
     operator long int() const { return static_cast<long int>(numberValue()); };
@@ -202,6 +203,7 @@ public:
     operator float() const { return static_cast<float>(numberValue()); };
     operator double() const { return numberValue(); };
     operator std::string() const { return std::string(stringValue()); };
+    operator std::basic_string<unsigned char>() const { return std::basic_string<unsigned char>(reinterpret_cast<const unsigned char*>(stringValue())); };
     operator const char*() const { return stringValue(); };
     operator bool() const { return boolValue(); };
 

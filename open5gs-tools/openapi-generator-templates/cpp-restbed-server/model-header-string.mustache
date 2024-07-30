@@ -1,0 +1,33 @@
+class {{classname}} : public std::string {
+public:
+    static constexpr const char * const apiName = "{{appName}}";
+    static constexpr const char * const apiVersion = "{{appVersion}}";
+    static constexpr const char * const apiDescription = "{{appDescription}}";
+    static constexpr const char * const inputSpec = "{{inputSpec}}";
+
+    {{classname}}() : std::string() {};
+    explicit {{classname}}(const std::string::allocator_type &alloc) : std::string(alloc) {};
+    {{classname}}(std::string::size_type count, std::string::value_type ch, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(count, ch, alloc) {};
+    {{classname}}(const std::string &other, std::string::size_type pos, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(other, pos, alloc) {};
+    {{classname}}(const std::string::value_type* s, std::string::size_type count, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(s, count, alloc) {};
+    {{classname}}(const std::string::value_type* s, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(s, alloc) {};
+    template <class InputIt>
+    {{classname}}(InputIt first, InputIt last, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(first, last, alloc) {};
+    {{classname}}(const std::string &other) : std::string(other) {};
+    {{classname}}(const std::string &other, const std::string::allocator_type &alloc) : std::string(other, alloc) {};
+    {{classname}}(std::string &&other) : std::string(std::move(other)) {};
+    {{classname}}(std::string &&other, const std::string::allocator_type &alloc) : std::string(std::move(other), alloc) {};
+    {{classname}}(std::initializer_list<std::string::value_type> ilist, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(ilist, alloc) {};
+    template <class StringViewLike>
+    explicit {{classname}}(const StringViewLike& t, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(t, alloc) {};
+    template <class StringViewLike>
+    explicit {{classname}}(const StringViewLike& t, std::string::size_type pos, std::string::size_type n, const std::string::allocator_type &alloc = std::string::allocator_type()) : std::string(t, pos, n, alloc) {};
+    {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true) : std::string() { fromJSON(json, as_request); };
+
+    virtual ~{{classname}}() {};
+
+    bool validate();
+
+    void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+    fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
+};
