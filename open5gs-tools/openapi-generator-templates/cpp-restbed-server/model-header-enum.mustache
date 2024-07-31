@@ -38,6 +38,13 @@ public:
     {{classname}} &operator=(Enum value) { m_value=value; return *this; };
     {{classname}} &operator=(const std::string &value) { return this->fromString(value); };
 
+    bool operator==(const {{classname}} &other) const { return m_value == other.m_value; };
+    bool operator==(Enum val) const { return m_value == val; };
+    bool operator==(const std::string &strval) const { return getString() == strval; };
+    bool operator!=(const {{classname}} &other) const { return m_value != other.m_value; };
+    bool operator!=(Enum val) const { return m_value != val; };
+    bool operator!=(const std::string &strval) const { return getString() != strval; };
+
     {{classname}} &fromString(const std::string &value);
 
     operator Enum() const { return m_value; };

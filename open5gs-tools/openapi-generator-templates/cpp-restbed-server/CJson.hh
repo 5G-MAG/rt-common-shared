@@ -214,6 +214,13 @@ public:
         return Null;
     };
 
+    bool operator==(const CJson &other) {
+        if (!m_node && !other.m_node) return true; /* both NULL */
+        if (!m_node) return false; /* this is NULL but other is not */
+        if (!other.m_node) return false; /* other is NULL but this is not */
+        return cJSON_Compare(m_node, other.m_node, 1) != 0;
+    };
+
     cJSON *exportCJSON() {
         m_owner = false;
         return m_node;

@@ -1,0 +1,39 @@
+{{#composedSchemas}}{{#allOf.0.name}}{{#allOf.1.name}}
+#error "Not implemented yet!"
+{{/allOf.1.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-toJSON}}{{/allOf.0}}{{/allOf.1.name}}{{/allOf.0.name}}{{#anyOf.0.name}}{{#anyOf.1.name}}
+#error "Not implemented yet!"
+{{/anyOf.1.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-toJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#oneOf.0.name}}{{#oneOf.1.name}}
+#error "Not implemented yet!"
+{{/oneOf.1.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-toJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{#isContainer}}{{#isArray}}
+CJson to_json = CJson::newArray();
+{
+    auto &fill_array = to_json;
+    for(const auto &var : from_value) {
+        const auto &from_value = var;
+        {{#items}}{{>model-source-object-var-toJSON}}{{/items}}
+        fill_array.append(std::move(to_json));
+    }
+}
+{{/isArray}}{{#isMap}}
+CJson to_json = CJson::newObject();
+{
+    auto &fill_map = to_json;
+    for(const auto &var : from_value) {
+        const auto &from_value = var.second;
+        {{#items}}{{>model-source-object-var-toJSON}}{{/items}}
+        fill_map.set(var.first, std::move(to_json));
+    }
+}
+{{/isMap}}{{/isContainer}}{{^isContainer}}{{#isPrimitiveType}}
+CJson to_json = CJson::wrap(from_value);
+{{/isPrimitiveType}}{{^isPrimitiveType}}{{#isString}}
+CJson to_json = CJson::wrap(from_value);
+{{/isString}}{{#isDate}}
+CJson to_json = CJson::wrap(from_value);
+{{/isDate}}{{#isDateTime}}
+CJson to_json = CJson::wrap(from_value);
+{{/isDateTime}}{{#isByteArray}}
+CJson to_json = CJson::wrap(from_value);
+{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
+CJson to_json = from_value->toJSON(as_request);
+{{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isPrimitiveType}}{{/isContainer}}{{/composedSchemas}}

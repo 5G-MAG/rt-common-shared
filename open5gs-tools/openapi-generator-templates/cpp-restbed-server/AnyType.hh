@@ -35,6 +35,31 @@ public:
 
     virtual ~AnyType() { if (m_val) delete m_val; };
 
+    AnyType &operator=(const AnyType &other) {
+        if (m_val) {
+            delete m_val;
+            m_val = nullptr;
+        }
+        if (other.m_val) m_val = new CJson(*other.m_val);
+        return *this;
+    };
+
+    AnyType &operator=(AnyType &&other) {
+        if (m_val) {
+            delete m_val;
+        }
+        m_val = other.m_val;
+        other.m_val = nullptr;
+        return *this;
+    };
+
+    bool operator==(const AnyType &other) {
+        if (!m_val && !other.m_val) return true;
+        if (!m_val) return false;
+        if (!other.m_val) return false;
+        return *m_val == *other.m_val; 
+    }; 
+
     virtual CJson toJSON(bool as_request = false) const {
         if (m_val) return *m_val;
         return CJson::Null;

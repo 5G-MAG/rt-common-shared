@@ -1,0 +1,7 @@
+{{#composedSchemas}}{{#anyOf.0.name}}{{#anyOf.1.name}}
+#error "Not implemented yet: {{classname}}.{{name}}"
+{{/anyOf.1.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-not-equal}}{{/anyOf.0}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf.1.name}}
+#error "Not implemented yet: {{classname}}.{{name}}"
+{{/allOf.1.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-not-equal}}{{/allOf.0}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{#oneOf.1.name}}
+#error "Not implemented yet: {{classname}}.{{name}}"
+{{/oneOf.1.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-not-equal}}{{/oneOf.0}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{#isModel}}{{#isString}}a != b{{/isString}}{{#isDate}}a != b{{/isDate}}{{#isDateTime}}a != b{{/isDateTime}}{{#isByteArray}}a != b{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}a != b && *a != *b{{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isModel}}{{^isModel}}a != b{{/isModel}}{{/composedSchemas}}
