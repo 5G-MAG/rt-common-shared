@@ -23,6 +23,7 @@
 #undef OGS_CORE_INSIDE
 
 #include <memory>
+#include <limits>
 
 namespace fiveg_mag_reftools {
 
