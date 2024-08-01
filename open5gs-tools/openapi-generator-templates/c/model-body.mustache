@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include "OpenAPI_regex.h"
 #include "{{classname}}.h"
+{{#discriminator.mappedModels}}#include "{{{modelName}}}.h"
+{{/discriminator.mappedModels}}
 
 {{#isEnum}}
 {{>model-body-enum}}

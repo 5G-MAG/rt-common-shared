@@ -28,11 +28,6 @@
 {{#imports}}
 #include "{{{.}}}.h"
 {{/imports}}
-{{#discriminator}}
-{{#mappedModels}}
-#include "{{{modelName}}}.h"
-{{/mappedModels}}
-{{/discriminator}}
 
 #define {{classname}}_info_title "{{appName}}"
 #define {{classname}}_info_version "{{appVersion}}"
@@ -41,6 +36,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+{{#discriminator}}
+
+{{#mappedModels}}typedef struct {{{modelName}}}_s {{{modelName}}}_t;
+{{/mappedModels}}{{/discriminator}}
 
 {{#isEnum}}
 {{>model-header-enum}}
