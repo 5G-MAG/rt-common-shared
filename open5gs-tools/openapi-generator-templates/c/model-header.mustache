@@ -36,6 +36,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+{{#discriminator}}
+
+{{#mappedModels}}typedef struct {{{modelName}}}_s {{{modelName}}}_t;
+{{/mappedModels}}{{/discriminator}}
 
 {{#isEnum}}
     {{#allowableValues}}

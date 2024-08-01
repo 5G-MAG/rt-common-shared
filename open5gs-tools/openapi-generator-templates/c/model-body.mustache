@@ -20,6 +20,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "{{classname}}.h"
+{{#discriminator.mappedModels}}#include "{{{modelName}}}.h"
+{{/discriminator.mappedModels}}
 
 {{#isEnum}}
 const char* {{classname}}_ToString(const {{classname}}_e {{classname}})
