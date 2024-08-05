@@ -276,9 +276,9 @@ private:
 };
 
 template <class V>
-class MapValidator : public Validator<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<typename V::value_type> > > {
+class MapValidator : public Validator<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > > {
 public:
-    typedef std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<typename V::value_type> > container_type;
+    typedef std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > container_type;
     typedef V item_validator;
     typedef typename V::value_type item_type;
 
