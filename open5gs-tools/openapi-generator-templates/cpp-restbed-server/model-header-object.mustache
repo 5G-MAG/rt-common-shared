@@ -22,6 +22,8 @@ public:
     bool operator==(const {{classname}} &other) const;
     bool operator!=(const {{classname}} &other) const { return !(*this == other); };
 
+    bool validate() const;
+
     {{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
 #error "Not implemented oneOf yet!"
     {{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}

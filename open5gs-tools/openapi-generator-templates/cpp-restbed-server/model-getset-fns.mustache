@@ -1,5 +1,5 @@
 typedef {{>model-type}} {{name}}Type;
-{{#isContainer}}typedef typename {{#isMap}}{{name}}Type::mapped_type{{/isMap}}{{#isArray}}{{name}}Type::value_type{{/isArray}} {{name}}ItemType;
+{{#isContainer}}typedef typename {{#isMap}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::mapped_type{{/isMap}}{{#isArray}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type{{/isArray}} {{name}}ItemType;
 {{/isContainer}}typedef {{<model-validator}}{{/model-validator}} {{name}}Validator;
 {{#isContainer}}typedef typename {{name}}Validator::item_validator {{name}}ItemValidator;
 {{/isContainer}}{{^isBoolean}}const {{name}}Type &{{getter}}() const;{{/isBoolean}}{{#isBoolean}}{{name}}Type {{getter}}() const;

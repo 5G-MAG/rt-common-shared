@@ -33,7 +33,7 @@ public:
         return static_cast<const std::string&>(*this) != static_cast<const std::string&>(other);
     };
 
-    bool validate();
+    bool validate() const;
 
     void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
     fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;

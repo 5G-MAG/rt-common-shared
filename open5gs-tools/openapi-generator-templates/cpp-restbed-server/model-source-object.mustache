@@ -99,9 +99,12 @@ CJson {{classname}}::toJSON(bool as_request) const
 
     const auto &{{name}}_val = {{getter}}();
     {
-        const auto &from_value = {{name}}_val;
+{{<is-optional}}{{$yes}}if ({{name}}_val.has_value()) {
+{{/yes}}{{/is-optional}}
+        const auto &from_value = {{name}}_val{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
         {{>model-source-object-var-toJSON}}
         object.set("{{name}}", to_json);
+{{<is-optional}}{{$yes}}        }{{/yes}}{{/is-optional}}
     }
 
     {{#isReadOnly}}
@@ -124,6 +127,11 @@ bool {{classname}}::operator==(const {{classname}} &other) const
     }
 {{/vars}}
     return true;
+}
+
+bool {{classname}}::validate() const
+{
+    return {{#vars}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} &&{{/-last}}{{/vars}};
 }
 {{#vars}}
 
@@ -152,24 +160,31 @@ bool {{classname}}::{{setter}}({{classname}}::{{name}}Type &&{{name}})
 {{#isContainer}}
 bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{classname}}::{{name}}ItemType &item)
 {
+    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
     {{#isMap}}{{name}}Type::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(item));
-    const auto [it, success] = {{/isMap}}m_{{name}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}.end(), item{{/isMap}});
+    const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), item{{/isMap}});
     return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
 }
 
 bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{classname}}::{{name}}ItemType &&item)
 {
+    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
     {{#isMap}}{{name}}Type::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(std::move(item)));
-    const auto [it, success] = {{/isMap}}m_{{name}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}.end(), std::move(item){{/isMap}});
+    const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), std::move(item){{/isMap}});
     return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
 }
 
 bool {{classname}}::remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{classname}}::{{name}}ItemType &item{{/isMap}})
 {
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) return false;{{/yes}}{{/is-optional}}
     {{#isMap}}
-    return m_{{name}}.erase(key) == 1;
+    return m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.erase(key) == 1;
     {{/isMap}}{{^isMap}}
-    m_{{name}}.remove(item);
+    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return true;{{/yes}}{{/is-optional}}{{/items}}
+    m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.remove(item);
+    {{<is-optional}}{{$yes}}if (m_{{name}}.value().empty()) m_{{name}}.reset();{{/yes}}{{/is-optional}}
     return true;
     {{/isMap}}
 }
@@ -179,7 +194,8 @@ const std::string &{{classname}}::keyFor{{name}}(const {{classname}}::{{name}}It
 {
     static const std::string s_null;
 
-    for (auto &it : m_{{name}}) {
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) return s_null;{{/yes}}{{/is-optional}}
+    for (auto &it : m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}) {
         if (it.second == item) return it.first;
     }
 
@@ -189,6 +205,6 @@ const std::string &{{classname}}::keyFor{{name}}(const {{classname}}::{{name}}It
 {{/isMap}}
 bool {{classname}}::clear{{name}}()
 {
-    m_{{name}}.clear();
+    m_{{name}}{{<is-optional}}{{$yes}}.reset(){{/yes}}{{$no}}.clear(){{/no}}{{/is-optional}};
     return true;
 }{{/isContainer}}{{/vars}}

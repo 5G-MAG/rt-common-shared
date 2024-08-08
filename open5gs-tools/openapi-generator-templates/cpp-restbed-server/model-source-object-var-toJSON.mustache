@@ -9,9 +9,11 @@ CJson to_json = CJson::newArray();
 {
     auto &fill_array = to_json;
     for(const auto &var : from_value) {
-        const auto &from_value = var;
-        {{#items}}{{>model-source-object-var-toJSON}}{{/items}}
+        {{#items}}{{<is-optional}}{{$yes}}if (var.has_value()) {
+            {{/yes}}{{/is-optional}}const auto &from_value = var{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
+        {{>model-source-object-var-toJSON}}{{/items}}
         fill_array.append(std::move(to_json));
+{{<is-optional}}{{$yes}}        }{{/yes}}{{/is-optional}}
     }
 }
 {{/isArray}}{{#isMap}}
@@ -19,9 +21,11 @@ CJson to_json = CJson::newObject();
 {
     auto &fill_map = to_json;
     for(const auto &var : from_value) {
-        const auto &from_value = var.second;
-        {{#items}}{{>model-source-object-var-toJSON}}{{/items}}
+        {{#items}}{{<is-optional}}{{$yes}}if (var.second.has_value()) {
+            {{/yes}}{{/is-optional}}const auto &from_value = var.second{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
+        {{>model-source-object-var-toJSON}}{{/items}}
         fill_map.set(var.first, std::move(to_json));
+{{<is-optional}}{{$yes}}        }{{/yes}}{{/is-optional}}
     }
 }
 {{/isMap}}{{/isContainer}}{{^isContainer}}{{#isPrimitiveType}}

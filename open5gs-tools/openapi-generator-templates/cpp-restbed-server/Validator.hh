@@ -22,7 +22,9 @@
 #include "core/ogs-memory.h"
 #undef OGS_CORE_INSIDE
 
+#include <optional>
 #include <regex>
+#include <type_traits>
 
 #include "Boundary.hh"
 #include "CJson.hh"
@@ -61,12 +63,18 @@ public:
 
     virtual ~Validator() {};
 
-    virtual bool validate(const value_type& value) const = 0;
+    virtual bool validate(const T& value) const = 0;
 
 protected:
     const char *m_classname;
     const char *m_fieldname;
 };
+
+template <class T>
+struct is_std_optional : std::false_type {};
+
+template <class U>
+struct is_std_optional<std::optional<U> > : std::true_type {};
 
 template <class T>
 class NumberValidator : public Validator<T> {
@@ -128,10 +136,29 @@ public:
     };
 
     virtual bool validate(const value_type &value) const {
+        return _validate(value);
+    }
+
+private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (value.has_value()) {
+            if (m_minimum && m_minimum->isGreaterThan(value.value())) {
+                throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname);
+            }
+            if (m_maximum && m_maximum->isLessThan(value.value())) {
+                throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname);
+            }
+        }
+
+        return true;
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
         if (m_minimum && m_minimum->isGreaterThan(value)) {
             throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname);
         }
-
         if (m_maximum && m_maximum->isLessThan(value)) {
             throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname);
         }
@@ -139,7 +166,6 @@ public:
         return true;
     };
 
-private:
     boundary_type *m_minimum;
     boundary_type *m_maximum;
 };
@@ -216,6 +242,10 @@ public:
         }
         return true;
     };
+    bool validate(const std::optional<std::string> &opt_val) const {
+        if (!opt_val.has_value()) return true;
+        return this->validate(opt_val.value());
+    };
 
 private:
     const char *m_pattern;
@@ -231,8 +261,21 @@ public:
     {};
 
     virtual ~ModelValidator() {};
-    virtual bool validate(const std::shared_ptr<T> &ptr) const { return validate(*ptr); };
-    bool validate(const model_type &value) const { return true; };
+    bool validate(const std::optional<std::shared_ptr<T> > &opt_ptr) const {
+        if (!opt_ptr.has_value()) return true;
+        if (!opt_ptr.value()) return true;
+        return this->validate(*(opt_ptr.value()));
+    };
+    virtual bool validate(const std::shared_ptr<T> &ptr) const {
+        if (!ptr) return false;
+        return this->validate(*ptr);
+    };
+    bool validate(const std::optional<T> &opt_value) const {
+        return (opt_value.has_value() && this->validate(opt_value.value()));
+    };
+    bool validate(const T &value) const {
+        return value.validate();
+    };
 };
 
 template <class T>
@@ -244,6 +287,7 @@ public:
     
     virtual ~NullValidator() {};
     virtual bool validate(const T &value) const { return true; };
+    bool validate(const std::optional<T> &value) const { return true; };
 };
 
 template <class C, class V>
@@ -269,6 +313,11 @@ public:
             }
         }
         return true;
+    };
+
+    bool validate(const std::optional<container_type> &opt_value) const {
+        if (!opt_value.has_value()) return true;
+        return this->validate(opt_value.value());
     };
 
 private:
@@ -298,7 +347,12 @@ public:
             }
         }
         return true;
-    }
+    };
+
+    bool validate(const std::optional<container_type> &opt_value) const {
+        if (!opt_value.has_value()) return true;
+        return this->validate(opt_value.value());
+    };
 
 private:
     item_validator *m_itemValidator;

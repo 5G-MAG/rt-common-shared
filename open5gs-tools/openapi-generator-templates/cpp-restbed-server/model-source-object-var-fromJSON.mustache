@@ -80,5 +80,5 @@
 {{/isDateTime}}{{#isByteArray}}
         member_var = static_cast<_PropertyType>(json_obj);
 {{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
-        member_var.reset(new _PropertyType::element_type(json_obj, as_request));
+        member_var{{<is-optional}}{{$yes}} = _PropertyType::value_type{{/yes}}{{$no}}.reset{{/no}}{{/is-optional}}(new _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type(json_obj, as_request));
 {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isPrimitiveType}}{{/isContainer}}

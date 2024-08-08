@@ -47,6 +47,8 @@ public:
     bool operator!=(Enum val) const { return m_value != val; };
     bool operator!=(const std::string &val) const { return m_strValue != val; };
 
+    bool validate() const { return true; };
+
     {{classname}} &fromString(const std::string &value);
 
     operator Enum() const { return m_value; };
