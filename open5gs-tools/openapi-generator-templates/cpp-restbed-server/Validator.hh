@@ -77,6 +77,18 @@ template <class U>
 struct is_std_optional<std::optional<U> > : std::true_type {};
 
 template <class T>
+struct is_std_shared_ptr : std::false_type {};
+
+template <class U>
+struct is_std_shared_ptr<std::shared_ptr<U> > : std::true_type {};
+
+template <class T>
+struct remove_std_optional { using type = T; };
+
+template <class U>
+struct remove_std_optional<std::optional<U> > { using type = U; };
+
+template <class T>
 class NumberValidator : public Validator<T> {
 public:
     typedef Boundary<T> boundary_type;
@@ -170,10 +182,13 @@ private:
     boundary_type *m_maximum;
 };
 
-class StringValidator : public Validator<std::string> {
+template <class T>
+class StringValidator : public Validator<T> {
 public:
+    typedef typename Validator<T>::value_type value_type;
+
     StringValidator(const char *classname = nullptr, const char *fieldname = nullptr, const char *pattern = nullptr)
-        :Validator<std::string>(classname, fieldname)
+        :Validator<T>(classname, fieldname)
         ,m_pattern(pattern)
         ,m_regex(nullptr)
     {
@@ -186,7 +201,7 @@ public:
     }
 
     StringValidator(const StringValidator &other)
-        :Validator<std::string>(other)
+        :Validator<T>(other)
         ,m_pattern(other.m_pattern)
         ,m_regex(nullptr)
     {
@@ -199,7 +214,7 @@ public:
     };
 
     StringValidator(StringValidator &&other)
-        :Validator<std::string>(std::move(other))
+        :Validator<T>(std::move(other))
         ,m_pattern(other.m_pattern)
         ,m_regex(other.m_regex)
     {
@@ -208,7 +223,7 @@ public:
 
     StringValidator &operator=(const StringValidator &other)
     {
-        this->Validator::operator=(other);
+        this->Validator<T>::operator=(other);
         m_pattern = other.m_pattern;
         if (m_regex) {
             delete m_regex;
@@ -224,7 +239,7 @@ public:
     };
     StringValidator &operator=(StringValidator &&other)
     {
-        this->Validator::operator=(std::move(other));
+        this->Validator<T>::operator=(std::move(other));
         m_pattern = other.m_pattern;
         if (m_regex) delete m_regex;
         m_regex = other.m_regex;
@@ -236,44 +251,72 @@ public:
         if (m_regex) delete m_regex;
     };
 
-    virtual bool validate(const std::string &value) const {
-        if (m_regex && !std::regex_match(value, *m_regex)) {
-            throw ModelException("String did not match the correct format", m_classname, m_fieldname);
-        }
-        return true;
-    };
-    bool validate(const std::optional<std::string> &opt_val) const {
-        if (!opt_val.has_value()) return true;
-        return this->validate(opt_val.value());
+    virtual bool validate(const value_type &value) const {
+        return _validate(value);
     };
 
 private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (value.has_value()) {
+            if (m_regex && !std::regex_match(value.value(), *m_regex)) {
+                throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname);
+            }
+        }
+
+        return true;
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (m_regex && !std::regex_match(value, *m_regex)) {
+            throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname);
+        }
+
+        return true;
+    };
+
     const char *m_pattern;
     std::regex *m_regex;
 };
 
 template<class T>
-class ModelValidator : public Validator<std::shared_ptr<T> > {
+class ModelValidator : public Validator<T> {
 public:
     typedef T model_type;
+    typedef typename Validator<T>::value_type value_type;
+
     ModelValidator(const char *classname = nullptr, const char *fieldname = nullptr)
-        :Validator<std::shared_ptr<T> >(classname, fieldname)
+        :Validator<T>(classname, fieldname)
     {};
 
     virtual ~ModelValidator() {};
-    bool validate(const std::optional<std::shared_ptr<T> > &opt_ptr) const {
+    virtual bool validate(const T &value) const {
+        return _validate(value);
+    }
+
+private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value && is_std_shared_ptr<typename remove_std_optional<U>::type>::value, bool>::type = true>
+    bool _validate(const U &opt_ptr) const {
         if (!opt_ptr.has_value()) return true;
-        if (!opt_ptr.value()) return true;
-        return this->validate(*(opt_ptr.value()));
+        if (!opt_ptr.value()) return false;
+        return opt_ptr.value()->validate();
     };
-    virtual bool validate(const std::shared_ptr<T> &ptr) const {
+
+    template <typename U, typename std::enable_if<is_std_optional<U>::value && !is_std_shared_ptr<typename remove_std_optional<U>::type>::value, bool>::type = true>
+    bool _validate(const U &opt_value) const {
+        if (!opt_value.has_value()) return true;
+        return opt_value.value().validate();
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value && is_std_shared_ptr<U>::value, bool>::type = true>
+    bool _validate(const U &ptr) const {
         if (!ptr) return false;
-        return this->validate(*ptr);
+        return ptr->validate();
     };
-    bool validate(const std::optional<T> &opt_value) const {
-        return (opt_value.has_value() && this->validate(opt_value.value()));
-    };
-    bool validate(const T &value) const {
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value && !is_std_shared_ptr<U>::value, bool>::type = true>
+    bool _validate(const T &value) const {
         return value.validate();
     };
 };
@@ -287,7 +330,6 @@ public:
     
     virtual ~NullValidator() {};
     virtual bool validate(const T &value) const { return true; };
-    bool validate(const std::optional<T> &value) const { return true; };
 };
 
 template <class C, class V>
@@ -307,6 +349,24 @@ public:
     };
 
     virtual bool validate(const container_type &value) const {
+        return _validate(value);
+    };
+
+private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (value.has_value()) {
+            if (m_itemValidator) {
+                for (auto &var : value.value()) {
+                    m_itemValidator->validate(var);
+                }
+            }
+        }
+        return true;
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
         if (m_itemValidator) {
             for (auto &var : value) {
                 m_itemValidator->validate(var);
@@ -315,9 +375,32 @@ public:
         return true;
     };
 
-    bool validate(const std::optional<container_type> &opt_value) const {
-        if (!opt_value.has_value()) return true;
-        return this->validate(opt_value.value());
+    item_validator *m_itemValidator;
+};
+
+template <class V>
+class OptionalMapValidator : public Validator<std::optional<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > > > {
+public:
+    typedef std::optional<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > > container_type;
+    typedef V item_validator;
+    typedef typename V::value_type item_type;
+
+    OptionalMapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr)
+        :Validator<container_type>(classname, fieldname)
+        ,m_itemValidator(item_validator)
+    {};
+
+    virtual ~OptionalMapValidator() {
+        if (m_itemValidator) delete m_itemValidator;
+    };
+
+    virtual bool validate(const container_type &value) const {
+        if (m_itemValidator && value.has_value()) {
+            for (auto &var : value.value()) {
+                m_itemValidator->validate(var.second);
+            }
+        }
+        return true;
     };
 
 private:
@@ -349,17 +432,15 @@ public:
         return true;
     };
 
-    bool validate(const std::optional<container_type> &opt_value) const {
-        if (!opt_value.has_value()) return true;
-        return this->validate(opt_value.value());
-    };
-
 private:
     item_validator *m_itemValidator;
 };
 
 template <class V>
 using ListValidator = ContainerValidator<std::list<typename V::value_type, OgsAllocator<typename V::value_type> >, V>;
+
+template <class V>
+using OptionalListValidator = ContainerValidator<std::optional<std::list<typename V::value_type, OgsAllocator<typename V::value_type> > >, V>;
 
 } /* end namespace */
 

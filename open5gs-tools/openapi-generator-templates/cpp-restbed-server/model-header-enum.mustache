@@ -10,7 +10,7 @@ public:
 {{#values}}        VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}},{{/-last}}
 {{/values}}
     } Enum;
-    typedef fiveg_mag_reftools::StringValidator Validator;
+    typedef fiveg_mag_reftools::StringValidator<std::string> Validator;
 
 {{#values}}
     static constexpr const char * const STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}} = "{{{.}}}";
@@ -45,7 +45,7 @@ public:
     bool operator!=(Enum val) const { return m_value != val; };
     bool operator!=(const std::string &strval) const { return getString() != strval; };
 
-    bool validate() const { return true; };
+    bool validate() const { return m_validator.validate(getString()); };
 
     {{classname}} &fromString(const std::string &value);
 

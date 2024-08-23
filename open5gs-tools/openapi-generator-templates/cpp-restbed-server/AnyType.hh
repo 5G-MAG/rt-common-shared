@@ -17,10 +17,11 @@
 #define _OPENAPI_ANY_TYPE_HH_
 
 #include "CJson.hh"
+#include "ModelObject.hh"
 
 namespace fiveg_mag_reftools {
 
-class AnyType {
+class AnyType : public ModelObject {
 public:
     AnyType() : m_val(nullptr) {};
     AnyType(const AnyType &other) : m_val(nullptr) {
@@ -71,6 +72,8 @@ public:
         }
         m_val = new CJson(json);
     };
+
+    virtual bool validate() const { return true; };
 
 private:
     CJson *m_val;

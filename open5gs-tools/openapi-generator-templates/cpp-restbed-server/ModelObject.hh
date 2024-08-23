@@ -34,6 +34,8 @@ public:
 
     virtual CJson toJSON(bool as_request = false) const = 0;
     virtual void fromJSON(const CJson &json, bool as_request = false) = 0;
+
+    virtual bool validate() const = 0;
 };
 
 } /* end namespace */

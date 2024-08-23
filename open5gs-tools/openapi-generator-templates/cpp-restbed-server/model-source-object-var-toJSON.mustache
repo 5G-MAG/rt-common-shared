@@ -11,9 +11,9 @@ CJson to_json = CJson::newArray();
     for(const auto &var : from_value) {
         {{#items}}{{<is-optional}}{{$yes}}if (var.has_value()) {
             {{/yes}}{{/is-optional}}const auto &from_value = var{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
-        {{>model-source-object-var-toJSON}}{{/items}}
-        fill_array.append(std::move(to_json));
-{{<is-optional}}{{$yes}}        }{{/yes}}{{/is-optional}}
+        {{>model-source-object-var-toJSON}}
+        fill_array.append(std::move(to_json));{{<is-optional}}{{$yes}}
+        }{{/yes}}{{/is-optional}}{{/items}}
     }
 }
 {{/isArray}}{{#isMap}}

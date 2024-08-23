@@ -2,21 +2,21 @@ bool {{classname}}::validate() const
 {
 {{^composedSchemas}}{{#pattern}}
     {   
-        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
         validator.validate(*this);
     }
 {{/pattern}}
     return true;
 {{/composedSchemas}}{{#composedSchemas}}{{#allOf.0.name}}{{#allOf}}{{#pattern}}
     {
-        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
         validator.validate(*this);
     }
 {{/pattern}}{{/allOf}}
     return true;
 {{/allOf.0.name}}{{#anyOf.0.name}}{{#anyOf}}{{#pattern}}
     try {
-        static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+        static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
         validator.validate(*this);
         return true;
     } catch (ModelException &ex) {
@@ -28,7 +28,7 @@ bool {{classname}}::validate() const
 {{#oneOf}}
     if (count < 2) {
         try {
-            static StringValidator validator("{{{classname}}}", nullptr, "{{pattern}}");
+            static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
             validator.validate(*this);
             count++;
         } catch (ModelException &ex) {

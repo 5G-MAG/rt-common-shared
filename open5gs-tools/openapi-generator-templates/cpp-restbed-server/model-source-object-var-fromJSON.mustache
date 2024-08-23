@@ -2,21 +2,22 @@
         if (!json_obj.isArray()) {
             throw ModelException("Field \"" _FIELD_NAME "\" is not an array", "{{classname}}", obj_key);
         }
-        _PropertyType field_list;
-        _PropertyType::value_type element;
+        _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}} field_list;
+        _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type element;
         for (auto var : json_obj) {
+	    typedef _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}} _ArrayType;
+            typedef _ArrayType::value_type _ElementType;
 {{#items}}{{#isPrimitiveType}}
-            element = static_cast<_PropertyType::value_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isPrimitiveType}}{{^isPrimitiveType}}{{#isString}}
-            element = static_cast<_PropertyType::value_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isString}}{{#isDate}}
-            element = static_cast<_PropertyType::value_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isDate}}{{#isDateTime}}
-            element = static_cast<_PropertyType::value_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isDateTime}}{{#isByteArray}}
-            element = static_cast<_PropertyType::value_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}{{#isContainer}}
-            typedef _PropertyType::value_type _ElementType;
             {
                 typedef _ElementType _PropertyType;
                 auto &json_obj = var;
@@ -25,7 +26,8 @@
             }
 {{/isContainer}}{{^isContainer}}
             try {
-                element.reset(new _PropertyType::value_type::element_type(var, as_request));
+		{{<is-optional}}{{$yes}}element = typename _ElementType::value_type(nullptr);{{/yes}}{{/is-optional}}
+                element{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.reset(new typename _ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type(var, as_request));
             } catch (ModelException &ex) {
                 throw ModelException(ex.what(), "{{classname}}", std::string(obj_key) + "." + ex.parameter);
             }
@@ -38,21 +40,22 @@
             throw ModelException("Field \"" _FIELD_NAME "\" is not an object", "{{classname}}", obj_key);
         }
 
-        _PropertyType field_map;
-        _PropertyType::mapped_type element;
+        _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}} field_map;
+        _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::mapped_type element;
         for (auto var : json_obj) {
+	    typedef _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}} _MapType;
+	    typedef _MapType::mapped_type _ElementType;
 {{#items}}{{#isPrimitiveType}}
-            element = static_cast<_PropertyType::mapped_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isPrimitiveType}}{{^isPrimitiveType}}{{#isString}}
-            element = static_cast<_PropertyType::mapped_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isString}}{{#isDate}}
-            element = static_cast<_PropertyType::mapped_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isDate}}{{#isDateTime}}
-            element = static_cast<_PropertyType::mapped_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isDateTime}}{{#isByteArray}}
-            element = static_cast<_PropertyType::mapped_type>(var);
+            element = static_cast<_ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(var);
 {{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}{{#isContainer}}
-            typedef _PropertyType::mapped_type _ElementType;
             {
                 typedef _ElementType _PropertyType;
                 auto &json_obj = var;
@@ -61,7 +64,8 @@
             }
 {{/isContainer}}{{^isContainer}}
             try {
-                element.reset(new _PropertyType::value_type::element_type(var, as_request));
+		{{<is-optional}}{{$yes}}element = typename _ElementType::value_type(nullptr);{{/yes}}{{/is-optional}}
+                element{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.reset(new typename _ElementType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type(var, as_request));
             } catch (ModelException &ex) {
                 throw ModelException(ex.what(), "{{classname}}", std::string(obj_key) + "." + ex.parameter);
             }
@@ -70,15 +74,15 @@
         }
         member_var = field_map;
 {{/isMap}}{{/isContainer}}{{^isContainer}}{{#isPrimitiveType}}
-        member_var = static_cast<_PropertyType>(json_obj);
+        member_var = static_cast<_PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(json_obj);
 {{/isPrimitiveType}}{{^isPrimitiveType}}{{#isString}}
-        member_var = static_cast<_PropertyType>(json_obj);
+        member_var = static_cast<_PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(json_obj);
 {{/isString}}{{#isDate}}
-        member_var = static_cast<_PropertyType>(json_obj);
+        member_var = static_cast<_PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(json_obj);
 {{/isDate}}{{#isDateTime}}
-        member_var = static_cast<_PropertyType>(json_obj);
+        member_var = static_cast<_PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(json_obj);
 {{/isDateTime}}{{#isByteArray}}
-        member_var = static_cast<_PropertyType>(json_obj);
+        member_var = static_cast<_PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}>(json_obj);
 {{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
         member_var{{<is-optional}}{{$yes}} = _PropertyType::value_type{{/yes}}{{$no}}.reset{{/no}}{{/is-optional}}(new _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type(json_obj, as_request));
 {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isPrimitiveType}}{{/isContainer}}

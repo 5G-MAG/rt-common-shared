@@ -131,7 +131,7 @@ bool {{classname}}::operator==(const {{classname}} &other) const
 
 bool {{classname}}::validate() const
 {
-    return {{#vars}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} &&{{/-last}}{{/vars}};
+    return {{^hasVars}}true{{/hasVars}}{{#vars}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/vars}};
 }
 {{#vars}}
 
@@ -162,7 +162,7 @@ bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}cons
 {
     {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
     {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
-    {{#isMap}}{{name}}Type::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(item));
+    {{#isMap}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(item));
     const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), item{{/isMap}});
     return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
 }
@@ -171,7 +171,7 @@ bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{cl
 {
     {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
     {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
-    {{#isMap}}{{name}}Type::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(std::move(item)));
+    {{#isMap}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(std::move(item)));
     const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), std::move(item){{/isMap}});
     return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
 }
