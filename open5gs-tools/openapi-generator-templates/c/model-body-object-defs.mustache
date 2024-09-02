@@ -2,6 +2,7 @@
 #define _OPENAPI_DATE_TIME_REGEX "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:.\\d+)?(?:Z|[-+]\\d{2}:\\d{2})$"
 #define _OPENAPI_URI_REGEX "^(?:[^:/?#]+:)?(?://[^/?#]*)?(?:[^?#]*)(?:\\?[^#]*)?(?:#.*)?$"
 #define _OPENAPI_UUID_REGEX "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+
 {{classname}}_t *{{classname}}_create(
 {{^hasVars}}
     {{#isString}}
@@ -766,7 +767,7 @@ end:
     return item;
 }
 
-{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err)
+{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err, char **{{classname}}_err_parameter)
 {
     {{classname}}_t *{{classname}}_local_var = NULL;
 
@@ -835,6 +836,7 @@ end:
 {{/vars}}
 
     if ({{classname}}_parse_err) *{{classname}}_parse_err = NULL;
+    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = NULL;
 
 {{^hasVars}}
     {{#isString}}
@@ -855,7 +857,7 @@ end:
     if ({{{classname}}}_regex) {
         if (!OpenAPI_regex_match({{{classname}}}_regex, value)) {
             ogs_error("{{classname}}_parseFromJSON() failed, did not match pattern");
-            if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}}";
+            if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}} is not formatted correctly";
             goto end;
         }
     }   
@@ -889,6 +891,7 @@ end:
             if (!OpenAPI_regex_match({{name}}_regex, {{name}})) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{name}}] did not match pattern");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "{{title}}.{{baseName}} did not match validation pattern";
+		if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
         }
@@ -944,12 +947,14 @@ end:
     if (!cJSON_IsString({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not an enumeration string";
+	if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
     {{name}}Variable = {{classname}}_{{#lambda.uppercase}}{{baseName}}{{/lambda.uppercase}}_FromString({{{name}}}->valuestring);
     if ({{name}}Variable < 0) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" value not recognised";
+	if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
             {{/isEnum}}
@@ -959,12 +964,14 @@ end:
     if (!cJSON_IsNumber({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a number";
+	if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
     {{name}}Ptr = ogs_calloc(1, sizeof({{dataType}}));
     if (!{{name}}Ptr) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to allocate memory for \"{{{baseName}}}\"";
+	if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
     *{{name}}Ptr = {{{name}}}->valuedouble;
@@ -972,6 +979,7 @@ end:
     if (*{{name}}Ptr <{{#composedSchemas.allOf.0.exclusiveMinimum}}={{/composedSchemas.allOf.0.exclusiveMinimum}} {{composedSchemas.allOf.0.minimum}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Out of range, number less than {{#composedSchemas.allOf.0.exclusiveMinimum}}or equal to {{/composedSchemas.allOf.0.exclusiveMinimum}}{{composedSchemas.allOf.0.minimum}}");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" value is less than {{#composedSchemas.allOf.0.exclusiveMinimum}}or equal to {{/composedSchemas.allOf.0.exclusiveMinimum}}{{composedSchemas.allOf.0.minimum}} [range {{#composedSchemas.allOf.0.exclusiveMinimum}}({{/composedSchemas.allOf.0.exclusiveMinimum}}{{^composedSchemas.allOf.0.exclusiveMinimum}}[{{/composedSchemas.allOf.0.exclusiveMinimum}}{{composedSchemas.allOf.0.minimum}}..{{#composedSchemas.allOf.0.maximum}}{{composedSchemas.allOf.0.maximum}}{{#composedSchemas.allOf.0.exclusiveMaximum}}){{/composedSchemas.allOf.0.exclusiveMaximum}}{{^composedSchemas.allOf.0.exclusiveMaximum}}]{{/composedSchemas.allOf.0.exclusiveMaximum}}{{/composedSchemas.allOf.0.maximum}}{{^composedSchemas.allOf.0.maximum}}inf]{{/composedSchemas.allOf.0.maximum}}]";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                     {{/composedSchemas.allOf.0.minimum}}
@@ -979,6 +987,7 @@ end:
     if (*{{name}}Ptr <{{#exclusiveMinimum}}={{/exclusiveMinimum}} {{minimum}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Out of range, number less than {{#exclusiveMinimum}}or equal to {{/exclusiveMinimum}}{{minimum}}");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" value is less than {{#exclusiveMinimum}}or equal to {{/exclusiveMinimum}}{{minimum}} [range {{#exclusiveMinimum}}({{/exclusiveMinimum}}{{^exclusiveMinimum}}[{{/exclusiveMinimum}}{{minimum}}..{{#maximum}}{{maximum}}{{#exclusiveMaximum}}){{/exclusiveMaximum}}{{^exclusiveMaximum}}]{{/exclusiveMaximum}}{{/maximum}}{{^maximum}}inf]{{/maximum}}]";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                     {{/minimum}}
@@ -986,6 +995,7 @@ end:
     if (*{{name}}Ptr >{{#composedSchemas.allOf.0.exclusiveMaximum}}={{/composedSchemas.allOf.0.exclusiveMaximum}} {{composedSchemas.allOf.0.maximum}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Out of range, number greater than {{#composedSchemas.allOf.0.exclusiveMaximum}}or equal to {{/composedSchemas.allOf.0.exclusiveMaximum}}{{composedSchemas.allOf.0.maximum}}");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" value is greater than {{#composedSchemas.allOf.0.exclusiveMaximum}}or equal to {{/composedSchemas.allOf.0.exclusiveMaximum}}{{composedSchemas.allOf.0.maximum}} [range {{#composedSchemas.allOf.0.minimum}}{{#composedSchemas.allOf.0.exclusiveMinimum}}({{/composedSchemas.allOf.0.exclusiveMinimum}}{{^composedSchemas.allOf.0.exclusiveMinimum}}[{{/composedSchemas.allOf.0.exclusiveMinimum}}{{composedSchemas.allOf.0.minimum}}{{/composedSchemas.allOf.0.minimum}}{{^composedSchemas.allOf.0.minimum}}[-inf{{/composedSchemas.allOf.0.minimum}}..{{composedSchemas.allOf.0.maximum}}{{#composedSchemas.allOf.0.exclusiveMaximum}}){{/composedSchemas.allOf.0.exclusiveMaximum}}{{^composedSchemas.allOf.0.exclusiveMaximum}}]{{/composedSchemas.allOf.0.exclusiveMaximum}}]";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                     {{/composedSchemas.allOf.0.maximum}}
@@ -993,6 +1003,7 @@ end:
     if (*{{name}}Ptr >{{#exclusiveMaximum}}={{/exclusiveMaximum}} {{maximum}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Out of range, number greater than {{#exclusiveMaximum}}or equal to {{/exclusiveMaximum}}{{maximum}}");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" value is greater than {{#exclusiveMaximum}}or equal to {{/exclusiveMaximum}}{{maximum}} [range {{#minimum}}{{#exclusiveMinimum}}({{/exclusiveMinimum}}{{^exclusiveMinimum}}[{{/exclusiveMinimum}}{{minimum}}{{/minimum}}{{^minimum}}[-inf{{/minimum}}..{{maximum}}{{#exclusiveMaximum}}){{/exclusiveMaximum}}{{^exclusiveMaximum}}]{{/exclusiveMaximum}}]";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                     {{/maximum}}
@@ -1001,6 +1012,7 @@ end:
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                         {{^required}}
@@ -1016,6 +1028,7 @@ end:
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
 
@@ -1030,6 +1043,7 @@ end:
     if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: pattern does not match");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match the validation pattern";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                     {{/pattern}}
@@ -1038,6 +1052,7 @@ end:
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
 
@@ -1047,6 +1062,7 @@ end:
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
 
@@ -1056,12 +1072,14 @@ end:
         if (!{{{name}}}_regex) {
             ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile date regex");
             if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the date validation regex for \"{{{baseName}}}\"";
+            if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
             goto end;
         }
     }
     if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match date format");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match date format";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                 {{/isDate}}
@@ -1069,6 +1087,7 @@ end:
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
 
@@ -1078,12 +1097,14 @@ end:
         if (!{{{name}}}_regex) {
             ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile date-time regex");
             if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the date-time validation regex for \"{{{baseName}}}\"";
+            if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
             goto end;
         }
     }
     if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match date-time format");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match date-time format";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                 {{/isDateTime}}
@@ -1091,6 +1112,7 @@ end:
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
 
@@ -1100,12 +1122,14 @@ end:
         if (!{{{name}}}_regex) {
             ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile uri regex");
             if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the uri validation regex for \"{{{baseName}}}\"";
+            if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
             goto end;
         }
     }
     if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match uri format");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match uri format";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                 {{/isUri}}
@@ -1113,6 +1137,7 @@ end:
     if (!cJSON_IsString({{{name}}}){{^required}} && !cJSON_IsNull({{{name}}}){{/required}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string{{^required}} or 'null'{{/required}}";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
 
@@ -1122,12 +1147,14 @@ end:
         if (!{{{name}}}_regex) {
             ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile uuid regex");
             if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the uuid validation regex for \"{{{baseName}}}\"";
+            if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
             goto end;
         }
     }
     if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match uuid format"); 
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match uuid format";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                 {{/isUuid}}
@@ -1135,12 +1162,14 @@ end:
     if (!cJSON_IsNumber({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a number";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                   {{#minimum}}
     if (({{dataType}})({{{name}}}->valuedouble) <{{#exclusiveMinimum}}={{/exclusiveMinimum}} {{minimum}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Out of range, number less than {{#exclusiveMinimum}}or equal to {{/exclusiveMinimum}}{{minimum}}");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" value is less than {{#exclusiveMinimum}}or equal to {{/exclusiveMinimum}}{{minimum}} [range {{#exclusiveMinimum}}({{/exclusiveMinimum}}{{^exclusiveMinimum}}[{{/exclusiveMinimum}}{{minimum}}..{{#maximum}}{{maximum}}{{#exclusiveMaximum}}){{/exclusiveMaximum}}{{^exclusiveMaximum}}]{{/exclusiveMaximum}}{{/maximum}}{{^maximum}}inf]{{/maximum}}]";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                   {{/minimum}}
@@ -1148,6 +1177,7 @@ end:
     if (({{dataType}})({{{name}}}->valuedouble) >{{#exclusiveMaximum}}={{/exclusiveMaximum}} {{maximum}}) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Out of range, number greater than {{#exclusiveMaximum}}or equal to {{/exclusiveMaximum}}{{maximum}}");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" value is greater than {{#exclusiveMaximum}}or equal to {{/exclusiveMaximum}}{{maximum}} [range {{#minimum}}{{#exclusiveMinimum}}({{/exclusiveMinimum}}{{^exclusiveMinimum}}[{{/exclusiveMinimum}}{{minimum}}{{/minimum}}{{^minimum}}[-inf{{/minimum}}..{{maximum}}{{#exclusiveMaximum}}){{/exclusiveMaximum}}{{^exclusiveMaximum}}]{{/exclusiveMaximum}}]";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                   {{/maximum}}
@@ -1156,6 +1186,7 @@ end:
     if (!cJSON_IsBool({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a boolean";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
                 {{/isBoolean}}
@@ -1166,12 +1197,14 @@ end:
     if (!cJSON_IsString({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
     decoded_str_{{{name}}}->data = OpenAPI_base64decode({{{name}}}->valuestring, strlen({{{name}}}->valuestring), &decoded_str_{{{name}}}->len);
     if (!decoded_str_{{{name}}}->data) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not base 64 encoded";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
             {{/isBinary}}
@@ -1179,6 +1212,7 @@ end:
     if (!cJSON_IsString({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a date string";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
             {{/isDate}}
@@ -1186,6 +1220,7 @@ end:
     if (!cJSON_IsString({{{name}}}) && !cJSON_IsNull({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a date-time string";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
             {{/isDateTime}}
@@ -1194,21 +1229,32 @@ end:
             {{#isEnum}}
     if (!cJSON_IsString({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
-        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not an enumeration string"; 
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not an enumeration string";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
     {{name}}Variable = {{complexType}}_FromString({{{name}}}->valuestring);
     if ({{name}}Variable < 0) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" enumerated value not recognised";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
             {{/isEnum}}
             {{^isEnum}}
                 {{#isModel}}
-    {{{name}}}_local_nonprim = {{complexType}}{{#isFreeFormObject}}object{{/isFreeFormObject}}_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err);
+    {{{name}}}_local_nonprim = {{complexType}}{{#isFreeFormObject}}object{{/isFreeFormObject}}_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
     if (!{{{name}}}_local_nonprim) {
         ogs_error("{{complexType}}{{#isFreeFormObject}}object{{/isFreeFormObject}}_parseFromJSON failed [{{{name}}}]");
+        if ({{classname}}_err_parameter) {
+	    if (*{{classname}}_err_parameter) {
+                char *param = ogs_msprintf("{{baseName}}.%s", *{{classname}}_err_parameter);
+		ogs_free(*{{classname}}_err_parameter);
+		*{{classname}}_err_parameter = param;
+	    } else {
+		*{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+	    }
+        }
         /* {{classname}}_parse_err already filled in by sub-parser */
         goto end;
     }
@@ -1218,15 +1264,32 @@ end:
     if (!cJSON_IsString({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string";
+	if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
         goto end;
     }
 
-    /* TODO: check string is UUID format */
+    static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+    if (!{{{name}}}_regex) {
+        {{{name}}}_regex = OpenAPI_regex_register_named("uuid",_OPENAPI_UUID_REGEX);
+        if (!{{{name}}}_regex) {
+            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile uuid regex");
+            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the uuid validation regex for \"{{{baseName}}}\"";
+            if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
+            goto end;
+        }
+    }
+    if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}->valuestring)) {
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: does not match uuid format");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" does not match uuid format";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
+        goto end;
+    }
                     {{/isUuid}}
                     {{#isEmail}}
     if (!cJSON_IsString({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a string";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
         goto end;
     }
 
@@ -1236,12 +1299,13 @@ end:
     if (!cJSON_IsObject({{{name}}})) {
         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not an object";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
         goto end;
     }
-    {{{name}}}_local_object = OpenAPI_object_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err);
+    {{{name}}}_local_object = OpenAPI_object_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
                     {{/isFreeFormObject}}
                     {{#isAnyType}}
-    {{{name}}}_local_object = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err);
+    {{{name}}}_local_object = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON({{{name}}}, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
                     {{/isAnyType}}
                 {{/isModel}}
             {{/isEnum}}
@@ -1253,6 +1317,7 @@ end:
         if (!cJSON_IsArray({{{name}}})) {
             ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
             if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not an array";
+            if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
             goto end;
         }
 
@@ -1264,12 +1329,14 @@ end:
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not an enumeration string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
             {{{complexType}}}Value = {{{complexType}}}_FromString({{{name}}}_local->valuestring);
             if ({{{complexType}}}Value < 0) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a recognised enumeration value";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
             OpenAPI_list_add({{{name}}}List, (void *){{{complexType}}}Value);
@@ -1281,6 +1348,7 @@ end:
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
                             {{#pattern}}
@@ -1294,6 +1362,7 @@ end:
             if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: pattern does not match");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element does not match string validation pattern";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
                             {{/pattern}}
@@ -1303,6 +1372,7 @@ end:
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
             /* TODO: check that byte array string is base64 (and decode??) */
@@ -1312,6 +1382,7 @@ end:
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
 
@@ -1321,12 +1392,14 @@ end:
 		if (!{{{name}}}_regex) {
 		    ogs_error("{{classname}}_parseFromJSON(): Bad date format regex, please fix");
 		    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile date regex for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
 		    goto end;
 		}
             }
             if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a date string");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a date string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
                         {{/isDate}}
@@ -1334,6 +1407,7 @@ end:
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
 
@@ -1343,13 +1417,14 @@ end:
                 if (!{{{name}}}_regex) {
                     ogs_error("{{classname}}_parseFromJSON(): Bad date-time format regex, please fix");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile date-time regex for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
             }
             if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a date-time string");
-                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a date-time string
-";
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a date-time string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
                         {{/isDateTime}}
@@ -1357,6 +1432,7 @@ end:
             if (!cJSON_IsNumber({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a number";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
             {
@@ -1364,6 +1440,7 @@ end:
                 if (!localDouble) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to allocate memory for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 *localDouble = {{{name}}}_local->valuedouble;
@@ -1374,6 +1451,7 @@ end:
             if (!cJSON_IsBool({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a boolean";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
             {
@@ -1381,6 +1459,7 @@ end:
                 if (!localInt) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to allocate memory for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 *localInt = {{{name}}}_local->valueint;
@@ -1393,12 +1472,22 @@ end:
             if (!cJSON_IsObject({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not an object";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
-            {{complexType}}_t *{{{name}}}Item = {{complexType}}_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err);
+            {{complexType}}_t *{{{name}}}Item = {{complexType}}_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
             if (!{{{name}}}Item) {
                 ogs_error("No {{{name}}}Item");
                 /* {{classname}}_parse_err given by sub-parser */
+                if ({{classname}}_err_parameter) {
+                    if (*{{classname}}_err_parameter) {
+                        char *param = ogs_msprintf("{{baseName}}.%s", *{{classname}}_err_parameter);
+			ogs_free(*{{classname}}_err_parameter);
+			*{{classname}}_err_parameter = param;
+		    } else {
+			*{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    }
+                }
                 goto end;
             }
             OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
@@ -1408,6 +1497,7 @@ end:
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
             OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
@@ -1416,6 +1506,7 @@ end:
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
             OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
@@ -1424,21 +1515,40 @@ end:
             if (!cJSON_IsObject({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not an object";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
-            OpenAPI_object_t *{{{name}}}Item = OpenAPI_object_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err);
+            OpenAPI_object_t *{{{name}}}Item = OpenAPI_object_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
             if (!{{{name}}}Item) {
                 ogs_error("No {{{name}}}Item");
                 /* {{classname}}_parse_err given by sub-parser */
+		if ({{classname}}_err_parameter) {
+                    if (*{{classname}}_err_parameter) {
+                        char *param = ogs_msprintf("{{baseName}}.%s", *{{classname}}_err_parameter);
+			ogs_free(*{{classname}}_err_parameter);
+			*{{classname}}_err_parameter = param;
+		    } else {
+			*{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    }
+                }
                 goto end;
             }
             OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
                             {{/isFreeFormObject}}
                             {{#isAnyType}}
-            {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{{name}}}Item = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err);
+            {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{{name}}}Item = {{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON({{{name}}}_local, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
             if (!{{{name}}}Item) {
                 ogs_error("No {{{name}}}Item");
                 /* {{classname}}_parse_err given by sub-parser */
+                if ({{classname}}_err_parameter) {
+                    if (*{{classname}}_err_parameter) {
+                        char *param = ogs_msprintf("{{baseName}}.%s", *{{classname}}_err_parameter);
+                        ogs_free(*{{classname}}_err_parameter);
+                        *{{classname}}_err_parameter = param;
+                    } else {
+                        *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    }
+                }
                 goto end;
             }
             OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
@@ -1454,6 +1564,7 @@ end:
         if (!cJSON_IsObject({{{name}}}) && !cJSON_IsNull({{{name}}})) {
             ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
             if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not an object or 'null'";
+            if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
             goto end;
         }
         if (cJSON_IsObject({{{name}}})) {
@@ -1466,12 +1577,14 @@ end:
                 if (!cJSON_IsString(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" is not a map of enumeration strings";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 {{{complexType}}}Value = {{{complexType}}}_FromString(localMapObject->string);
                 if ({{{complexType}}}Value < 0) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map contains unrecognised enumeration values";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), (void *){{{complexType}}}Value);
@@ -1483,6 +1596,7 @@ end:
                 if (!cJSON_IsString(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                             {{#items.pattern}}
@@ -1496,6 +1610,7 @@ end:
                 if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: pattern does not match");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value does not match string validation pattern";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                             {{/items.pattern}}
@@ -1505,6 +1620,7 @@ end:
                 if (!cJSON_IsString(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), ogs_strdup(localMapObject->valuestring));
@@ -1513,6 +1629,7 @@ end:
                 if (!cJSON_IsString(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 static OpenAPI_regex_t *localMapValueRegex = NULL;
@@ -1521,12 +1638,14 @@ end:
                     if (!localMapValueRegex) {
                         ogs_error("{{classname}}_parseFromJSON(): Unable to compile date validation regex for [{{{name}}}]");
                         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to initialise date validation for \"{{{baseName}}}\" map value";
+                        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                         goto end;
                     }
                 }
                 if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: map value is not a date string");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a date string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                         {{/items.isDate}}
@@ -1534,6 +1653,7 @@ end:
                 if (!cJSON_IsString(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 static OpenAPI_regex_t *localMapValueRegex = NULL;
@@ -1542,12 +1662,14 @@ end:
                     if (!localMapValueRegex) {
                         ogs_error("{{classname}}_parseFromJSON(): Unable to compile date-time validation regex for [{{{name}}}]");
                         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to initialise date-time validation for \"{{{baseName}}}\" map value";
+                        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                         goto end;
                     }
                 }
                 if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: map value is not a date-time string");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a date-time string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                         {{/items.isDateTime}}
@@ -1555,6 +1677,7 @@ end:
                 if (!cJSON_IsNumber(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a number";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 {
@@ -1562,6 +1685,7 @@ end:
                     if (!localDouble) {
                         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to allocate memory for \"{{{baseName}}}\" map element";
+                        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                         goto end;
                     }
                     *localDouble = localMapObject->valuedouble;
@@ -1572,6 +1696,7 @@ end:
                 if (!cJSON_IsBool(localMapObject)) {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a boolean";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                 {
@@ -1579,6 +1704,7 @@ end:
                     if (!localInt) {
                         ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to allocate memory for \"{{{baseName}}}\" map element";
+                        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                         goto end;
                     }
                     *localInt = localMapObject->valueint;
@@ -1589,12 +1715,13 @@ end:
                     {{^items.isPrimitiveType}}
                 if (cJSON_IsObject(localMapObject)) {
                     localMapKeyPair = OpenAPI_map_create(
-                        ogs_strdup(localMapObject->string), {{items.complexType}}_parseFromJSON(localMapObject, {{classname}}_as_request, {{classname}}_parse_err));
+                        ogs_strdup(localMapObject->string), {{items.complexType}}_parseFromJSON(localMapObject, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter));
                 } else if (cJSON_IsNull(localMapObject)) {
                     localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), NULL);
                 } else {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}.{{{items.name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}/{{{items.baseName}}}\" map value is not an object or 'null'";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                     {{/items.isPrimitiveType}}
@@ -1609,8 +1736,17 @@ end:
 #error "Not implemented yet"
                         {{/items.items.isPrimativeType}}
                         {{^items.items.isPrimativeType}}
-                        {{items.items.dataType}}_t *node_data = {{items.items.dataType}}_parseFromJSON(json_array_node, {{classname}}_as_request, {{classname}}_parse_err);
+                        {{items.items.dataType}}_t *node_data = {{items.items.dataType}}_parseFromJSON(json_array_node, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
                         if (!node_data) {
+			    if ({{classname}}_err_parameter) {
+				if (*{{classname}}_err_parameter) {
+				    char *param = ogs_msprintf("{{baseName}}.%s", *{{classname}}_err_parameter);
+                                    ogs_free(*{{classname}}_err_parameter);
+                                    *{{classname}}_err_parameter = param;
+                                } else {
+                                    *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                                }
+                            }
                             goto end;
                         }
                         OpenAPI_list_add(new_array, node_data);
@@ -1623,6 +1759,7 @@ end:
                 } else {
                     ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}.{{{items.name}}}]");
                     if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}/{{{items.baseName}}}\" map value is not an array or 'null'";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                     goto end;
                 }
                     {{/items.isArray}}
