@@ -22,7 +22,7 @@ public:
     {{classname}}();
     {{classname}}(const {{classname}} &other);
     {{classname}}({{classname}} &&other);
-    {{classname}}(const std::string &json, bool as_request = true);
+    explicit {{classname}}(const std::string &json, bool as_request = true);
     {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true);
 
     virtual ~{{classname}}();
@@ -47,7 +47,7 @@ public:
     bool operator!=(Enum val) const { return m_value != val; };
     bool operator!=(const std::string &val) const { return m_strValue != val; };
 
-    bool validate() const { return m_validator.validate(getString()); };
+    bool validate() const { return m_validator.validate(*this); };
 
     {{classname}} &fromString(const std::string &value);
 

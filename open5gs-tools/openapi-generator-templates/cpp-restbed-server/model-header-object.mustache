@@ -8,7 +8,7 @@ public:
     {{classname}}();
     {{classname}}(const {{classname}} &other);
     {{classname}}({{classname}} &&other);
-    {{classname}}(const std::string &json, bool as_request = true);
+    explicit {{classname}}(const std::string &json, bool as_request = true);
     {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true);
 
     virtual ~{{classname}}();

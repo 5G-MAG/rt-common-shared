@@ -12,7 +12,7 @@ CJson to_json = CJson::newArray();
         {{#items}}{{<is-optional}}{{$yes}}if (var.has_value()) {
             {{/yes}}{{/is-optional}}const auto &from_value = var{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
         {{>model-source-object-var-toJSON}}
-        fill_array.append(std::move(to_json));{{<is-optional}}{{$yes}}
+        if (!to_json.isNull()) fill_array.append(std::move(to_json));{{<is-optional}}{{$yes}}
         }{{/yes}}{{/is-optional}}{{/items}}
     }
 }
@@ -39,5 +39,5 @@ CJson to_json = CJson::wrap(from_value);
 {{/isDateTime}}{{#isByteArray}}
 CJson to_json = CJson::wrap(from_value);
 {{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isByteArray}}
-CJson to_json = from_value->toJSON(as_request);
+CJson to_json = from_value?from_value->toJSON(as_request):CJson::Null;
 {{/isByteArray}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isPrimitiveType}}{{/isContainer}}{{/composedSchemas}}
