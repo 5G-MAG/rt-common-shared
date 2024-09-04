@@ -103,7 +103,7 @@ CJson {{classname}}::toJSON(bool as_request) const
 {{/yes}}{{/is-optional}}
         const auto &from_value = {{name}}_val{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
         {{>model-source-object-var-toJSON}}
-        object.set("{{name}}", to_json);
+        object.set("{{baseName}}", to_json);
 {{<is-optional}}{{$yes}}        }{{/yes}}{{/is-optional}}
     }
 
