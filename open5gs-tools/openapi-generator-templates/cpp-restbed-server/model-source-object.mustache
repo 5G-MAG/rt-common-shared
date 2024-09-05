@@ -104,7 +104,9 @@ CJson {{classname}}::toJSON(bool as_request) const
         const auto &from_value = {{name}}_val{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
         {{>model-source-object-var-toJSON}}
         object.set("{{baseName}}", to_json);
-{{<is-optional}}{{$yes}}        }{{/yes}}{{/is-optional}}
+{{<is-optional}}{{$yes}}{{#required}}        } else {
+        {{#isContainer}}object.set("{{baseName}}", {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{classname}}.{{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}");{{/isContainer}}
+{{/required}}        }{{/yes}}{{/is-optional}}
     }
 
     {{#isReadOnly}}

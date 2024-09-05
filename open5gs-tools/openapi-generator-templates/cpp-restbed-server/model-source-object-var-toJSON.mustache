@@ -13,7 +13,9 @@ CJson to_json = CJson::newArray();
             {{/yes}}{{/is-optional}}const auto &from_value = var{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
         {{>model-source-object-var-toJSON}}
         if (!to_json.isNull()) fill_array.append(std::move(to_json));{{<is-optional}}{{$yes}}
-        }{{/yes}}{{/is-optional}}{{/items}}
+       {{#required}} } else {        
+        {{#isContainer}}fill_array.append({{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}");{{/isContainer}}
+       {{/required}} }{{/yes}}{{/is-optional}}{{/items}}
     }
 }
 {{/isArray}}{{#isMap}}
@@ -25,7 +27,9 @@ CJson to_json = CJson::newObject();
             {{/yes}}{{/is-optional}}const auto &from_value = var.second{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
         {{>model-source-object-var-toJSON}}{{/items}}
         fill_map.set(var.first, std::move(to_json));
-{{<is-optional}}{{$yes}}        }{{/yes}}{{/is-optional}}
+{{<is-optional}}{{$yes}}       {{#required}} } else {        
+            {{#isContainer}}fill_map.set(var.first, {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}");{{/isContainer}}
+       {{/required}} }{{/yes}}{{/is-optional}}
     }
 }
 {{/isMap}}{{/isContainer}}{{^isContainer}}{{#isPrimitiveType}}
