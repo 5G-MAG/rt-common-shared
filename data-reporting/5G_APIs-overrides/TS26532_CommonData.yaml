@@ -46,6 +46,7 @@ components:
       type: object
       properties:
         contextIds:
+          readOnly: true
           type: array
           minItems: 1
           items:
@@ -80,6 +81,7 @@ components:
       type: object
       properties:
         contextIds:
+          readOnly: true
           type: array
           minItems: 1
           items:
