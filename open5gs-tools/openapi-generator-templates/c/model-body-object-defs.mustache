@@ -933,8 +933,9 @@ end:
     {{{name}}} = cJSON_GetObjectItemCaseSensitive({{classname}}JSON, "{{{baseName}}}");
     {{#required}}
     if (!{{{name}}}) {
-        ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
-        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Required field \"{{{name}}}\" not found";
+        ogs_error("{{classname}}_parseFromJSON() failed [{{{baseName}}}]");
+        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Required field \"{{{baseName}}}\" not found";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{{baseName}}}");
         goto end;
     }
     {{/required}}
