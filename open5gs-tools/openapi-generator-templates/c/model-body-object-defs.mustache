@@ -1,6 +1,43 @@
 #define _OPENAPI_DATE_REGEX "^\\d{4}-\\d{2}-\\d{2}$"
 #define _OPENAPI_DATE_TIME_REGEX "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:.\\d+)?(?:Z|[-+]\\d{2}:\\d{2})$"
-#define _OPENAPI_URI_REGEX "^(?:[^:/?#]+:)?(?://[^/?#]*)?(?:[^?#]*)(?:\\?[^#]*)?(?:#.*)?$"
+
+#define _OPENAPI_URI_RE_ALPHA "[a-zA-Z]"
+#define _OPENAPI_URI_RE_DIGIT "[0-9]"
+#define _OPENAPI_URI_RE_HEXDIG "[a-fA-F0-9]"
+#define _OPENAPI_URI_RE_UNRESERVED "[-a-zA-Z0-9._~]"
+#define _OPENAPI_URI_RE_SUB_DELIMS "[!$&'()*+,;=]"
+#define _OPENAPI_URI_RE_GEN_DELIMS "[:\\/?#[\\]@]"
+#define _OPENAPI_URI_RE_RESERVED "[:\\/?#[\\]@!$&'()*+,;=]"
+#define _OPENAPI_URI_RE_PCT_ENCODED "%[a-fA-F0-9][a-fA-F0-9]"
+#define _OPENAPI_URI_RE_PCHAR "(?:[-a-zA-Z0-9._~!$&'()*+,;=:@]|" _OPENAPI_URI_RE_PCT_ENCODED ")"
+#define _OPENAPI_URI_RE_QUERY "(?:[-a-zA-Z0-9._~!$&'()*+,;=:@/?]|" _OPENAPI_URI_RE_PCT_ENCODED ")*"
+#define _OPENAPI_URI_RE_FRAGMENT _OPENAPI_URI_RE_QUERY
+#define _OPENAPI_URI_RE_SEGMENT_NZ_NC "(?:[-a-zA-Z0-9._~!$&'()*+,;=@]|" _OPENAPI_URI_RE_PCT_ENCODED ")+"
+#define _OPENAPI_URI_RE_SEGMENT_NZ _OPENAPI_URI_RE_PCHAR "+"
+#define _OPENAPI_URI_RE_SEGMENT _OPENAPI_URI_RE_PCHAR "*"
+#define _OPENAPI_URI_RE_PATH_ROOTLESS _OPENAPI_URI_RE_SEGMENT_NZ "(?:/" _OPENAPI_URI_RE_SEGMENT ")*"
+#define _OPENAPI_URI_RE_PATH_NOSCHEME _OPENAPI_URI_RE_SEGMENT_NZ_NC "(?:/" _OPENAPI_URI_RE_SEGMENT ")*"
+#define _OPENAPI_URI_RE_PATH_ABSOLUTE "/(?:" _OPENAPI_URI_RE_PATH_ROOTLESS ")?"
+#define _OPENAPI_URI_RE_PATH_ABEMPTY "(?:/" _OPENAPI_URI_RE_SEGMENT ")*"
+#define _OPENAPI_URI_RE_PATH = "(?:" _OPENAPI_URI_RE_PATH_ABEMPTY "|" _OPENAPI_URI_RE_PATH_ABSOLUTE "|" _OPENAPI_URI_RE_PATH_NOSCHEME "|" _OPENAPI_URI_RE_PATH_ROOTLESS ")"
+#define _OPENAPI_URI_RE_DEC_OCTET "(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])"
+#define _OPENAPI_URI_RE_REG_NAME "(?:[-a-zA-Z0-9._~!$&'()*+,;=]|" _OPENAPI_URI_RE_PCT_ENCODED ")*"
+#define _OPENAPI_URI_RE_IPV4_ADDRESS _OPENAPI_URI_RE_DEC_OCTET "(?:\\." _OPENAPI_URI_RE_DEC_OCTET "){3}"
+#define _OPENAPI_URI_RE_H16 "(?:" _OPENAPI_URI_RE_HEXDIG "){1,4}"
+#define _OPENAPI_URI_RE_LS32 "(?:" _OPENAPI_URI_RE_H16 ":" _OPENAPI_URI_RE_H16 "|" _OPENAPI_URI_RE_IPV4_ADDRESS ")"
+#define _OPENAPI_URI_RE_IPV6_ADDRESS "(?:(?:" _OPENAPI_URI_RE_H16 ":){6}" _OPENAPI_URI_RE_LS32 "|::(?:" _OPENAPI_URI_RE_H16 ":){5}" _OPENAPI_URI_RE_LS32 "|(?:" _OPENAPI_URI_RE_H16 ")?::(?:" _OPENAPI_URI_RE_H16 ":){4}" _OPENAPI_URI_RE_LS32 "|(?:(?:" _OPENAPI_URI_RE_H16 ":){0,1}" _OPENAPI_URI_RE_H16 ")?::(?:" _OPENAPI_URI_RE_H16 ":){3}" _OPENAPI_URI_RE_LS32 "|(?:(?:" _OPENAPI_URI_RE_H16 ":){0,2}" _OPENAPI_URI_RE_H16 ")?::(?:" _OPENAPI_URI_RE_H16 ":){2}" _OPENAPI_URI_RE_LS32 "|(?:(?:" _OPENAPI_URI_RE_H16 ":){0,3}" _OPENAPI_URI_RE_H16 ")?::" _OPENAPI_URI_RE_H16 ":" _OPENAPI_URI_RE_LS32 "|(?:(?:" _OPENAPI_URI_RE_H16 ":){0,4}" _OPENAPI_URI_RE_H16 ")?::" _OPENAPI_URI_RE_LS32 "|(?:(?:" _OPENAPI_URI_RE_H16 ":){0,5}" _OPENAPI_URI_RE_H16 ")?::" _OPENAPI_URI_RE_H16 "|(?:(?:" _OPENAPI_URI_RE_H16 ":){0,6}" _OPENAPI_URI_RE_H16 ")?::)"
+#define _OPENAPI_URI_RE_IPV_FUTURE "v" _OPENAPI_URI_RE_HEXDIG "+\\.[-a-zA-Z0-9._~!$&'()*+,;=:]+"
+#define _OPENAPI_URI_RE_PORT _OPENAPI_URI_RE_DIGIT "*"
+#define _OPENAPI_URI_RE_HOST "(?:\\[(?:" _OPENAPI_URI_RE_IPV_FUTURE "|" _OPENAPI_URI_RE_IPV6_ADDRESS ")\\]|" _OPENAPI_URI_RE_IPV4_ADDRESS "|" _OPENAPI_URI_RE_REG_NAME ")"
+#define _OPENAPI_URI_RE_USERINFO "(?:[-a-zA-Z0-9._~!$&'()*+,;=:]|" _OPENAPI_URI_RE_PCT_ENCODED ")*"
+#define _OPENAPI_URI_RE_AUTHORITY "(?:" _OPENAPI_URI_RE_USERINFO "@)?" _OPENAPI_URI_RE_HOST "(?::" _OPENAPI_URI_RE_PORT ")?"
+#define _OPENAPI_URI_RE_SCHEME _OPENAPI_URI_RE_ALPHA "[-a-zA-Z0-9+.]*"
+#define _OPENAPI_URI_RE_RELATIVE_PART "(?://" _OPENAPI_URI_RE_AUTHORITY _OPENAPI_URI_RE_PATH_ABEMPTY "|" _OPENAPI_URI_RE_PATH_ABSOLUTE "|" _OPENAPI_URI_RE_PATH_NOSCHEME "|)"
+#define _OPENAPI_URI_RE_RELATIVE_REF _OPENAPI_URI_RE_RELATIVE_PART "(?:\\?" _OPENAPI_URI_RE_QUERY ")?(?:#" _OPENAPI_URI_RE_FRAGMENT ")?"
+#define _OPENAPI_URI_RE_HIER_PART "(?://" _OPENAPI_URI_RE_AUTHORITY _OPENAPI_URI_RE_PATH_ABEMPTY "|" _OPENAPI_URI_RE_PATH_ABSOLUTE "|" _OPENAPI_URI_RE_PATH_ROOTLESS "|)"
+#define _OPENAPI_URI_RE_ABSOLUTE_URI _OPENAPI_URI_RE_SCHEME ":" _OPENAPI_URI_RE_HIER_PART "(?:\\?" _OPENAPI_URI_RE_QUERY ")?"
+#define _OPENAPI_URI_REGEX "^" _OPENAPI_URI_RE_SCHEME ":" _OPENAPI_URI_RE_HIER_PART "(?:\\?" _OPENAPI_URI_RE_QUERY ")?(?:#" _OPENAPI_URI_RE_FRAGMENT ")?"
+
 #define _OPENAPI_UUID_REGEX "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 
 {{classname}}_t *{{classname}}_create(
@@ -1367,6 +1404,42 @@ end:
                 goto end;
             }
                             {{/pattern}}
+                            {{#isUri}}
+            static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+            if (!{{{name}}}_regex) {
+                {{{name}}}_regex = OpenAPI_regex_register_named("uri", _OPENAPI_URI_REGEX);
+                if (!{{{name}}}_regex) {
+                    ogs_error("{{classname}}_parseFromJSON(): Bad uri format regex, please fix");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile uri regex for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    goto end;
+                }
+            }
+            if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a URI string");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a URI string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                goto end;
+            }
+                            {{/isUri}}
+                            {{#isUuid}}
+            static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+            if (!{{{name}}}_regex) {
+                {{{name}}}_regex = OpenAPI_regex_register_named("uuid", _OPENAPI_UUID_REGEX);
+                if (!{{{name}}}_regex) {
+                    ogs_error("{{classname}}_parseFromJSON(): Bad uuid format regex, please fix");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile uuid regex for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    goto end;
+                }
+            }
+            if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a UUID string");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a UUID string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                goto end;
+            }
+                            {{/isUuid}}
             OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
                         {{/isString}}
                         {{#isByteArray}}
@@ -1494,10 +1567,51 @@ end:
             OpenAPI_list_add({{{name}}}List, {{{name}}}Item);
                         {{/isModel}}
                         {{^isModel}}
+                            {{#isUri}}
+            if (!cJSON_IsString({{{name}}}_local)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                goto end;
+            }
+            static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+            if (!{{{name}}}_regex) {
+                {{{name}}}_regex = OpenAPI_regex_register_named("uri", _OPENAPI_URI_REGEX);
+                if (!{{{name}}}_regex) {
+                    ogs_error("{{classname}}_parseFromJSON(): Bad uri format regex, please fix");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile uri regex for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    goto end;
+                }
+            }
+            if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a URI string");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a URI string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                goto end;
+            }
+            OpenAPI_list_add({{{name}}}List, ogs_strdup({{{name}}}_local->valuestring));
+                            {{/isUri}}
                             {{#isUuid}}
             if (!cJSON_IsString({{{name}}}_local)) {
                 ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
                 if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a string";
+                if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                goto end;
+            }
+            static OpenAPI_regex_t *{{{name}}}_regex = NULL;
+            if (!{{{name}}}_regex) {
+                {{{name}}}_regex = OpenAPI_regex_register_named("uuid", _OPENAPI_UUID_REGEX);
+                if (!{{{name}}}_regex) {
+                    ogs_error("{{classname}}_parseFromJSON(): Bad uuid format regex, please fix");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile uuid regex for \"{{{baseName}}}\" array element";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    goto end;
+                }
+            }
+            if ({{{name}}}_regex && !OpenAPI_regex_match({{{name}}}_regex, {{{name}}}_local->valuestring)) {
+                ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: array element is not a UUID string");
+                if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" array element is not a UUID string";
                 if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
                 goto end;
             }
@@ -1615,6 +1729,42 @@ end:
                     goto end;
                 }
                             {{/items.pattern}}
+                            {{#items.isUri}}
+                static OpenAPI_regex_t *localMapValueRegex = NULL;
+                if (!localMapValueRegex) {
+                    localMapValueRegex = OpenAPI_regex_register_named("uri", _OPENAPI_URI_REGEX);
+                    if (!localMapValueRegex) {
+                        ogs_error("{{classname}}_parseFromJSON(): Bad uri format regex, please fix");
+                        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile uri regex for \"{{{baseName}}}\" map value";
+                        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                        goto end;
+                    }
+                }
+                if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: map value is not a URI string");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a URI string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    goto end;
+                }
+                            {{/items.isUri}}
+                            {{#items.isUuid}}
+                static OpenAPI_regex_t *localMapValueRegex = NULL;
+                if (!localMapValueRegex) {
+                    localMapValueRegex = OpenAPI_regex_register_named("uuid", _OPENAPI_UUID_REGEX);
+                    if (!localMapValueRegex) {
+                        ogs_error("{{classname}}_parseFromJSON(): Bad uuid format regex, please fix");
+                        if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile uuid regex for \"{{{baseName}}}\" map value";
+                        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                        goto end;
+                    }
+                }
+                if (localMapValueRegex && !OpenAPI_regex_match(localMapValueRegex, localMapObject->valuestring)) {
+                    ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: map value is not a UUID string");
+                    if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map value is not a UUID string";
+                    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{baseName}}");
+                    goto end;
+                }
+                            {{/items.isUuid}}
                 localMapKeyPair = OpenAPI_map_create(ogs_strdup(localMapObject->string), ogs_strdup(localMapObject->valuestring));
                         {{/items.isString}}
                         {{#items.isByteArray}}
