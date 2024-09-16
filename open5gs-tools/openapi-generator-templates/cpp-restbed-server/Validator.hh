@@ -344,6 +344,35 @@ public:
         ,m_itemValidator(item_validator)
     {};
 
+    ContainerValidator(const ContainerValidator &other)
+        :Validator<container_type>(other)
+        ,m_itemValidator(new item_validator(*other.m_itemValidator))
+    {};
+
+    ContainerValidator(ContainerValidator &&other)
+        :Validator<container_type>(std::move(other))
+        ,m_itemValidator(other.m_itemValidator)
+    {
+        other.m_itemValidator = nullptr;
+    };
+
+    ContainerValidator &operator=(const ContainerValidator &other)
+    {
+        this->Validator<container_type>::operator=(other);
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = new item_validator(*other.m_itemValidator);
+        return *this;
+    };
+
+    ContainerValidator &operator=(ContainerValidator &&other)
+    {
+        this->Validator<container_type>::operator=(std::move(other));
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = other.m_itemValidator;
+        other.m_itemValidator = nullptr;
+        return *this;
+    };
+
     virtual ~ContainerValidator() {
         if (m_itemValidator) delete m_itemValidator;
     };
@@ -390,6 +419,35 @@ public:
         ,m_itemValidator(item_validator)
     {};
 
+    OptionalMapValidator(const OptionalMapValidator &other)
+        :Validator<container_type>(other)
+        ,m_itemValidator(new item_validator(*other.m_itemValidator))
+    {};
+
+    OptionalMapValidator(OptionalMapValidator &&other)
+        :Validator<container_type>(std::move(other))
+        ,m_itemValidator(other.m_itemValidator)
+    {
+        other.m_itemValidator = nullptr;
+    };
+
+    OptionalMapValidator &operator=(const OptionalMapValidator &other)
+    {
+        this->Validator<container_type>::operator=(other);
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = new item_validator(*other.m_itemValidator);
+        return *this;
+    };
+
+    OptionalMapValidator &operator=(OptionalMapValidator &&other)
+    {
+        this->Validator<container_type>::operator=(std::move(other));
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = other.m_itemValidator;
+        other.m_itemValidator = nullptr;
+        return *this;
+    };
+
     virtual ~OptionalMapValidator() {
         if (m_itemValidator) delete m_itemValidator;
     };
@@ -418,6 +476,35 @@ public:
         :Validator<container_type>(classname, fieldname)
         ,m_itemValidator(item_validator)
     {};
+
+    MapValidator(const MapValidator &other)
+        :Validator<container_type>(other)
+        ,m_itemValidator(new item_validator(*other.m_itemValidator))
+    {};
+
+    MapValidator(MapValidator &&other)
+        :Validator<container_type>(std::move(other))
+        ,m_itemValidator(other.m_itemValidator)
+    {
+        other.m_itemValidator = nullptr;
+    };
+
+    MapValidator &operator=(const MapValidator &other)
+    {
+        this->Validator<container_type>::operator=(other);
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = new item_validator(*other.m_itemValidator);
+        return *this;
+    };
+
+    MapValidator &operator=(MapValidator &&other)
+    {
+        this->Validator<container_type>::operator=(std::move(other));
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = other.m_itemValidator;
+        other.m_itemValidator = nullptr;
+        return *this;
+    };
 
     virtual ~MapValidator() {
         if (m_itemValidator) delete m_itemValidator;
