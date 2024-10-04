@@ -70,14 +70,18 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
     if (as_request) {
     {{/isWriteOnly}}
 
-    {{name}}_json = json.getObjectItemCaseSensitive({{name}}_key);
+    {{name}}_json = json.getObjectItemCaseSensitive({{name}}_key);{{#required}}
+    if ({{name}}_json.isNull()) {
+        throw ModelException("Field \"{{baseName}}\" is required", "{{classname}}", "{{baseName}}");
+    }{{/required}}
     if (!{{name}}_json.isNull()) {
         auto &json_obj = {{name}}_json;{{#isContainer}}
         const char *obj_key = {{name}}_key;{{/isContainer}}
         typedef {{name}}Type _PropertyType;
         auto &member_var = m_{{name}};
 #define _FIELD_NAME "{{baseName}}"
-{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}#undef _FIELD_NAME
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}
+#undef _FIELD_NAME
         m_{{name}}_validator.validate(m_{{name}});
     }{{#isReadOnly}}
     }{{/isReadOnly}}{{#isWriteOnly}}
