@@ -197,15 +197,15 @@ public:
 
     const char *key() const { return m_node->string; };
 
-    operator int() const { return static_cast<int>(numberValue()); };
-    operator long int() const { return static_cast<long int>(numberValue()); };
-    operator long long int() const { return static_cast<long long int>(numberValue()); };
-    operator float() const { return static_cast<float>(numberValue()); };
-    operator double() const { return numberValue(); };
-    operator std::string() const { return std::string(stringValue()); };
-    operator std::basic_string<unsigned char>() const { return std::basic_string<unsigned char>(reinterpret_cast<const unsigned char*>(stringValue())); };
-    operator const char*() const { return stringValue(); };
-    operator bool() const { return boolValue(); };
+    operator int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson"); return static_cast<int>(numberValue()); };
+    operator long int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson"); return static_cast<long int>(numberValue()); };
+    operator long long int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson"); return static_cast<long long int>(numberValue()); };
+    operator float() const { if (!isNumber()) throw ModelException("Attempt to access non-number as floating point", "CJson"); return static_cast<float>(numberValue()); };
+    operator double() const { if (!isNumber()) throw ModelException("Attempt to access non-number as floating point", "CJson"); return numberValue(); };
+    operator std::string() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson"); return std::string(stringValue()); };
+    operator std::basic_string<unsigned char>() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson"); return std::basic_string<unsigned char>(reinterpret_cast<const unsigned char*>(stringValue())); };
+    operator const char*() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson"); return stringValue(); };
+    operator bool() const { if (!isBool()) throw ModelException("Attempt to access non-boolean value as boolean", "CJson"); return boolValue(); };
 
     CJson getObjectItemCaseSensitive(const std::string &key) const {
         if (isObject()) {
