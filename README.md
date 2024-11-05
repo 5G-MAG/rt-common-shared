@@ -20,3 +20,8 @@ The mbms directory contains:
 * Example configurations for the LTE-based 5G
 Broadcast (rt-mbms-\*) Reference tools.
 * Information on MBMS Service Announcement formats can be found [here](https://5g-mag.github.io/Getting-Started/pages/lte-based-5g-broadcast/rt-common-shared/MBMS-service-announcement-files.html).
+
+### Simple Express Server
+A simple HTTP server based on express.js that can be used to statically host files.
+
+More information can be found in the corresponding [subfolder](simple-express-server/README.md).
