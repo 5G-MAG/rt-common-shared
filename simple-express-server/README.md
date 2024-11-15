@@ -9,13 +9,13 @@ A simple HTTP server based on express.js that can be used to statically host fil
 ### Clone the repository
 
 ````
-git clone --recurse-submodules https://github.com/5G-MAG/rt-mbms-examples
+git clone --recurse-submodules https://github.com/5G-MAG/rt-common-shared
 ```` 
 
 ### Install dependencies
 
 ````
-cd rt-mbms-examples/simple-express-server
+cd rt-common-shared/simple-express-server
 npm install
 ````
 
