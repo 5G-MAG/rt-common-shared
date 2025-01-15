@@ -42,16 +42,16 @@ private:
 {{^hasVars}}{{#composedSchemas}}{{#anyOf.0.name}}{{#anyOf}}
     {{name}}Type m_{{name}};
     {{name}}Validator m_{{name}}_validator;
-{{/anyOf}}{{/anyOf.0.name}}{{#oneOf.0.name}}
+{{/anyOf}}{{/anyOf.0.name}}{{#oneOf.0.name}}{{#oneOf.1.name}}
 #error "Not implemented oneOf yet!"
-    union {
+    union { {{/oneOf.1.name}}
 {{#oneOf}}        {{name}}Type m_{{name}};
-{{/oneOf}}
-    };
+{{/oneOf}}{{#oneOf.1.name}}
+    };{{/oneOf.1.name}}
 {{#oneOf}}    {{name}}Validator m_{{name}}_validator;
 {{/oneOf}}
-    {{/oneOf.0.name}}{{#allOf.0.name}}
-#error "Not implemented allOf yet!"
+    {{/oneOf.0.name}}{{#allOf.0.name}}{{#allOf.1.name}}
+#error "Not implemented allOf yet!"{{/allOf.1.name}}
 {{#allOf}}    {{name}}Type m_{{name}};
     {{name}}Validator m_{{name}}_validator;
 {{/allOf}}
