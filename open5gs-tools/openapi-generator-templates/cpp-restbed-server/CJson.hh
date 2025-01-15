@@ -221,6 +221,14 @@ public:
         return cJSON_Compare(m_node, other.m_node, 1) != 0;
     };
 
+    std::string serialise() {
+        if (!m_node) return std::string("null");
+        char *str = cJSON_Print(m_node);
+        std::string ret(str);
+        cJSON_free(str);
+        return ret;
+    }
+
     cJSON *exportCJSON() {
         m_owner = false;
         return m_node;
