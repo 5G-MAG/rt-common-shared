@@ -19,12 +19,22 @@
 #include "core/ogs-memory.h"
 #undef OGS_CORE_INSIDE
 
+void *operator new[](size_t size)
+{
+    return ogs_malloc(size);
+}
+
 void *operator new(size_t size)
 {
     return ogs_malloc(size);
 }
 
 void operator delete(void *ptr)
+{
+    ogs_free(ptr);
+}
+
+void operator delete(void *ptr, unsigned long __size)
 {
     ogs_free(ptr);
 }
