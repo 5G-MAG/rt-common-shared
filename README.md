@@ -7,21 +7,41 @@
 
 ## Introduction
 
-Common example configurations and other files shared between multiple 5G-MAG repositories.
+Files, components and common example configurations share by multiple 5G-MAG repositories.
 
 ### 5G Media Streaming (5GMS)
 
-The 5gms directory contains example configurations and common scripts for the
-5GMS (rt-5gms-\*) Reference Tools.
+Includes example configurations and common scripts for the 5GMS (rt-5gms-\*) Reference Tools.
+
+More information can be found in the corresponding [subfolder](5gms/README.md).
 
 ### MBMS and LTE-based 5G Broadcast (MBMS)
 
-The mbms directory contains:
-* Example configurations for the LTE-based 5G
-Broadcast (rt-mbms-\*) Reference tools.
-* Information on MBMS Service Announcement formats can be found [here](https://5g-mag.github.io/Getting-Started/pages/lte-based-5g-broadcast/rt-common-shared/MBMS-service-announcement-files.html).
+Includes example configurations for the LTE-based 5G Broadcast (rt-mbms-\*) Reference tools.
+
+More information can be found in the corresponding [subfolder](mbms/README.md).
+
+Information on MBMS Service Announcement formats can be found [here](https://5g-mag.github.io/Getting-Started/pages/lte-based-5g-broadcast/rt-common-shared/MBMS-service-announcement-files.html).
 
 ### Simple Express Server
-A simple HTTP server based on express.js that can be used to statically host files.
+
+Includes a simple HTTP server based on express.js that can be used to statically host files.
 
 More information can be found in the corresponding [subfolder](simple-express-server/README.md).
+
+### Open5GS Tools
+
+Includes scripts related to the OpenAPI generator.
+
+More information can be found in the corresponding [subfolder](open5gs-tools/).
+
+### Data Reporting 5G_APIs overrides
+
+Includes modified versions of the OpenAPI YAML files from the 5G_APIs repository specific to Data Reporting for use with a Data Collection Application Function.
+
+More information can be found in the corresponding [subfolder](/data-reporting/5G_APIs-overrides/README.md).
+
+### Avcodec build
+Includes a helper script to build ffmpeg libraries for Android.
+
+More information can be found in the corresponding [subfolder](/avcodec-build/README.md).
