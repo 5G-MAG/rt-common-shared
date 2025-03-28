@@ -37,6 +37,7 @@ RUN ln -s ${FFMPEG} /usr/src/ffmpeg
 
 # Build
 COPY build.sh ffmpeg_build.sh
+RUN chmod +x ffmpeg_build.sh
 
 ENV TARGET_ABI="aarch64"
 ENV ANDROID_API_LEVEL=35
