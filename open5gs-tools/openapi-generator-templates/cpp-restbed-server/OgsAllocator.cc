@@ -39,5 +39,10 @@ void operator delete(void *ptr, unsigned long __size)
     ogs_free(ptr);
 }
 
+void operator delete[](void *ptr)
+{
+    ogs_free(ptr);
+}
+
 /* vim:ts=8:sts=4:sw=4:expandtab:
  */
