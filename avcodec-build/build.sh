@@ -95,4 +95,4 @@ $MAKE_EXECUTABLE install
 
 # when making changes to the build configuration, 
 # make sure the license here reflects the build configuration
-cp ${FFMPEG_SRC_DIR}/COPYING.LGPLv2.1 ${AVCODEC_INSTALL_DIR}/LICENSE
+cp ./COPYING.LGPLv2.1 ${AVCODEC_INSTALL_DIR}/LICENSE
