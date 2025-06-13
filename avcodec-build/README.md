@@ -33,3 +33,11 @@ docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
  
 docker run -v $(pwd)/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
 ```
+
+## Additional recommendations in relation to the V3C Immersive Platform
+
+### Android
+Once compiled, the `.so` libraries from the build artifacts' `lib` directory can be included into the `./External/avcodec/7.1/Android/arm64-v8a/lib` directory.
+
+### Windows
+Once compiled, the `.dll` libraries can be included into `./External/avcodec/7.1/Windows/x86_64/bin` directory
