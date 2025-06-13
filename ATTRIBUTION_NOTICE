@@ -31,3 +31,7 @@ The following is a list of open source software that is used directly by scripts
 - wget - GNU Wget
   - available at https://www.gnu.org/software/wget/
     Licensed under GNU General Public License v3 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+- express server - Fast, unopinionated, minimalist web framework for Node.js
+  - available at https://github.com/expressjs/
+    Licensed under MIT License (https://github.com/expressjs/express/blob/master/LICENSE)
