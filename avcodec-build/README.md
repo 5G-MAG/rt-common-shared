@@ -28,11 +28,27 @@ export AVCODEC_INSTALL_DIR=build/ffmpeg/aarch64
 
 ***Dockerfile* usage :** 
 
+**Linux (x86-64)**
 ```
 docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
  
 docker run -v $(pwd)/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
 ```
+
+**Windows (x86-64)**
+```
+docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
+ 
+docker run -v ${pwd}/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
+```
+
+**On arm64 hosts, such as Mac OSX on Apple silicon**
+```
+podman build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
+ 
+podman run -v ${pwd}/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
+```
+
 
 ## Additional recommendations in relation to the V3C Immersive Platform
 
