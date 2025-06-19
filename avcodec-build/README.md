@@ -2,7 +2,7 @@
 
 Helper script to build ffmpeg libraries for Android.
 The script is intended for use on Linux & Mac OSX. 
-On Windows, building is supported through WSL, or else using the Dockerfile. In Windows, please use PowerShell (not Git Bash)
+On Windows, building is supported through WSL, or else using the Dockerfile. In Windows, please use PowerShell (not Git Bash).
 
 
 ***build.sh* usage :**
