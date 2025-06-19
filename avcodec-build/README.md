@@ -41,7 +41,7 @@ docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
 docker run -v ${pwd}/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
 ```
 
-**Windows (x86-64) (with git Bash)**
+**Windows (x86-64) (with Git Bash)**
 ```
 docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
  
