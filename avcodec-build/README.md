@@ -2,8 +2,7 @@
 
 Helper script to build ffmpeg libraries for Android.
 The script is intended for use on Linux & Mac OSX. 
-On Windows, building is supported through WSL, or else using the Dockerfile. In Windows, please use PowerShell (not Git Bash).
-
+On Windows, building is supported through WSL, or else using the Dockerfile.
 
 ***build.sh* usage :**
 
@@ -35,11 +34,18 @@ docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
 docker run -v $(pwd)/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
 ```
 
-**Windows (x86-64)**
+**Windows (x86-64) (with PowerShell)**
 ```
 docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
  
 docker run -v ${pwd}/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
+```
+
+**Windows (x86-64) (with git Bash)**
+```
+docker build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
+ 
+docker run -v /$(PWD)/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
 ```
 
 **On arm64 hosts, such as Mac OSX on Apple silicon**
