@@ -70,8 +70,8 @@ std::string {{classname}}::getString() const
 {
     switch(m_value) {
 {{#values}}
-    case Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}:
-        return std::string(STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}});
+    case Enum::VAL_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}}:
+        return std::string({{#.}}STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}});
 {{/values}}
     default:
         break;
@@ -83,8 +83,8 @@ const char *{{classname}}::getStringConst() const
 {
     switch(m_value) {
 {{#values}}
-    case Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}:
-        return STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
+    case Enum::VAL_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}}:
+        return STR_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}};
 {{/values}}
     default:
         break;
@@ -96,10 +96,10 @@ const char *{{classname}}::getStringConst() const
 {
     if (value.empty()) {
         m_value = Enum::NO_VAL;
-{{#values}}
+{{#values}}{{#.}}
     } else if (value == STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
         m_value = Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
-{{/values}}
+{{/.}}{{/values}}
     }
     return *this;
 }

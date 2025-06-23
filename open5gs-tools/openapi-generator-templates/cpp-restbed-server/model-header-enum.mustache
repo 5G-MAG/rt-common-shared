@@ -7,13 +7,13 @@ public:
 
     typedef enum {
         NO_VAL,
-{{#values}}        VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}},{{/-last}}
+{{#values}}        VAL_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}},{{/-last}}{{/.}}
 {{/values}}
     } Enum;
     typedef fiveg_mag_reftools::StringValidator<std::string> Validator;
 
 {{#values}}
-    static constexpr const char * const STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}} = "{{{.}}}";
+    static constexpr const char * const STR_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}} = {{^.}}nullptr{{/.}}{{#.}}"{{{.}}}"{{/.}};
 {{/values}}
 
     {{classname}}();

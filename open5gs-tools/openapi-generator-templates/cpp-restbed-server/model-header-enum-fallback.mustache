@@ -8,13 +8,13 @@ public:
 {{#anyOf.0}}
     typedef enum {
         NO_VAL,
-{{#allowableValues}}{{#values}}        VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}},
+{{#allowableValues}}{{#values}}        VAL_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}},
 {{/values}}{{/allowableValues}}
 	OTHER
     } Enum;
     typedef typename fiveg_mag_reftools::NullValidator<{{classname}}> Validator;
 
-{{#allowableValues}}{{#values}}    static constexpr const char STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}[] = "{{{.}}}";
+{{#allowableValues}}{{#values}}    static constexpr const char *STR_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}} = {{^.}}nullptr{{/.}}{{#.}}"{{{.}}}"{{/.}};
 {{/values}}{{/allowableValues}}
 
 {{/anyOf.0}}

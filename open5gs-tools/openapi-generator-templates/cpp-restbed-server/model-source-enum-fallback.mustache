@@ -79,10 +79,10 @@ CJson {{classname}}::toJSON(bool as_request) const
     m_value = Enum::OTHER;
     if (value.empty()) {
         m_value = Enum::NO_VAL;
-{{#anyOf.0.allowableValues.values}}
+{{#anyOf.0.allowableValues.values}}{{#.}}
     } else if (value == STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}) {
         m_value = Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
-{{/anyOf.0.allowableValues.values}}
+{{/.}}{{/anyOf.0.allowableValues.values}}
     }
     return *this;
 }
@@ -93,8 +93,8 @@ std::string {{classname}}::__toString({{classname}}::Enum value)
 
     switch(value) {
 {{#anyOf.0.allowableValues.values}}
-    case {{classname}}::Enum::VAL_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}:
-        return {{classname}}::STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}};
+    case {{classname}}::Enum::VAL_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}}:
+        return {{^.}}std::string(){{/.}}{{#.}}{{classname}}::STR_{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}};
 {{/anyOf.0.allowableValues.values}}
     default:
         break;
