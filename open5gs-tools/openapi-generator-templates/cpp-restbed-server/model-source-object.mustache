@@ -72,7 +72,7 @@ void {{classname}}::fromJSON(const CJson &json, bool as_request)
 
     {{name}}_json = json.getObjectItemCaseSensitive({{name}}_key);{{#required}}
     if ({{name}}_json.isNull()) {
-        throw ModelException("Field \"{{baseName}}\" is required", "{{classname}}", "{{baseName}}");
+        throw ModelException("Field \"{{baseName}}\" is required", "{{classname}}", "{{baseName}}", ProblemCause::MANDATORY_IE_MISSING);
     }{{/required}}
     if (!{{name}}_json.isNull()) {
         auto &json_obj = {{name}}_json;{{#isContainer}}
@@ -109,7 +109,7 @@ CJson {{classname}}::toJSON(bool as_request) const
         {{>model-source-object-var-toJSON}}
         object.set("{{baseName}}", to_json);
 {{<is-optional}}{{$yes}}{{#required}}        } else {
-        {{#isContainer}}object.set("{{baseName}}", {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{classname}}.{{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}");{{/isContainer}}
+        {{#isContainer}}object.set("{{baseName}}", {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{classname}}.{{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);{{/isContainer}}
 {{/required}}        }{{/yes}}{{/is-optional}}
     }
 

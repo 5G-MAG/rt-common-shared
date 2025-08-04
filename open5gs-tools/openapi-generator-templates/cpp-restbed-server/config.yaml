@@ -33,6 +33,10 @@ files:
     folder: model
   OgsAllocator.hh:
     folder: model
+  ProblemCause.cc:
+    folder: model
+  ProblemCause.hh:
+    folder: model
   Validator.hh:
     folder: model
   model-header.mustache:

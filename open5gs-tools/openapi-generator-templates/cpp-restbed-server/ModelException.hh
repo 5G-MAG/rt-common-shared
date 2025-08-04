@@ -16,28 +16,34 @@
 #ifndef _OPENAPI_MODEL_EXCEPTION_HH_
 #define _OPENAPI_MODEL_EXCEPTION_HH_
 
+#include <optional>
 #include <stdexcept>
 #include <string>
+
+#include "ProblemCause.hh"
 
 namespace fiveg_mag_reftools {
 
 class ModelException : public std::runtime_error {
 public:
-    ModelException(const std::string &ex_reason, const std::string &ex_classname, const std::string &ex_parameter = std::string())
+    ModelException(const std::string &ex_reason, const std::string &ex_classname, const std::string &ex_parameter = std::string(), const std::optional<ProblemCause> &ex_cause = std::nullopt)
         :std::runtime_error(ex_reason)
         ,classname(ex_classname)
         ,parameter(ex_parameter)
+        ,cause(ex_cause)
         {};
     ModelException(const ModelException &other) noexcept
         :std::runtime_error(other)
         ,classname(other.classname)
         ,parameter(other.parameter)
+        ,cause(other.cause)
         {};
 
     virtual ~ModelException() {};
 
     std::string classname;
     std::string parameter;
+    std::optional<ProblemCause> cause;
 private:
     ModelException() = delete;
 };

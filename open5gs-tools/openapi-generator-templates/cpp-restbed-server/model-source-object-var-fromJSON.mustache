@@ -1,6 +1,6 @@
 {{#isContainer}}{{#isArray}}
         if (!json_obj.isArray()) {
-            throw ModelException("Field \"" _FIELD_NAME "\" is not an array", "{{classname}}", obj_key);
+            throw ModelException("Field \"" _FIELD_NAME "\" is not an array", "{{classname}}", obj_key, ProblemCause::INVALID_MSG_FORMAT);
         }
         _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}} field_list;
         _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type element;
@@ -38,7 +38,7 @@
                     if (ex.parameter.size() > 0) {
                         param << "." << ex.parameter;
                     }
-                    throw ModelException(ex.what(), "{{classname}}", param.str());
+                    throw ModelException(ex.what(), "{{classname}}", param.str(), ex.cause);
                 }
                 idx++;
             }
@@ -46,7 +46,7 @@
         member_var = field_list;
 {{/isArray}}{{#isMap}}
         if (!json_obj.isObject()) {
-            throw ModelException("Field \"" _FIELD_NAME "\" is not an object", "{{classname}}", obj_key);
+            throw ModelException("Field \"" _FIELD_NAME "\" is not an object", "{{classname}}", obj_key, ProblemCause::INVALID_MSG_FORMAT);
         }
 
         _PropertyType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}} field_map;
@@ -83,7 +83,7 @@
                 if (ex.parameter.size() > 0) {
                     param << "." << ex.parameter;
                 }
-                throw ModelException(ex.what(), "{{classname}}", param.str());
+                throw ModelException(ex.what(), "{{classname}}", param.str(), ex.cause);
             }
         }
         member_var = field_map;
@@ -108,6 +108,6 @@
             if (ex.parameter.size() > 0) {
                 param << "." << ex.parameter;
             }
-            throw ModelException(ex.what(), "{{classname}}", param.str());
+            throw ModelException(ex.what(), "{{classname}}", param.str(), ex.cause);
         }
 {{/isContainer}}

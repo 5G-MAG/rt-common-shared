@@ -83,7 +83,7 @@ public:
     static CJson parse(const std::string &json_string) {
         cJSON *json = cJSON_Parse(json_string.c_str());
         if (!json) {
-            throw ModelException("Unable to parse JSON", "CJson");
+            throw ModelException("Unable to parse JSON", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT);
         }
         return CJson(json);
     }
@@ -148,7 +148,7 @@ public:
         return set(key, std::move(CJson(node)));
     };
     CJson &set(const std::string &key, CJson &&node) {
-        if (!isObject()) throw ModelException("Attempt to set object parameter on non-object", "CJson");
+        if (!isObject()) throw ModelException("Attempt to set object parameter on non-object", "CJson", std::string(), ProblemCause::SYSTEM_FAILURE);
         if (node.m_node) {
             cJSON *cjson = node.m_node;
             if (!node.m_owner) {
@@ -167,7 +167,7 @@ public:
         return append(std::move(CJson(node)));
     };
     CJson &append(CJson &&node) {
-        if (!isArray()) throw ModelException("Attempt to append to non-array object", "CJson");
+        if (!isArray()) throw ModelException("Attempt to append to non-array object", "CJson", std::string(), ProblemCause::SYSTEM_FAILURE);
         if (node.m_node) {
             cJSON *cjson = node.m_node;
             if (!node.m_owner) {
@@ -185,7 +185,7 @@ public:
         return append(std::move(std::string(str)));
     };
     CJson &append(std::string &&str) {
-        if (!isArray()) throw ModelException("Attempt to append to non-array object", "CJson");
+        if (!isArray()) throw ModelException("Attempt to append to non-array object", "CJson", std::string(), ProblemCause::SYSTEM_FAILURE);
         cJSON_AddItemToArray(m_node, cJSON_CreateString(str.c_str()));
         return *this;
     };
@@ -197,15 +197,15 @@ public:
 
     const char *key() const { return m_node->string; };
 
-    operator int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson"); return static_cast<int>(numberValue()); };
-    operator long int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson"); return static_cast<long int>(numberValue()); };
-    operator long long int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson"); return static_cast<long long int>(numberValue()); };
-    operator float() const { if (!isNumber()) throw ModelException("Attempt to access non-number as floating point", "CJson"); return static_cast<float>(numberValue()); };
-    operator double() const { if (!isNumber()) throw ModelException("Attempt to access non-number as floating point", "CJson"); return numberValue(); };
-    operator std::string() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson"); return std::string(stringValue()); };
-    operator std::basic_string<unsigned char>() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson"); return std::basic_string<unsigned char>(reinterpret_cast<const unsigned char*>(stringValue())); };
-    operator const char*() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson"); return stringValue(); };
-    operator bool() const { if (!isBool()) throw ModelException("Attempt to access non-boolean value as boolean", "CJson"); return boolValue(); };
+    operator int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return static_cast<int>(numberValue()); };
+    operator long int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return static_cast<long int>(numberValue()); };
+    operator long long int() const { if (!isNumber()) throw ModelException("Attempt to access non-number as integer", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return static_cast<long long int>(numberValue()); };
+    operator float() const { if (!isNumber()) throw ModelException("Attempt to access non-number as floating point", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return static_cast<float>(numberValue()); };
+    operator double() const { if (!isNumber()) throw ModelException("Attempt to access non-number as floating point", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return numberValue(); };
+    operator std::string() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return std::string(stringValue()); };
+    operator std::basic_string<unsigned char>() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return std::basic_string<unsigned char>(reinterpret_cast<const unsigned char*>(stringValue())); };
+    operator const char*() const { if (!isString()) throw ModelException("Attempt to access non-string value as string", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return stringValue(); };
+    operator bool() const { if (!isBool()) throw ModelException("Attempt to access non-boolean value as boolean", "CJson", std::string(), ProblemCause::INVALID_MSG_FORMAT); return boolValue(); };
 
     CJson getObjectItemCaseSensitive(const std::string &key) const {
         if (isObject()) {

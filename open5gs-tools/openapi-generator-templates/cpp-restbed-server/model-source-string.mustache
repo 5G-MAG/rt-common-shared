@@ -22,7 +22,7 @@ bool {{classname}}::validate() const
     } catch (ModelException &ex) {
     }
 {{/pattern}}{{/anyOf}}
-    throw ModelException("String did not match any of the validation patterns", "{{{classname}}}", nullptr);
+    throw ModelException("String did not match any of the validation patterns", "{{{classname}}}", nullptr, ProblemCause::{{#required}}MANDATORY{{/required}}{{^required}}OPTIONAL{{/required}}_IE_INCORRECT);
 {{/anyOf.0.name}}{{#oneOf.0.name}}
     std::size_t count = 0;
 {{#oneOf}}
@@ -36,7 +36,7 @@ bool {{classname}}::validate() const
     }
 {{/oneOf}}
     if (count != 1) {
-        throw ModelException("String did not validate", "{{{classname}}}", nullptr);
+        throw ModelException("String did not validate", "{{{classname}}}", nullptr, ProblemCause::{{#required}}MANDATORY{{/required}}{{^required}}OPTIONAL{{/required}}_IE_INCORRECT);
     }
     return true;
 {{/oneOf.0.name}}{{/composedSchemas}}

@@ -14,7 +14,7 @@ CJson to_json = CJson::newArray();
         {{>model-source-object-var-toJSON}}
         if (!to_json.isNull()) fill_array.append(std::move(to_json));{{<is-optional}}{{$yes}}
        {{#required}} } else {        
-        {{#isContainer}}fill_array.append({{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}");{{/isContainer}}
+        {{#isContainer}}fill_array.append({{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);{{/isContainer}}
        {{/required}} }{{/yes}}{{/is-optional}}{{/items}}
     }
 }
@@ -28,7 +28,7 @@ CJson to_json = CJson::newObject();
         {{>model-source-object-var-toJSON}}
         fill_map.set(var.first, std::move(to_json));
 {{<is-optional}}{{$yes}}       {{#required}} } else {        
-            {{#isContainer}}fill_map.set(var.first, {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}");{{/isContainer}}
+            {{#isContainer}}fill_map.set(var.first, {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);{{/isContainer}}
        {{/required}} }{{/yes}}{{/is-optional}}{{/items}}
     }
 }

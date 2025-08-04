@@ -156,10 +156,10 @@ private:
     bool _validate(const U &value) const {
         if (value.has_value()) {
             if (m_minimum && m_minimum->isGreaterThan(value.value())) {
-                throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname);
+                throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
             }
             if (m_maximum && m_maximum->isLessThan(value.value())) {
-                throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname);
+                throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
             }
         }
 
@@ -169,10 +169,10 @@ private:
     template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
     bool _validate(const U &value) const {
         if (m_minimum && m_minimum->isGreaterThan(value)) {
-            throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname);
+            throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
         }
         if (m_maximum && m_maximum->isLessThan(value)) {
-            throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname);
+            throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
         }
 
         return true;
@@ -260,7 +260,7 @@ private:
     bool _validate(const U &value) const {
         if (value.has_value()) {
             if (m_regex && !std::regex_match(value.value(), *m_regex)) {
-                throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname);
+                throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
             }
         }
 
@@ -270,7 +270,7 @@ private:
     template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
     bool _validate(const U &value) const {
         if (m_regex && !std::regex_match(value, *m_regex)) {
-            throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname);
+            throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
         }
 
         return true;
