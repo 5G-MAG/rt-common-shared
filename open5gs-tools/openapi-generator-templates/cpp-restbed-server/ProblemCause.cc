@@ -24,7 +24,11 @@ namespace fiveg_mag_reftools {
 
 namespace {
 
-static std::list<std::shared_ptr<ProblemCause> > g_registered_causes;
+static std::list<std::shared_ptr<ProblemCause> > &__registered_causes()
+{
+    static std::list<std::shared_ptr<ProblemCause> > _registered_causes;
+    return _registered_causes;
+}
 
 } // end anonymous namespace
 
@@ -169,11 +173,12 @@ long int ProblemCause::causeEnum() const
 const ProblemCause &ProblemCause::registerCause(const std::string &cause, int status_code, const std::string &status_reason,
                                                 const std::string &description)
 {
-    for (const auto &cause_ptr : g_registered_causes) {
+    auto &reg_causes = __registered_causes();
+    for (const auto &cause_ptr : reg_causes) {
         if (cause_ptr->m_cause == cause) throw std::invalid_argument(cause + " can only be registered as a ProblemCause once");
     }
     ProblemCause *problem_cause = new ProblemCause(cause, status_code, status_reason, description);
-    g_registered_causes.emplace_back(problem_cause);
+    reg_causes.emplace_back(problem_cause);
     return *problem_cause;
 }
 
