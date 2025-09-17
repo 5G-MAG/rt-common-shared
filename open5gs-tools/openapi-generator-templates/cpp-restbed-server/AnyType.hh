@@ -75,6 +75,8 @@ public:
 
     virtual bool validate() const { return true; };
 
+    void applyJSONPatch(const CJson &json);
+
 private:
     CJson *m_val;
 };

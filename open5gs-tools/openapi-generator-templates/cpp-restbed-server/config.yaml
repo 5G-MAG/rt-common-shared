@@ -13,6 +13,8 @@ importMappings:
   "std::list": "#include <list>"
   "std::basic_string<unsigned char>": "#include <string>"
 files:
+  AnyType.cc:
+    folder: model
   AnyType.hh:
     folder: model
   AnyType.h:

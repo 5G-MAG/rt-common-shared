@@ -1,0 +1,205 @@
+                  {
+{{#isContainer}}
+                    std::string idx_str(path_rest.substr(1));
+                    auto offset = idx_str.find_first_of('/');
+                    if (offset != std::string::npos) {
+                        path_rest = idx_str.substr(offset);
+                        idx_str.erase(offset);
+                    } else {
+                        path_rest.clear();
+                    }
+{{#isArray}}
+                    _PropertyType::{{<is-optional}}{{$yes}}value_type::{{/yes}}{{/is-optional}}iterator it;
+{{<is-optional}}{{$yes}}
+                    if (patched_obj) {
+{{/yes}}{{/is-optional}}
+                      if (idx_str == "-") {
+                        it = patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end();
+                      } else {
+                        std::size_t pos{};
+                        std::size_t offset(std::stol(idx_str, &pos));
+                        if (pos != idx_str.size()) {
+                            throw ModelException(std::string("Runtime Error: Array index in JSON Patch path is not a number: ") + idx_str, "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                        }
+                        it = patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.begin();
+                        for (auto i = offset; i > 0 && it != patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(); i--) {
+                            ++it;
+                        }
+                      }
+{{<is-optional}}{{$yes}}
+                    }
+{{/yes}}{{/is-optional}}
+                    if (path_rest.empty()) {
+                      if (op == "add" || op == "replace") {
+                        auto value_json = json.getObjectItemCaseSensitive("value");
+                        if (value_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "value", ProblemCause::INVALID_MSG_FORMAT);
+{{#isReadOnly}}
+                        throw ModelException("Runtime Error: JSON Patch operation not permitted: field {{baseName}} is read-only", "{{classname}}", "{{baseName}}", ProblemCause::MODIFICATION_NOT_ALLOWED);
+{{/isReadOnly}}{{^isReadOnly}}
+                        auto &json_obj = value_json;
+                        typedef _PropertyType _RecurseType;
+                        {
+                          typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type _PropertyType;
+                          _PropertyType value{};
+                          auto &member_var = value;
+{{#items}}
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}
+{{/items}}
+                          if (op == "add") {
+{{<is-optional}}{{$yes}}
+                            if (patched_obj) {
+{{/yes}}{{/is-optional}}
+                              patched_obj.{{<is-optional}}{{$yes}}value().{{/yes}}{{/is-optional}}insert(it, value);
+{{<is-optional}}{{$yes}}
+                            } else {
+                              patched_obj = _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}{value};
+                            }
+{{/yes}}{{/is-optional}}
+                          } else {
+{{<is-optional}}{{$yes}}
+                            if (!patched_obj) {
+                              throw ModelException("Runtime Error: JSON Patch replacing out of range array index", "{{classname}}", "{{baseName}}", ProblemCause::INVALID_MSG_FORMAT);
+                            } else {
+{{/yes}}{{/is-optional}}
+                              if (it == patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end()) {
+                                patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.push_back(value);
+                              } else {
+                                *it = value;
+                              }
+{{<is-optional}}{{$yes}}
+                            }
+{{/yes}}{{/is-optional}}
+                          }
+                        }
+                        return;
+{{/isReadOnly}}
+                      } else if (op == "remove") {
+{{#isReadOnly}}
+                        throw ModelException("Runtime Error: JSON Patch operation not permitted: field {{baseName}} is read-only", "{{classname}}", "{{baseName}}", ProblemCause::MODIFICATION_NOT_ALLOWED);
+{{/isReadOnly}}{{^isReadOnly}}{{<is-optional}}{{$yes}}
+                        if (patched_obj) {
+{{/yes}}{{/is-optional}}
+                          patched_obj.{{<is-optional}}{{$yes}}value().{{/yes}}{{/is-optional}}erase(it);
+{{<is-optional}}{{$yes}}
+                        }
+{{/yes}}{{/is-optional}}
+                        return;
+{{/isReadOnly}}
+                      } else {
+                        throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for array", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+                      }
+                    } else {
+{{<is-optional}}{{$yes}}
+                      if (!patched_obj) {
+                        throw ModelException("Runtime Error: JSON Patch array index out of range", "{{classname}}", "{{baseName}}", ProblemCause::INVALID_MSG_FORMAT);
+                      } else {
+{{/yes}}{{/is-optional}}
+                        [[maybe_unused]] auto &patched_obj = *it;
+                        typedef _PropertyType _RecurseType;
+                        {
+                            [[maybe_unused]] typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type _PropertyType;
+{{#items}}{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-patch-recurse}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-patch-recurse}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-patch-recurse}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-patch-recurse}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-patch-recurse}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-patch-recurse}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-patch-recurse}}{{/composedSchemas}}{{/items}}                        
+                        }
+{{<is-optional}}{{$yes}}
+                      }
+{{/yes}}{{/is-optional}}
+                    }
+{{/isArray}}{{#isMap}}
+                    if (path_rest.empty()) {
+                      if (op == "add" || op == "replace") {
+                        auto value_json = json.getObjectItemCaseSensitive("value");
+                        if (value_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "value", ProblemCause::INVALID_MSG_FORMAT);
+{{#isReadOnly}}
+                        throw ModelException("Runtime Error: JSON Patch operation not permitted: field {{baseName}} is read-only", "{{classname}}", "{{baseName}}", ProblemCause::MODIFICATION_NOT_ALLOWED);
+{{/isReadOnly}}{{^isReadOnly}}
+                        auto &json_obj = value_json;
+                        typedef _PropertyType _RecurseType;
+                        {
+                            typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type _PropertyType;
+                            _PropertyType value{};
+                            auto &member_var = value;
+{{#items}}
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}
+{{/items}}
+                        }
+                        if (op == "add") {
+                            {{<is-optional}}{{$yes}}if (!patched_obj) {
+                                patched_obj = {{name}}Type::value_type();
+                            }{{/yes}}{{/is-optional}}patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}[idx_str] = value;
+                        } else {
+                            {{<is-optional}}{{$yes}}if (!patched_obj) {
+                                throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch replace operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                            }{{/yes}}{{/is-optional}}auto it = patched_obj.find(idx_str);
+                            if (it == patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end()) {
+                                throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch replace operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                            }
+                            it->second = value;
+                        }
+                        return;
+{{/isReadOnly}}
+                      } else if (op == "remove") {
+{{#isReadOnly}}
+                        throw ModelException("Runtime Error: JSON Patch operation not permitted: field {{baseName}} is read-only", "{{classname}}", "{{baseName}}", ProblemCause::MODIFICATION_NOT_ALLOWED);
+{{/isReadOnly}}{{^isReadOnly}}
+                        {{<is-optional}}{{$yes}}if (!patched_obj) {
+                            throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch remove operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                        }{{/yes}}{{/is-optional}}auto it = patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.find(idx_str);
+                        if (it == patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end()) {
+                            throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch remove operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                        }
+                        patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.erase(it);
+                        return;
+{{/isReadOnly}}
+                      } else {
+                        throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for array", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+                      }
+                    } else {
+		      [[maybe_unused]] auto &patched_obj = it->second;
+                      typedef _PropertyType _RecurseType;
+                      {
+                          [[maybe_unused]] typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type _PropertyType;
+{{#items}}{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-patch-recurse}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-patch-recurse}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-patch-recurse}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-patch-recurse}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-patch-recurse}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-patch-recurse}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-patch-recurse}}{{/composedSchemas}}{{/items}}
+                      }
+                    }
+{{/isMap}}{{/isContainer}}{{^isContainer}}{{#isPrimitiveType}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isPrimitiveType}}{{^isPrimitiveType}}{{#isEnum}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isEnum}}{{^isEnum}}{{#isString}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isString}}{{#isDate}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isDate}}{{#isDateTime}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isDateTime}}{{#isUuid}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isUuid}}{{#isUri}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isUri}}{{#isEmail}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isEmail}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isUuid}}{{^isUri}}{{^isEmail}}{{<is-optional}}{{$yes}}
+                    if (patched_obj) {
+{{/yes}}{{/is-optional}}
+                      CJson new_patch(json);
+                      new_patch.set("path", CJson::newString(path_rest));
+                      try {
+                        patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}->applyJSONPatch(new_patch);
+                      } catch (ModelException &ex) {
+                        if (ex.parameter == "op" || ex.parameter == "path" || ex.parameter == "value") {
+                            throw ModelException(ex.what(), "{{classname}}", ex.parameter, ex.cause);
+                        }
+                        std::ostringstream param;
+                        param << "{{baseName}}";
+                        if (ex.parameter.size() > 0) {
+                            param << "." << ex.parameter;
+                        }
+                        throw ModelException(ex.what(), "{{classname}}", param.str(), ex.cause);
+                      }
+{{<is-optional}}{{$yes}}
+                    } else {
+                      throw ModelException("Runtime Error: JSON Patch operation on missing optional field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                    }
+{{/yes}}{{/is-optional}}
+                    return;
+{{/isEmail}}{{/isUri}}{{/isUuid}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isEnum}}{{/isPrimitiveType}}{{/isContainer}}
+                  }

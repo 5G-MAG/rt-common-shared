@@ -149,16 +149,22 @@ public:
     };
     CJson &set(const std::string &key, CJson &&node) {
         if (!isObject()) throw ModelException("Attempt to set object parameter on non-object", "CJson", std::string(), ProblemCause::SYSTEM_FAILURE);
+        cJSON *cjson = NULL;
         if (node.m_node) {
-            cJSON *cjson = node.m_node;
+            cjson = node.m_node;
             if (!node.m_owner) {
                 cjson = cJSON_Duplicate(cjson, 1);
             } else {
                 node.m_owner = false;
             }
-            cJSON_AddItemToObject(m_node, key.c_str(), cjson);
+            cJSON_ReplaceItemInObjectCaseSensitive(m_node, key.c_str(), cjson);
         } else {
-            cJSON_AddItemToObject(m_node, key.c_str(), cJSON_CreateNull());
+            cjson = cJSON_CreateNull();
+        }
+        if (cJSON_HasObjectItem(m_node, key.c_str())) {
+            cJSON_ReplaceItemInObject(m_node, key.c_str(), cjson);
+        } else {
+            cJSON_AddItemToObject(m_node, key.c_str(), cjson);
         }
         return *this;
     };
@@ -221,7 +227,7 @@ public:
         return cJSON_Compare(m_node, other.m_node, 1) != 0;
     };
 
-    std::string serialise() {
+    std::string serialise() const {
         if (!m_node) return std::string("null");
         char *str = cJSON_Print(m_node);
         std::string ret(str);

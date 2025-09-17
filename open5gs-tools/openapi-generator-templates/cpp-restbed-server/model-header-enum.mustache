@@ -53,6 +53,8 @@ public:
     operator std::string() const { return getString(); };
     operator const char *() const { return getStringConst(); };
 
+    void applyJSONPatch(const fiveg_mag_reftools::CJson &json);
+
 private:
     Enum m_value;
     Validator m_validator;

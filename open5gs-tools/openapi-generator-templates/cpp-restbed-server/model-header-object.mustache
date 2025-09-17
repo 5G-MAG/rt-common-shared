@@ -19,6 +19,9 @@ public:
     virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
     void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
 
+    {{classname}} *newWithJSONPatches(const fiveg_mag_reftools::CJson &json) const;
+    void applyJSONPatch(const fiveg_mag_reftools::CJson &json);
+
     bool operator==(const {{classname}} &other) const;
     bool operator!=(const {{classname}} &other) const { return !(*this == other); };
 

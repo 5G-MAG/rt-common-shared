@@ -52,3 +52,29 @@ CJson {{classname}}::toJSON(bool as_request) const
 {
     return CJson::newString(*this);
 }
+
+void {{classname}}::applyJSONPatch(const CJson &json)
+{
+    if (!json.isObject()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", std::string(), ProblemCause::INVALID_MSG_FORMAT);
+
+    auto op_json = json.getObjectItemCaseSensitive("op");
+    if (op_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "op", ProblemCause::INVALID_MSG_FORMAT);
+    std::string op(op_json.stringValue());
+
+    auto path_json = json.getObjectItemCaseSensitive("path");
+    if (path_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+    std::string path(path_json.stringValue());
+
+    if (path.empty()) {
+        if (op == "add" || op == "replace") {
+            auto value_json = json.getObjectItemCaseSensitive("value");
+            if (value_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "value", ProblemCause::INVALID_MSG_FORMAT);
+            *this = static_cast<std::string>(value_json);
+            this->validate();
+        } else {
+            throw ModelException("Runtime Error: JSON Patch operation not implemented on this node", "{{classname}}", std::string(), ProblemCause::SYSTEM_FAILURE);
+        }
+    } else {
+        throw ModelException("Runtime Error: Attempt to reference beyond leaf node in JSON Patch path", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+    }
+}

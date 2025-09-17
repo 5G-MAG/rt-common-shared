@@ -54,6 +54,8 @@ public:
     operator Enum() const { return m_value; };
     operator const std::string &() const { return m_strValue; };
 
+    void applyJSONPatch(const fiveg_mag_reftools::CJson &json);
+
 private:
     static std::string __toString(Enum value);
 

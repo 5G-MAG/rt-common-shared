@@ -26,6 +26,8 @@ public:
 
     virtual ~{{classname}}() {};
 
+    void applyJSONPatch(const fiveg_mag_reftools::CJson &json);
+
     bool operator==(const {{classname}} &other) const {
         return static_cast<const std::string&>(*this) == static_cast<const std::string&>(other);
     };

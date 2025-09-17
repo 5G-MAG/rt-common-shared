@@ -139,6 +139,74 @@ bool {{classname}}::validate() const
 {
     return {{^hasVars}}true{{/hasVars}}{{#vars}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/vars}};
 }
+
+{{classname}} *{{classname}}::newWithJSONPatches(const CJson &json) const
+{
+    {{classname}} *patched = new {{classname}}(*this);
+
+    if (json.isArray()) {
+        for (const auto &patch : json) {
+            patched->applyJSONPatch(patch);
+        }
+    } else {
+        patched->applyJSONPatch(json);
+    }
+
+    return patched;
+}
+
+void {{classname}}::applyJSONPatch(const CJson &json)
+{
+    if (!json.isObject()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", std::string(), ProblemCause::INVALID_MSG_FORMAT);
+
+    auto op_json = json.getObjectItemCaseSensitive("op");
+    if (op_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "op", ProblemCause::INVALID_MSG_FORMAT);
+    std::string op(op_json.stringValue());
+
+    auto path_json = json.getObjectItemCaseSensitive("path");
+    if (path_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+    std::string path(path_json.stringValue());
+
+    [[maybe_unused]] static const bool as_request = true; // Treat all Patch operations as though they apply to a request object
+
+    if (path.empty()) {
+        if (op == "add" || op == "replace") {
+            auto value_json = json.getObjectItemCaseSensitive("value");
+            if (value_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "value", ProblemCause::INVALID_MSG_FORMAT);
+            fromJSON(value_json, true);
+            validate();
+            return;
+        } else {
+            throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " cannot be performed",  "{{classname}}", "path", ProblemCause::SYSTEM_FAILURE);
+        }
+    }
+
+{{#vars}}
+    {
+        std::string path_prefix("/{{baseName}}");
+        if (path.starts_with(path_prefix)) {
+            auto path_rest = path.substr(path_prefix.size());
+            if (path_rest.empty()) {
+                [[maybe_unused]] auto &patch_target = m_{{name}};
+		[[maybe_unused]] typedef {{name}}Type _PropertyType;
+#define _FIELD_NAME "{{baseName}}"
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-patch-leaf}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-patch-leaf}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-patch-leaf}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-patch-leaf}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-patch-leaf}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-patch-leaf}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-patch-leaf}}{{/composedSchemas}}
+                m_{{name}}_validator.validate(m_{{name}});
+		return;
+            } else if (path_rest.starts_with("/")) {
+                [[maybe_unused]] auto &patched_obj = m_{{name}};
+                [[maybe_unused]] typedef {{name}}Type _PropertyType;
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-patch-recurse}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-patch-recurse}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-patch-recurse}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-patch-recurse}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-patch-recurse}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-patch-recurse}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-patch-recurse}}{{/composedSchemas}}
+#undef _FIELD_NAME
+		return;
+            }
+        }   
+    }
+{{/vars}}
+
+    throw ModelException(std::string("Runtime Error: Unknown path in JSON Patch: ") + json.serialise(), "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+}
+
 {{#vars}}
 
 {{#isBoolean}}const {{classname}}::{{name}}Type &{{classname}}::get{{name}}() const
