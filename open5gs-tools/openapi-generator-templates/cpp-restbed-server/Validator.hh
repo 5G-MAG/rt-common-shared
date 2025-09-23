@@ -22,6 +22,7 @@
 #include "core/ogs-memory.h"
 #undef OGS_CORE_INSIDE
 
+#include <format>
 #include <optional>
 #include <regex>
 #include <type_traits>
@@ -29,6 +30,7 @@
 #include "Boundary.hh"
 #include "CJson.hh"
 #include "ModelException.hh"
+#include "ProblemCause.hh"
 
 namespace fiveg_mag_reftools {
 
@@ -339,19 +341,25 @@ public:
     typedef V item_validator;
     typedef typename V::value_type item_type;
 
-    ContainerValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr)
+    ContainerValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr, const std::optional<size_t> &min_items = std::nullopt, const std::optional<size_t> &max_items = std::nullopt)
         :Validator<container_type>(classname, fieldname)
         ,m_itemValidator(item_validator)
+        ,m_minItems(min_items)
+        ,m_maxItems(max_items)
     {};
 
     ContainerValidator(const ContainerValidator &other)
         :Validator<container_type>(other)
         ,m_itemValidator(new item_validator(*other.m_itemValidator))
+        ,m_minItems(other.m_minItems)
+        ,m_maxItems(other.m_maxItems)
     {};
 
     ContainerValidator(ContainerValidator &&other)
         :Validator<container_type>(std::move(other))
         ,m_itemValidator(other.m_itemValidator)
+        ,m_minItems(std::move(other.m_minItems))
+        ,m_maxItems(std::move(other.m_maxItems))
     {
         other.m_itemValidator = nullptr;
     };
@@ -361,6 +369,8 @@ public:
         this->Validator<container_type>::operator=(other);
         if (m_itemValidator) delete m_itemValidator;
         m_itemValidator = new item_validator(*other.m_itemValidator);
+        m_minItems = other.m_minItems;
+        m_maxItems = other.m_maxItems;
         return *this;
     };
 
@@ -370,6 +380,8 @@ public:
         if (m_itemValidator) delete m_itemValidator;
         m_itemValidator = other.m_itemValidator;
         other.m_itemValidator = nullptr;
+        m_minItems = std::move(other.m_minItems);
+        m_maxItems = std::move(other.m_maxItems);
         return *this;
     };
 
@@ -385,6 +397,15 @@ private:
     template <typename U, typename std::enable_if<is_std_optional<U>::value, bool>::type = true>
     bool _validate(const U &value) const {
         if (value.has_value()) {
+            if (m_minItems || m_maxItems) {
+                auto n_items = value.value().size();
+                if (m_minItems && m_minItems.value() > n_items) {
+                    throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+                if (m_maxItems && m_maxItems.value() < n_items) {
+                    throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+            }
             if (m_itemValidator) {
                 for (auto &var : value.value()) {
                     m_itemValidator->validate(var);
@@ -396,6 +417,15 @@ private:
 
     template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
     bool _validate(const U &value) const {
+        if (m_minItems || m_maxItems) {
+            auto n_items = value.size();
+            if (m_minItems && m_minItems.value() > n_items) {
+                throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+            if (m_maxItems && m_maxItems.value() < n_items) {
+                throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+        }
         if (m_itemValidator) {
             for (auto &var : value) {
                 m_itemValidator->validate(var);
@@ -405,6 +435,8 @@ private:
     };
 
     item_validator *m_itemValidator;
+    std::optional<size_t> m_minItems;
+    std::optional<size_t> m_maxItems;
 };
 
 template <class V>
@@ -414,19 +446,27 @@ public:
     typedef V item_validator;
     typedef typename V::value_type item_type;
 
-    OptionalMapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr)
+    OptionalMapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr,
+                         const std::optional<size_t> &min_items = std::nullopt,
+                         const std::optional<size_t> &max_items = std::nullopt)
         :Validator<container_type>(classname, fieldname)
         ,m_itemValidator(item_validator)
+        ,m_minItems(min_items)
+        ,m_maxItems(max_items)
     {};
 
     OptionalMapValidator(const OptionalMapValidator &other)
         :Validator<container_type>(other)
         ,m_itemValidator(new item_validator(*other.m_itemValidator))
+        ,m_minItems(other.m_minItems)
+        ,m_maxItems(other.m_maxItems)
     {};
 
     OptionalMapValidator(OptionalMapValidator &&other)
         :Validator<container_type>(std::move(other))
         ,m_itemValidator(other.m_itemValidator)
+        ,m_minItems(std::move(other.m_minItems))
+        ,m_maxItems(std::move(other.m_maxItems))
     {
         other.m_itemValidator = nullptr;
     };
@@ -436,6 +476,8 @@ public:
         this->Validator<container_type>::operator=(other);
         if (m_itemValidator) delete m_itemValidator;
         m_itemValidator = new item_validator(*other.m_itemValidator);
+        m_minItems = other.m_minItems;
+        m_maxItems = other.m_maxItems;
         return *this;
     };
 
@@ -445,6 +487,8 @@ public:
         if (m_itemValidator) delete m_itemValidator;
         m_itemValidator = other.m_itemValidator;
         other.m_itemValidator = nullptr;
+        m_minItems = std::move(other.m_minItems);
+        m_maxItems = std::move(other.m_maxItems);
         return *this;
     };
 
@@ -453,9 +497,20 @@ public:
     };
 
     virtual bool validate(const container_type &value) const {
-        if (m_itemValidator && value.has_value()) {
-            for (auto &var : value.value()) {
-                m_itemValidator->validate(var.second);
+        if (value.has_value()) {
+            if (m_minItems || m_maxItems) {
+                auto n_items = value.value().size();
+                if (m_minItems && m_minItems.value() > n_items) {
+                    throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+                if (m_maxItems && m_maxItems.value() < n_items) {
+                    throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+            }
+            if (m_itemValidator) {
+                for (auto &var : value.value()) {
+                    m_itemValidator->validate(var.second);
+                }
             }
         }
         return true;
@@ -463,6 +518,8 @@ public:
 
 private:
     item_validator *m_itemValidator;
+    std::optional<size_t> m_minItems;
+    std::optional<size_t> m_maxItems;
 };
 
 template <class V>
@@ -472,19 +529,27 @@ public:
     typedef V item_validator;
     typedef typename V::value_type item_type;
 
-    MapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr)
+    MapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr,
+                 const std::optional<size_t> &min_items = std::nullopt,
+                 const std::optional<size_t> &max_items = std::nullopt)
         :Validator<container_type>(classname, fieldname)
         ,m_itemValidator(item_validator)
+        ,m_minItems(min_items)
+        ,m_maxItems(max_items)
     {};
 
     MapValidator(const MapValidator &other)
         :Validator<container_type>(other)
         ,m_itemValidator(new item_validator(*other.m_itemValidator))
+        ,m_minItems(other.m_minItems)
+        ,m_maxItems(other.m_maxItems)
     {};
 
     MapValidator(MapValidator &&other)
         :Validator<container_type>(std::move(other))
         ,m_itemValidator(other.m_itemValidator)
+        ,m_minItems(std::move(other.m_minItems))
+        ,m_maxItems(std::move(other.m_maxItems))
     {
         other.m_itemValidator = nullptr;
     };
@@ -494,6 +559,8 @@ public:
         this->Validator<container_type>::operator=(other);
         if (m_itemValidator) delete m_itemValidator;
         m_itemValidator = new item_validator(*other.m_itemValidator);
+        m_minItems = other.m_minItems;
+        m_maxItems = other.m_maxItems;
         return *this;
     };
 
@@ -503,6 +570,8 @@ public:
         if (m_itemValidator) delete m_itemValidator;
         m_itemValidator = other.m_itemValidator;
         other.m_itemValidator = nullptr;
+        m_minItems = std::move(other.m_minItems);
+        m_maxItems = std::move(other.m_maxItems);
         return *this;
     };
 
@@ -511,6 +580,15 @@ public:
     };
 
     virtual bool validate(const container_type &value) const {
+        if (m_minItems || m_maxItems) {
+            auto n_items = value.size();
+            if (m_minItems && m_minItems.value() > n_items) {
+                throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+            if (m_maxItems && m_maxItems.value() < n_items) {
+                throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+        }
         if (m_itemValidator) {
             for (auto &var : value) {
                 m_itemValidator->validate(var.second);
@@ -521,6 +599,8 @@ public:
 
 private:
     item_validator *m_itemValidator;
+    std::optional<size_t> m_minItems;
+    std::optional<size_t> m_maxItems;
 };
 
 template <class V>
