@@ -115,25 +115,26 @@
                         auto &json_obj = value_json;
                         typedef _PropertyType _RecurseType;
                         {
-                            typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type _PropertyType;
+                            typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::mapped_type _PropertyType;
                             _PropertyType value{};
                             auto &member_var = value;
 {{#items}}
 {{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}
 {{/items}}
-                        }
-                        if (op == "add") {
-                            {{<is-optional}}{{$yes}}if (!patched_obj) {
-                                patched_obj = {{name}}Type::value_type();
-                            }{{/yes}}{{/is-optional}}patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}[idx_str] = value;
-                        } else {
-                            {{<is-optional}}{{$yes}}if (!patched_obj) {
-                                throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch replace operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
-                            }{{/yes}}{{/is-optional}}auto it = patched_obj.find(idx_str);
-                            if (it == patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end()) {
-                                throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch replace operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                            if (op == "add") {
+                                {{<is-optional}}{{$yes}}if (!patched_obj) {
+                                    patched_obj = {{name}}Type::value_type();
+                                }{{/yes}}{{/is-optional}}patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}[idx_str] = value;
+                            } else {
+                                {{<is-optional}}{{$yes}}if (!patched_obj) {
+                                    throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch replace operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                                }{{/yes}}{{/is-optional}}
+				auto it = patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.find(idx_str);
+                                if (it == patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end()) {
+                                    throw ModelException(std::string("Runtime Error: Map index ") + idx_str + " does not exist for JSON Patch replace operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                                }
+                                it->second = value;
                             }
-                            it->second = value;
                         }
                         return;
 {{/isReadOnly}}
@@ -154,10 +155,14 @@
                         throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for array", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
                       }
                     } else {
+		      auto it = patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.find(idx_str);
+                      if (it == patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end()) {
+                        throw ModelException(std::string("Runtime Error: Map index \"") + idx_str + "\" does not exist for JSON Patch operation", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+                      }
 		      [[maybe_unused]] auto &patched_obj = it->second;
                       typedef _PropertyType _RecurseType;
                       {
-                          [[maybe_unused]] typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::element_type _PropertyType;
+                          [[maybe_unused]] typedef _RecurseType{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::mapped_type _PropertyType;
 {{#items}}{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-patch-recurse}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-patch-recurse}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-patch-recurse}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-patch-recurse}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-patch-recurse}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-patch-recurse}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-patch-recurse}}{{/composedSchemas}}{{/items}}
                       }
                     }
