@@ -4,12 +4,13 @@ Helper script to build ffmpeg libraries for Android.
 The script is intended for use on Linux & Mac OSX. 
 On Windows, building is supported through WSL, or else using the Dockerfile.
 
+Please use the following introductions according to your target ANDROID_API, ndk, etc.
+
 ***build.sh* usage :**
 
 ```
 # Get ffmpeg sources
 curl -LO "https://www.ffmpeg.org/releases/ffmpeg-7.1.1.tar.bz2"
-mkdir src
 tar xf ffmpeg-7.1.1.tar.bz2 -C src && rm ffmpeg-7.1.1.tar.bz2
 
 # Configure NDK path
