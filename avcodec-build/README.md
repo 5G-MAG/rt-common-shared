@@ -9,6 +9,7 @@ On Windows, building is supported through WSL, or else using the Dockerfile.
 ```
 # Get ffmpeg sources
 curl -LO "https://www.ffmpeg.org/releases/ffmpeg-7.1.1.tar.bz2"
+mkdir src
 tar xf ffmpeg-7.1.1.tar.bz2 -C src && rm ffmpeg-7.1.1.tar.bz2
 
 # Configure NDK path
