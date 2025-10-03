@@ -51,10 +51,13 @@ docker run -v /$(PWD)/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aa
 ```
 
 **On arm64 hosts, such as Mac OSX on Apple silicon**
+
+If you are building the container on an ARM host (eg. Snapdragon X Elite, Apple silicon), use [podman](https://podman.io/) instead of docker with the [--arch](https://docs.podman.io/en/latest/markdown/podman-run.1.html#arch-arch) option: 
+
 ```
 podman build -t ffmpeg-builder:27 --build-arg NDK_VERSION=27.2.12479018 .
- 
-podman run -v ${pwd}/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
+
+podman run --arch=amd64 -v ${pwd}/build/ffmpeg/aarch64:/usr/build/ffmpeg --env TARGET_ABI=aarch64 --env ANDROID_API_LEVEL=35 ffmpeg-builder:27
 ```
 
 
