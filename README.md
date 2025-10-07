@@ -23,12 +23,6 @@ More information can be found in the corresponding [subfolder](mbms/README.md).
 
 Information on MBMS Service Announcement formats can be found [here](https://5g-mag.github.io/Getting-Started/pages/lte-based-5g-broadcast/rt-common-shared/MBMS-service-announcement-files.html).
 
-### Simple Express Server
-
-Includes a simple HTTP server based on express.js that can be used to statically host files.
-
-More information can be found in the corresponding [subfolder](simple-express-server/README.md).
-
 ### Open5GS Tools
 
 Includes scripts related to the OpenAPI generator.
@@ -40,8 +34,3 @@ More information can be found in the corresponding [subfolder](open5gs-tools/).
 Includes modified versions of the OpenAPI YAML files from the 5G_APIs repository specific to Data Reporting for use with a Data Collection Application Function.
 
 More information can be found in the corresponding [subfolder](/data-reporting/5G_APIs-overrides/README.md).
-
-### Avcodec build
-Includes a helper script to build ffmpeg libraries for Android.
-
-More information can be found in the corresponding [subfolder](/avcodec-build/README.md).
