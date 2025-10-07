@@ -182,7 +182,9 @@
                     throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
 {{/isUri}}{{#isEmail}}
                     throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
-{{/isEmail}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isUuid}}{{^isUri}}{{^isEmail}}{{<is-optional}}{{$yes}}
+{{/isEmail}}{{#isByteArray}}
+                    throw ModelException("Runtime Error: JSON Patch path extends beyond leaf field", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isUuid}}{{^isUri}}{{^isEmail}}{{^isByteArray}}{{<is-optional}}{{$yes}}
                     if (patched_obj) {
 {{/yes}}{{/is-optional}}
                       CJson new_patch(json);
@@ -206,5 +208,5 @@
                     }
 {{/yes}}{{/is-optional}}
                     return;
-{{/isEmail}}{{/isUri}}{{/isUuid}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isEnum}}{{/isPrimitiveType}}{{/isContainer}}
+{{/isByteArray}}{{/isEmail}}{{/isUri}}{{/isUuid}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isEnum}}{{/isPrimitiveType}}{{/isContainer}}
                   }

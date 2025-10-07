@@ -38,7 +38,9 @@
                    throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
 {{/isUri}}{{#isEmail}}
                    throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
-{{/isEmail}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isUuid}}{{^isUri}}{{^isEmail}}
+{{/isEmail}}{{#isByteArray}}
+                  throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isUuid}}{{^isUri}}{{^isEmail}}{{^isByteArray}}
                    CJson new_patch(json);
                    new_patch.set("path", CJson::newString(path_rest));
                    try {
@@ -60,5 +62,5 @@
                        }
                        throw ModelException(ex.what(), "{{classname}}", param.str(), ex.cause);
                    }
-{{/isEmail}}{{/isUri}}{{/isUuid}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isEnum}}{{/isPrimitiveType}}{{/isContainer}}
+{{/isByteArray}}{{/isEmail}}{{/isUri}}{{/isUuid}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isEnum}}{{/isPrimitiveType}}{{/isContainer}}
                }
