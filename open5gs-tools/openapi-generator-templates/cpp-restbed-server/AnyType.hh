@@ -54,7 +54,7 @@ public:
         return *this;
     };
 
-    bool operator==(const AnyType &other) {
+    bool operator==(const AnyType &other) const {
         if (!m_val && !other.m_val) return true;
         if (!m_val) return false;
         if (!other.m_val) return false;
