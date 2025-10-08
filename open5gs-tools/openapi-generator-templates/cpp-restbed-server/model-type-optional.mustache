@@ -1,0 +1,1 @@
+{{#required}}{{#isReadOnly}}std::optional<{{/isReadOnly}}{{#isWriteOnly}}std::optional<{{/isWriteOnly}}{{$type}}{{/type}}{{#isReadOnly}} >{{/isReadOnly}}{{#isWriteOnly}} >{{/isWriteOnly}}{{/required}}{{^required}}std::optional<{{$type}}{{/type}} >{{/required}}

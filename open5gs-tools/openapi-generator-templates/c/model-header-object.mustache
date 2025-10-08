@@ -1,0 +1,46 @@
+typedef struct {{classname}}_s {{classname}}_t;
+
+{{#vars}}
+    {{^isContainer}}
+        {{#isPrimitiveType}}
+            {{#isEnum}}
+{{<model-header-enum}}
+{{$classname}}{{classname}}_{{#lambda.uppercase}}{{baseName}}{{/lambda.uppercase}}{{/classname}}
+{{/model-header-enum}}
+            {{/isEnum}}
+        {{/isPrimitiveType}}
+    {{/isContainer}}
+{{/vars}}
+typedef struct {{classname}}_s {
+    {{#discriminator}}
+{{>model-polymorphic-fields}}
+    {{/discriminator}}
+    {{^discriminator}}
+{{>model-object-fields}}
+    {{/discriminator}}
+} {{classname}}_t;
+
+{{#discriminator}}
+{{#discriminator.mappedModels}}
+{{classname}}_t *{{classname}}_{{#lambda.lowercase}}{{mappingName}}{{/lambda.lowercase}}_create({{modelName}}_t *{{modelName}});
+{{/discriminator.mappedModels}}
+{{/discriminator}}
+{{^discriminator}}
+{{classname}}_t *{{classname}}_create(
+{{<model-object-fields}}{{$sepchar}},{{/sepchar}}{{$sep}}{{^-last}}{{$sepchar}},{{/sepchar}}{{/-last}}{{/sep}}{{/model-object-fields}}
+);
+{{/discriminator}}
+
+void {{classname}}_free({{classname}}_t *{{classname}});
+
+{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err);
+{{classname}}_t *{{classname}}_parseRequestFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err);
+{{classname}}_t *{{classname}}_parseResponseFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err);
+
+cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{classname}}_as_request);
+cJSON *{{classname}}_convertRequestToJSON(const {{classname}}_t *{{classname}});
+cJSON *{{classname}}_convertResponseToJSON(const {{classname}}_t *{{classname}});
+
+{{classname}}_t *{{classname}}_copy({{classname}}_t *dst, const {{classname}}_t *src, bool {{classname}}_as_request);
+{{classname}}_t *{{classname}}_copyRequest({{classname}}_t *dst, const {{classname}}_t *src);
+{{classname}}_t *{{classname}}_copyResponse({{classname}}_t *dst, const {{classname}}_t *src);

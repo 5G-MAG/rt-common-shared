@@ -1,0 +1,66 @@
+               if (op == "add" || op == "replace") {
+                   auto value_json = json.getObjectItemCaseSensitive("value");
+                   if (value_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "value", ProblemCause::INVALID_MSG_FORMAT);
+{{#isReadOnly}}
+                   throw ModelException("Runtime Error: JSON Patch operation not permitted: field {{baseName}} is read-only", "{{classname}}", "{{baseName}}", ProblemCause::MODIFICATION_NOT_ALLOWED);
+{{/isReadOnly}}{{^isReadOnly}}
+                   auto &json_obj = value_json;
+{{#isArray}}
+                   const char *obj_key = "{{baseName}}";
+{{/isArray}}{{#isMap}}
+                   const char *obj_key = "{{baseName}}";
+{{/isMap}}
+                   auto &member_var = patch_target;
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}
+{{/isReadOnly}}
+               } else if (op == "remove") {
+{{#isReadOnly}}
+                   throw ModelException("Runtime Error: JSON Patch operation not permitted: field {{baseName}} is read-only", "{{classname}}", "{{baseName}}", ProblemCause::MODIFICATION_NOT_ALLOWED);
+{{/isReadOnly}}{{^isReadOnly}}
+                   {{<is-optional}}{{$yes}}patch_target = std::nullopt;{{/yes}}{{$no}}throw ModelException("Runtime Error: JSON Patch attempt to clear mandatory {{classname}}.{{baseName}} field", "{{classname}}", "{{baseName}}", ProblemCause::MANDATORY_IE_MISSING);{{/no}}{{/is-optional}}
+{{/isReadOnly}}
+               } else {
+{{#isContainer}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for array/map", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isContainer}}{{^isContainer}}{{#isPrimitiveType}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isPrimitiveType}}{{^isPrimitiveType}}{{#isEnum}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isEnum}}{{^isEnum}}{{#isString}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isString}}{{#isDate}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isDate}}{{#isDateTime}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isDateTime}}{{#isUuid}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isUuid}}{{#isUri}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isUri}}{{#isEmail}}
+                   throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isEmail}}{{#isByteArray}}
+                  throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " not implemented for {{baseName}}", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);
+{{/isByteArray}}{{^isString}}{{^isDate}}{{^isDateTime}}{{^isUuid}}{{^isUri}}{{^isEmail}}{{^isByteArray}}
+                   CJson new_patch(json);
+                   new_patch.set("path", CJson::newString(path_rest));
+                   try {
+{{<is-optional}}{{$yes}}
+                       if (patch_target) {
+{{/yes}}{{/is-optional}}
+                           patch_target{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}->applyJSONPatch(new_patch);
+{{<is-optional}}{{$yes}}
+                       }
+{{/yes}}{{/is-optional}}
+                   } catch (ModelException &ex) {
+                       if (ex.parameter == "op" || ex.parameter == "path" || ex.parameter == "value") {
+                           throw ModelException(ex.what(), "{{classname}}", ex.parameter, ex.cause);
+                       }
+                       std::ostringstream param;
+                       param << "{{baseName}}";
+                       if (ex.parameter.size() > 0) {
+                           param << "." << ex.parameter;
+                       }
+                       throw ModelException(ex.what(), "{{classname}}", param.str(), ex.cause);
+                   }
+{{/isByteArray}}{{/isEmail}}{{/isUri}}{{/isUuid}}{{/isDateTime}}{{/isDate}}{{/isString}}{{/isEnum}}{{/isPrimitiveType}}{{/isContainer}}
+               }

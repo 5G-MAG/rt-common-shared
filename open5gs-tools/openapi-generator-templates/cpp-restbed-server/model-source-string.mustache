@@ -1,0 +1,80 @@
+bool {{classname}}::validate() const
+{
+{{^composedSchemas}}{{#pattern}}
+    {   
+        static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+    }
+{{/pattern}}
+    return true;
+{{/composedSchemas}}{{#composedSchemas}}{{#allOf.0.name}}{{#allOf}}{{#pattern}}
+    {
+        static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+    }
+{{/pattern}}{{/allOf}}
+    return true;
+{{/allOf.0.name}}{{#anyOf.0.name}}{{#anyOf}}{{#pattern}}
+    try {
+        static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
+        validator.validate(*this);
+        return true;
+    } catch (ModelException &ex) {
+    }
+{{/pattern}}{{/anyOf}}
+    throw ModelException("String did not match any of the validation patterns", "{{{classname}}}", nullptr, ProblemCause::{{#required}}MANDATORY{{/required}}{{^required}}OPTIONAL{{/required}}_IE_INCORRECT);
+{{/anyOf.0.name}}{{#oneOf.0.name}}
+    std::size_t count = 0;
+{{#oneOf}}
+    if (count < 2) {
+        try {
+            static StringValidator<std::string> validator("{{{classname}}}", nullptr, "{{pattern}}");
+            validator.validate(*this);
+            count++;
+        } catch (ModelException &ex) {
+        }
+    }
+{{/oneOf}}
+    if (count != 1) {
+        throw ModelException("String did not validate", "{{{classname}}}", nullptr, ProblemCause::{{#required}}MANDATORY{{/required}}{{^required}}OPTIONAL{{/required}}_IE_INCORRECT);
+    }
+    return true;
+{{/oneOf.0.name}}{{/composedSchemas}}
+}
+
+void {{classname}}::fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request)
+{
+    *this = static_cast<std::string>(json);
+    this->validate();
+}
+
+CJson {{classname}}::toJSON(bool as_request) const
+{
+    return CJson::newString(*this);
+}
+
+void {{classname}}::applyJSONPatch(const CJson &json)
+{
+    if (!json.isObject()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", std::string(), ProblemCause::INVALID_MSG_FORMAT);
+
+    auto op_json = json.getObjectItemCaseSensitive("op");
+    if (op_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "op", ProblemCause::INVALID_MSG_FORMAT);
+    std::string op(op_json.stringValue());
+
+    auto path_json = json.getObjectItemCaseSensitive("path");
+    if (path_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+    std::string path(path_json.stringValue());
+
+    if (path.empty()) {
+        if (op == "add" || op == "replace") {
+            auto value_json = json.getObjectItemCaseSensitive("value");
+            if (value_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "value", ProblemCause::INVALID_MSG_FORMAT);
+            *this = static_cast<std::string>(value_json);
+            this->validate();
+        } else {
+            throw ModelException("Runtime Error: JSON Patch operation not implemented on this node", "{{classname}}", std::string(), ProblemCause::SYSTEM_FAILURE);
+        }
+    } else {
+        throw ModelException("Runtime Error: Attempt to reference beyond leaf node in JSON Patch path", "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+    }
+}

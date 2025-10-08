@@ -1,0 +1,61 @@
+class {{classname}} : public fiveg_mag_reftools::ModelObject {
+public:
+    static constexpr const char * const apiName = "{{appName}}";
+    static constexpr const char * const apiVersion = "{{appVersion}}";
+    static constexpr const char * const apiDescription = "{{appDescription}}";
+    static constexpr const char * const inputSpec = "{{inputSpec}}";
+
+    typedef enum {
+        NO_VAL,
+{{#values}}        VAL_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{^-last}},{{/-last}}{{/.}}
+{{/values}}
+    } Enum;
+    typedef fiveg_mag_reftools::StringValidator<std::string> Validator;
+
+{{#values}}
+    static constexpr const char * const STR_{{^.}}NULL{{/.}}{{#.}}{{#lambda.uppercase}}{{#lambda.snakecase}}{{.}}{{/lambda.snakecase}}{{/lambda.uppercase}}{{/.}} = {{^.}}nullptr{{/.}}{{#.}}"{{{.}}}"{{/.}};
+{{/values}}
+
+    {{classname}}();
+    {{classname}}(const {{classname}} &other);
+    {{classname}}({{classname}} &&other);
+    explicit {{classname}}(const std::string &json, bool as_request = true);
+    {{classname}}(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+    virtual ~{{classname}}();
+
+    {{classname}} &operator=(const {{classname}} &other);
+    {{classname}} &operator=({{classname}} &&other);
+
+    virtual fiveg_mag_reftools::CJson toJSON(bool as_request = false) const;
+    void fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request = true);
+
+    Enum getValue() const { return m_value; };
+    std::string getString() const;
+    const char *getStringConst() const;
+    const Validator &validator() const { return m_validator; };
+
+    {{classname}} &operator=(Enum value) { m_value=value; return *this; };
+    {{classname}} &operator=(const std::string &value) { return this->fromString(value); };
+
+    bool operator==(const {{classname}} &other) const { return m_value == other.m_value; };
+    bool operator==(Enum val) const { return m_value == val; };
+    bool operator==(const std::string &strval) const { return getString() == strval; };
+    bool operator!=(const {{classname}} &other) const { return m_value != other.m_value; };
+    bool operator!=(Enum val) const { return m_value != val; };
+    bool operator!=(const std::string &strval) const { return getString() != strval; };
+
+    bool validate() const { return m_validator.validate(getString()); };
+
+    {{classname}} &fromString(const std::string &value);
+
+    operator Enum() const { return m_value; };
+    operator std::string() const { return getString(); };
+    operator const char *() const { return getStringConst(); };
+
+    void applyJSONPatch(const fiveg_mag_reftools::CJson &json);
+
+private:
+    Enum m_value;
+    Validator m_validator;
+};

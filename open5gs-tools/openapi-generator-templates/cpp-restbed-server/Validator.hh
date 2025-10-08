@@ -1,0 +1,617 @@
+/**************************************************************************
+ * Validator.hh : Validator model base class/interface
+ **************************************************************************
+ * This is the base type for all model files generated from the OpenAPI
+ * YAML.
+ **************************************************************************
+ * License: 5G-MAG Public License (v1.0)
+ * Author: David Waring
+ * Copyright: (C)2024 British Broadcasting Corporation
+ *
+ * For full license terms please see the LICENSE file distributed with this
+ * program. If this file is missing then the license can be retrieved from
+ * https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+ */
+
+#ifndef _OPENAPI_VALIDATOR_HH_
+#define _OPENAPI_VALIDATOR_HH_
+
+//#include "core/ogs-core.h"
+#define OGS_CORE_INSIDE
+#define OGS_USE_TALLOC 1
+#include "core/ogs-memory.h"
+#undef OGS_CORE_INSIDE
+
+#include <format>
+#include <optional>
+#include <regex>
+#include <type_traits>
+
+#include "Boundary.hh"
+#include "CJson.hh"
+#include "ModelException.hh"
+#include "ProblemCause.hh"
+
+namespace fiveg_mag_reftools {
+
+template <class T>
+class Validator {
+public:
+    typedef T value_type;
+
+    Validator(const char *classname = nullptr, const char *fieldname = nullptr)
+        :m_classname(classname)
+        ,m_fieldname(fieldname)
+        {};
+    Validator(const Validator &other)
+        :m_classname(other.m_classname)
+        ,m_fieldname(other.m_fieldname)
+        {};
+    Validator(Validator &&other)
+        :m_classname(other.m_classname)
+        ,m_fieldname(other.m_fieldname)
+        {};
+
+    Validator &operator=(const Validator &other) {
+        m_classname = other.m_classname;
+        m_fieldname = other.m_fieldname;
+        return *this;
+    };
+    Validator &operator=(Validator &&other) {
+        m_classname = other.m_classname;
+        m_fieldname = other.m_fieldname;
+        return *this;
+    };
+
+    virtual ~Validator() {};
+
+    virtual bool validate(const T& value) const = 0;
+
+protected:
+    const char *m_classname;
+    const char *m_fieldname;
+};
+
+template <class T>
+struct is_std_optional : std::false_type {};
+
+template <class U>
+struct is_std_optional<std::optional<U> > : std::true_type {};
+
+template <class T>
+struct is_std_shared_ptr : std::false_type {};
+
+template <class U>
+struct is_std_shared_ptr<std::shared_ptr<U> > : std::true_type {};
+
+template <class T>
+struct remove_std_optional { using type = T; };
+
+template <class U>
+struct remove_std_optional<std::optional<U> > { using type = U; };
+
+template <class T>
+class NumberValidator : public Validator<T> {
+public:
+    typedef Boundary<T> boundary_type;
+    typedef typename Validator<T>::value_type value_type;
+
+    NumberValidator(const char *classname = nullptr, const char *fieldname = nullptr, boundary_type *minimum = nullptr, boundary_type *maximum = nullptr)
+        :Validator<T>(classname, fieldname)
+        ,m_minimum(minimum)
+        ,m_maximum(maximum)
+    {};
+    NumberValidator(const NumberValidator &other)
+        :Validator<T>(other)
+        ,m_minimum(nullptr)
+        ,m_maximum(nullptr)
+    {
+        if (other.m_minimum) m_minimum = new boundary_type(*other.m_minimum);
+        if (other.m_maximum) m_maximum = new boundary_type(*other.m_maximum);
+    };
+    NumberValidator(NumberValidator &&other)
+        :Validator<T>(std::move(other))
+        ,m_minimum(other.m_minimum)
+        ,m_maximum(other.m_maximum)
+    {
+        other.m_minimum = nullptr;
+        other.m_maximum = nullptr;
+    };
+
+    NumberValidator &operator=(const NumberValidator &other) {
+        this->Validator<T>::operator=(other);
+
+        if (m_minimum) {
+            delete m_minimum;
+            m_minimum = nullptr;
+        }
+        if (other.m_minimum) m_minimum = new boundary_type(*other.m_minimum);
+
+        if (m_maximum) {
+            delete m_maximum;
+            m_maximum = nullptr;
+        }
+        if (other.m_maximum) m_maximum = new boundary_type(*other.m_maximum);
+
+        return *this;
+    };
+    NumberValidator &operator=(NumberValidator &&other) {
+        this->Validator<T>::operator=(std::move(other));
+        m_minimum = other.m_minimum;
+        m_maximum = other.m_maximum;
+        other.m_minimum = nullptr;
+        other.m_maximum = nullptr;
+        return *this;
+    };
+
+    virtual ~NumberValidator() {
+        if (m_minimum) delete m_minimum;
+        if (m_maximum) delete m_maximum;
+    };
+
+    virtual bool validate(const value_type &value) const {
+        return _validate(value);
+    }
+
+private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (value.has_value()) {
+            if (m_minimum && m_minimum->isGreaterThan(value.value())) {
+                throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+            }
+            if (m_maximum && m_maximum->isLessThan(value.value())) {
+                throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+            }
+        }
+
+        return true;
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (m_minimum && m_minimum->isGreaterThan(value)) {
+            throw ModelException("Given value is less than the allowed minimum", this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+        }
+        if (m_maximum && m_maximum->isLessThan(value)) {
+            throw ModelException("Given value is greater than the allowed maximum", this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+        }
+
+        return true;
+    };
+
+    boundary_type *m_minimum;
+    boundary_type *m_maximum;
+};
+
+template <class T>
+class StringValidator : public Validator<T> {
+public:
+    typedef typename Validator<T>::value_type value_type;
+
+    StringValidator(const char *classname = nullptr, const char *fieldname = nullptr, const char *pattern = nullptr)
+        :Validator<T>(classname, fieldname)
+        ,m_pattern(pattern)
+        ,m_regex(nullptr)
+    {
+        if (m_pattern) {
+            std::string pattern(m_pattern);
+            pattern = pattern.substr(1,pattern.size()-2);
+            /* TODO: get regex from a pool */
+            m_regex = new std::regex(pattern, std::regex_constants::ECMAScript);
+        }
+    }
+
+    StringValidator(const StringValidator &other)
+        :Validator<T>(other)
+        ,m_pattern(other.m_pattern)
+        ,m_regex(nullptr)
+    {
+        if (m_pattern) {
+            std::string pattern(m_pattern);
+            pattern = pattern.substr(1,pattern.size()-2);
+            /* TODO: use pool regex from "other" */
+            m_regex = new std::regex(pattern, std::regex_constants::ECMAScript);
+        }
+    };
+
+    StringValidator(StringValidator &&other)
+        :Validator<T>(std::move(other))
+        ,m_pattern(other.m_pattern)
+        ,m_regex(other.m_regex)
+    {
+        other.m_regex = nullptr;
+    };
+
+    StringValidator &operator=(const StringValidator &other)
+    {
+        this->Validator<T>::operator=(other);
+        m_pattern = other.m_pattern;
+        if (m_regex) {
+            delete m_regex;
+            m_regex = nullptr;
+        }
+        if (m_pattern) {
+            std::string pattern(m_pattern);
+            pattern = pattern.substr(1,pattern.size()-2);
+            /* TODO: use pool regex from "other" */
+            m_regex = new std::regex(pattern, std::regex_constants::ECMAScript);
+        }
+        return *this;
+    };
+    StringValidator &operator=(StringValidator &&other)
+    {
+        this->Validator<T>::operator=(std::move(other));
+        m_pattern = other.m_pattern;
+        if (m_regex) delete m_regex;
+        m_regex = other.m_regex;
+        other.m_regex = nullptr;
+        return *this;
+    };
+
+    virtual ~StringValidator() {
+        if (m_regex) delete m_regex;
+    };
+
+    virtual bool validate(const value_type &value) const {
+        return _validate(value);
+    };
+
+private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (value.has_value()) {
+            if (m_regex && !std::regex_match(value.value(), *m_regex)) {
+                throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+            }
+        }
+
+        return true;
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (m_regex && !std::regex_match(value, *m_regex)) {
+            throw ModelException("String did not match the correct format", this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+        }
+
+        return true;
+    };
+
+    const char *m_pattern;
+    std::regex *m_regex;
+};
+
+template<class T>
+class ModelValidator : public Validator<T> {
+public:
+    typedef T model_type;
+    typedef typename Validator<T>::value_type value_type;
+
+    ModelValidator(const char *classname = nullptr, const char *fieldname = nullptr)
+        :Validator<T>(classname, fieldname)
+    {};
+
+    virtual ~ModelValidator() {};
+    virtual bool validate(const T &value) const {
+        return _validate(value);
+    }
+
+private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value && is_std_shared_ptr<typename remove_std_optional<U>::type>::value, bool>::type = true>
+    bool _validate(const U &opt_ptr) const {
+        if (!opt_ptr.has_value()) return true;
+        if (!opt_ptr.value()) return false;
+        return opt_ptr.value()->validate();
+    };
+
+    template <typename U, typename std::enable_if<is_std_optional<U>::value && !is_std_shared_ptr<typename remove_std_optional<U>::type>::value, bool>::type = true>
+    bool _validate(const U &opt_value) const {
+        if (!opt_value.has_value()) return true;
+        return opt_value.value().validate();
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value && is_std_shared_ptr<U>::value, bool>::type = true>
+    bool _validate(const U &ptr) const {
+        if (!ptr) return false;
+        return ptr->validate();
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value && !is_std_shared_ptr<U>::value, bool>::type = true>
+    bool _validate(const T &value) const {
+        return value.validate();
+    };
+};
+
+template <class T>
+class NullValidator : public Validator<T> {
+public:
+    NullValidator(const char *classname = nullptr, const char *fieldname = nullptr)
+        :Validator<T>(classname, fieldname)
+    {};
+    
+    virtual ~NullValidator() {};
+    virtual bool validate(const T &value) const { return true; };
+};
+
+template <class C, class V>
+class ContainerValidator : public Validator<C> {
+public:
+    typedef C container_type;
+    typedef V item_validator;
+    typedef typename V::value_type item_type;
+
+    ContainerValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr, const std::optional<size_t> &min_items = std::nullopt, const std::optional<size_t> &max_items = std::nullopt)
+        :Validator<container_type>(classname, fieldname)
+        ,m_itemValidator(item_validator)
+        ,m_minItems(min_items)
+        ,m_maxItems(max_items)
+    {};
+
+    ContainerValidator(const ContainerValidator &other)
+        :Validator<container_type>(other)
+        ,m_itemValidator(new item_validator(*other.m_itemValidator))
+        ,m_minItems(other.m_minItems)
+        ,m_maxItems(other.m_maxItems)
+    {};
+
+    ContainerValidator(ContainerValidator &&other)
+        :Validator<container_type>(std::move(other))
+        ,m_itemValidator(other.m_itemValidator)
+        ,m_minItems(std::move(other.m_minItems))
+        ,m_maxItems(std::move(other.m_maxItems))
+    {
+        other.m_itemValidator = nullptr;
+    };
+
+    ContainerValidator &operator=(const ContainerValidator &other)
+    {
+        this->Validator<container_type>::operator=(other);
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = new item_validator(*other.m_itemValidator);
+        m_minItems = other.m_minItems;
+        m_maxItems = other.m_maxItems;
+        return *this;
+    };
+
+    ContainerValidator &operator=(ContainerValidator &&other)
+    {
+        this->Validator<container_type>::operator=(std::move(other));
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = other.m_itemValidator;
+        other.m_itemValidator = nullptr;
+        m_minItems = std::move(other.m_minItems);
+        m_maxItems = std::move(other.m_maxItems);
+        return *this;
+    };
+
+    virtual ~ContainerValidator() {
+        if (m_itemValidator) delete m_itemValidator;
+    };
+
+    virtual bool validate(const container_type &value) const {
+        return _validate(value);
+    };
+
+private:
+    template <typename U, typename std::enable_if<is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (value.has_value()) {
+            if (m_minItems || m_maxItems) {
+                auto n_items = value.value().size();
+                if (m_minItems && m_minItems.value() > n_items) {
+                    throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+                if (m_maxItems && m_maxItems.value() < n_items) {
+                    throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+            }
+            if (m_itemValidator) {
+                for (auto &var : value.value()) {
+                    m_itemValidator->validate(var);
+                }
+            }
+        }
+        return true;
+    };
+
+    template <typename U, typename std::enable_if<!is_std_optional<U>::value, bool>::type = true>
+    bool _validate(const U &value) const {
+        if (m_minItems || m_maxItems) {
+            auto n_items = value.size();
+            if (m_minItems && m_minItems.value() > n_items) {
+                throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+            if (m_maxItems && m_maxItems.value() < n_items) {
+                throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+        }
+        if (m_itemValidator) {
+            for (auto &var : value) {
+                m_itemValidator->validate(var);
+            }
+        }
+        return true;
+    };
+
+    item_validator *m_itemValidator;
+    std::optional<size_t> m_minItems;
+    std::optional<size_t> m_maxItems;
+};
+
+template <class V>
+class OptionalMapValidator : public Validator<std::optional<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > > > {
+public:
+    typedef std::optional<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > > container_type;
+    typedef V item_validator;
+    typedef typename V::value_type item_type;
+
+    OptionalMapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr,
+                         const std::optional<size_t> &min_items = std::nullopt,
+                         const std::optional<size_t> &max_items = std::nullopt)
+        :Validator<container_type>(classname, fieldname)
+        ,m_itemValidator(item_validator)
+        ,m_minItems(min_items)
+        ,m_maxItems(max_items)
+    {};
+
+    OptionalMapValidator(const OptionalMapValidator &other)
+        :Validator<container_type>(other)
+        ,m_itemValidator(new item_validator(*other.m_itemValidator))
+        ,m_minItems(other.m_minItems)
+        ,m_maxItems(other.m_maxItems)
+    {};
+
+    OptionalMapValidator(OptionalMapValidator &&other)
+        :Validator<container_type>(std::move(other))
+        ,m_itemValidator(other.m_itemValidator)
+        ,m_minItems(std::move(other.m_minItems))
+        ,m_maxItems(std::move(other.m_maxItems))
+    {
+        other.m_itemValidator = nullptr;
+    };
+
+    OptionalMapValidator &operator=(const OptionalMapValidator &other)
+    {
+        this->Validator<container_type>::operator=(other);
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = new item_validator(*other.m_itemValidator);
+        m_minItems = other.m_minItems;
+        m_maxItems = other.m_maxItems;
+        return *this;
+    };
+
+    OptionalMapValidator &operator=(OptionalMapValidator &&other)
+    {
+        this->Validator<container_type>::operator=(std::move(other));
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = other.m_itemValidator;
+        other.m_itemValidator = nullptr;
+        m_minItems = std::move(other.m_minItems);
+        m_maxItems = std::move(other.m_maxItems);
+        return *this;
+    };
+
+    virtual ~OptionalMapValidator() {
+        if (m_itemValidator) delete m_itemValidator;
+    };
+
+    virtual bool validate(const container_type &value) const {
+        if (value.has_value()) {
+            if (m_minItems || m_maxItems) {
+                auto n_items = value.value().size();
+                if (m_minItems && m_minItems.value() > n_items) {
+                    throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+                if (m_maxItems && m_maxItems.value() < n_items) {
+                    throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::OPTIONAL_IE_INCORRECT);
+                }
+            }
+            if (m_itemValidator) {
+                for (auto &var : value.value()) {
+                    m_itemValidator->validate(var.second);
+                }
+            }
+        }
+        return true;
+    };
+
+private:
+    item_validator *m_itemValidator;
+    std::optional<size_t> m_minItems;
+    std::optional<size_t> m_maxItems;
+};
+
+template <class V>
+class MapValidator : public Validator<std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > > {
+public:
+    typedef std::map<std::string, typename V::value_type, std::less<std::string>, OgsAllocator<std::pair<const std::string, typename V::value_type> > > container_type;
+    typedef V item_validator;
+    typedef typename V::value_type item_type;
+
+    MapValidator(const char *classname = nullptr, const char *fieldname = nullptr, V* item_validator = nullptr,
+                 const std::optional<size_t> &min_items = std::nullopt,
+                 const std::optional<size_t> &max_items = std::nullopt)
+        :Validator<container_type>(classname, fieldname)
+        ,m_itemValidator(item_validator)
+        ,m_minItems(min_items)
+        ,m_maxItems(max_items)
+    {};
+
+    MapValidator(const MapValidator &other)
+        :Validator<container_type>(other)
+        ,m_itemValidator(new item_validator(*other.m_itemValidator))
+        ,m_minItems(other.m_minItems)
+        ,m_maxItems(other.m_maxItems)
+    {};
+
+    MapValidator(MapValidator &&other)
+        :Validator<container_type>(std::move(other))
+        ,m_itemValidator(other.m_itemValidator)
+        ,m_minItems(std::move(other.m_minItems))
+        ,m_maxItems(std::move(other.m_maxItems))
+    {
+        other.m_itemValidator = nullptr;
+    };
+
+    MapValidator &operator=(const MapValidator &other)
+    {
+        this->Validator<container_type>::operator=(other);
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = new item_validator(*other.m_itemValidator);
+        m_minItems = other.m_minItems;
+        m_maxItems = other.m_maxItems;
+        return *this;
+    };
+
+    MapValidator &operator=(MapValidator &&other)
+    {
+        this->Validator<container_type>::operator=(std::move(other));
+        if (m_itemValidator) delete m_itemValidator;
+        m_itemValidator = other.m_itemValidator;
+        other.m_itemValidator = nullptr;
+        m_minItems = std::move(other.m_minItems);
+        m_maxItems = std::move(other.m_maxItems);
+        return *this;
+    };
+
+    virtual ~MapValidator() {
+        if (m_itemValidator) delete m_itemValidator;
+    };
+
+    virtual bool validate(const container_type &value) const {
+        if (m_minItems || m_maxItems) {
+            auto n_items = value.size();
+            if (m_minItems && m_minItems.value() > n_items) {
+                throw ModelException(std::format("{}.{} must have at least {} entries", this->m_classname, this->m_fieldname, m_minItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+            if (m_maxItems && m_maxItems.value() < n_items) {
+                throw ModelException(std::format("{}.{} can have at most {} entries", this->m_classname, this->m_fieldname, m_maxItems.value()), this->m_classname, this->m_fieldname, ProblemCause::MANDATORY_IE_INCORRECT);
+            }
+        }
+        if (m_itemValidator) {
+            for (auto &var : value) {
+                m_itemValidator->validate(var.second);
+            }
+        }
+        return true;
+    };
+
+private:
+    item_validator *m_itemValidator;
+    std::optional<size_t> m_minItems;
+    std::optional<size_t> m_maxItems;
+};
+
+template <class V>
+using ListValidator = ContainerValidator<std::list<typename V::value_type, OgsAllocator<typename V::value_type> >, V>;
+
+template <class V>
+using OptionalListValidator = ContainerValidator<std::optional<std::list<typename V::value_type, OgsAllocator<typename V::value_type> > >, V>;
+
+} /* end namespace */
+
+/* vim:ts=8:sts=4:sw=4:expandtab:
+ */
+
+#endif /* _OPENAPI_VALIDATOR_HH_ */

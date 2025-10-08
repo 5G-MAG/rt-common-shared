@@ -1,0 +1,284 @@
+{{classname}}::{{classname}}()
+    :ModelObject(){{#vars}}
+    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}}){{/vars}}
+{
+}
+
+{{classname}}::{{classname}}(const {{classname}} &other)
+    :ModelObject(other){{#vars}}
+    ,m_{{name}}(other.m_{{name}})
+    ,m_{{name}}_validator(other.m_{{name}}_validator){{/vars}}
+{
+}
+
+{{classname}}::{{classname}}({{classname}} &&other)
+    :ModelObject(std::move(other)){{#vars}}
+    ,m_{{name}}(std::move(other.m_{{name}}))
+    ,m_{{name}}_validator(std::move(other.m_{{name}}_validator)){{/vars}}
+{
+}
+
+{{classname}}::{{classname}}(const std::string &json, bool as_request)
+    :ModelObject(){{#vars}}
+    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}}){{/vars}}
+{
+    CJson jtree = CJson::parse(json);
+    this->fromJSON(jtree, as_request);
+}
+
+{{classname}}::{{classname}}(const CJson &json, bool as_request)
+    :ModelObject(){{#vars}}
+    ,m_{{name}}()
+    ,m_{{name}}_validator({{>model-validator-params}}){{/vars}}
+{
+    this->fromJSON(json, as_request);
+}
+
+{{classname}}::~{{classname}}()
+{
+}
+
+{{classname}} &{{classname}}::operator=(const {{classname}} &other)
+{
+{{#vars}}
+    m_{{name}} = other.m_{{name}};
+    m_{{name}}_validator = other.m_{{name}}_validator;{{/vars}}
+
+    return *this;
+}
+
+{{classname}} &{{classname}}::operator=({{classname}} &&other)
+{
+{{#vars}}
+    m_{{name}} = std::move(other.m_{{name}});
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);{{/vars}}
+
+    return *this;
+}
+
+void {{classname}}::fromJSON(const CJson &json, bool as_request)
+{
+{{#vars}}
+    static const char *{{name}}_key = "{{baseName}}";
+    CJson {{name}}_json = CJson::Null;
+    {{#isReadOnly}}
+    if (!as_request) {
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    if (as_request) {
+    {{/isWriteOnly}}
+
+    {{name}}_json = json.getObjectItemCaseSensitive({{name}}_key);{{#required}}
+    if ({{name}}_json.isNull()) {
+        throw ModelException("Field \"{{baseName}}\" is required", "{{classname}}", "{{baseName}}", ProblemCause::MANDATORY_IE_MISSING);
+    }{{/required}}
+    if (!{{name}}_json.isNull()) {
+        auto &json_obj = {{name}}_json;{{#isContainer}}
+        const char *obj_key = {{name}}_key;{{/isContainer}}
+        typedef {{name}}Type _PropertyType;
+        auto &member_var = m_{{name}};
+#define _FIELD_NAME "{{baseName}}"
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}
+#undef _FIELD_NAME
+        m_{{name}}_validator.validate(m_{{name}});
+    }{{#isReadOnly}}
+    }{{/isReadOnly}}{{#isWriteOnly}}
+    }{{/isWriteOnly}}
+
+{{/vars}}
+}
+
+CJson {{classname}}::toJSON(bool as_request) const
+{
+    CJson object = CJson::newObject();
+    {{#vars}}
+    {{#isReadOnly}}
+    if (!as_request) {
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    if (as_request) {
+    {{/isWriteOnly}}
+
+    const auto &{{name}}_val = {{getter}}();
+    {
+{{<is-optional}}{{$yes}}if ({{name}}_val.has_value()) {
+{{/yes}}{{/is-optional}}
+        const auto &from_value = {{name}}_val{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
+        {{>model-source-object-var-toJSON}}
+        object.set("{{baseName}}", to_json);
+{{<is-optional}}{{$yes}}{{#required}}        } else {
+        {{#isContainer}}object.set("{{baseName}}", {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{classname}}.{{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);{{/isContainer}}
+{{/required}}        }{{/yes}}{{/is-optional}}
+    }
+
+    {{#isReadOnly}}
+    }
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    }
+    {{/isWriteOnly}}
+    {{/vars}}
+
+    return object;
+}
+
+bool {{classname}}::operator==(const {{classname}} &other) const
+{
+{{#vars}}    {
+        auto &a = m_{{name}};
+        auto &b = other.m_{{name}};
+        if ({{>model-source-object-var-not-equal}}) return false;
+    }
+{{/vars}}
+    return true;
+}
+
+bool {{classname}}::validate() const
+{
+    return {{^hasVars}}true{{/hasVars}}{{#vars}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/vars}};
+}
+
+{{classname}} *{{classname}}::newWithJSONPatches(const CJson &json) const
+{
+    {{classname}} *patched = new {{classname}}(*this);
+
+    if (json.isArray()) {
+        for (const auto &patch : json) {
+            patched->applyJSONPatch(patch);
+        }
+    } else {
+        patched->applyJSONPatch(json);
+    }
+
+    return patched;
+}
+
+void {{classname}}::applyJSONPatch(const CJson &json)
+{
+    if (!json.isObject()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", std::string(), ProblemCause::INVALID_MSG_FORMAT);
+
+    auto op_json = json.getObjectItemCaseSensitive("op");
+    if (op_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "op", ProblemCause::INVALID_MSG_FORMAT);
+    std::string op(op_json.stringValue());
+
+    auto path_json = json.getObjectItemCaseSensitive("path");
+    if (path_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+    std::string path(path_json.stringValue());
+
+    [[maybe_unused]] static const bool as_request = true; // Treat all Patch operations as though they apply to a request object
+
+    if (path.empty()) {
+        if (op == "add" || op == "replace") {
+            auto value_json = json.getObjectItemCaseSensitive("value");
+            if (value_json.isNull()) throw ModelException(std::string("Runtime Error: JSON Patch not recognised: ") + json.serialise(),  "{{classname}}", "value", ProblemCause::INVALID_MSG_FORMAT);
+            fromJSON(value_json, true);
+            validate();
+            return;
+        } else {
+            throw ModelException(std::string("Runtime Error: JSON Patch operation ") + op + " cannot be performed",  "{{classname}}", "path", ProblemCause::SYSTEM_FAILURE);
+        }
+    }
+
+{{#vars}}
+    {
+        std::string path_prefix("/{{baseName}}");
+        if (path.starts_with(path_prefix)) {
+            auto path_rest = path.substr(path_prefix.size());
+            if (path_rest.empty()) {
+                [[maybe_unused]] auto &patch_target = m_{{name}};
+		[[maybe_unused]] typedef {{name}}Type _PropertyType;
+#define _FIELD_NAME "{{baseName}}"
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-patch-leaf}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-patch-leaf}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-patch-leaf}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-patch-leaf}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-patch-leaf}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-patch-leaf}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-patch-leaf}}{{/composedSchemas}}
+                m_{{name}}_validator.validate(m_{{name}});
+		return;
+            } else if (path_rest.starts_with("/")) {
+                [[maybe_unused]] auto &patched_obj = m_{{name}};
+                [[maybe_unused]] typedef {{name}}Type _PropertyType;
+{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-patch-recurse}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-patch-recurse}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-patch-recurse}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-patch-recurse}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-patch-recurse}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-patch-recurse}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-patch-recurse}}{{/composedSchemas}}
+#undef _FIELD_NAME
+		return;
+            }
+        }   
+    }
+{{/vars}}
+
+    throw ModelException(std::string("Runtime Error: Unknown path in JSON Patch: ") + json.serialise(), "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
+}
+
+{{#vars}}
+
+{{#isBoolean}}const {{classname}}::{{name}}Type &{{classname}}::get{{name}}() const
+{
+    return m_{{name}};
+}
+
+{{classname}}::{{name}}Type {{classname}}::{{getter}}() const{{/isBoolean}}{{^isBoolean}}const {{classname}}::{{name}}Type &{{classname}}::{{getter}}() const{{/isBoolean}}
+{
+    return m_{{name}};
+}
+
+bool {{classname}}::{{setter}}(const {{classname}}::{{name}}Type &{{name}})
+{
+    m_{{name}} = {{name}};
+    return true;
+}
+
+bool {{classname}}::{{setter}}({{classname}}::{{name}}Type &&{{name}})
+{
+    m_{{name}} = std::move({{name}});
+    return true;
+}
+
+{{#isContainer}}
+bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{classname}}::{{name}}ItemType &item)
+{
+    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
+    {{#isMap}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(item));
+    const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), item{{/isMap}});
+    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
+}
+
+bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{classname}}::{{name}}ItemType &&item)
+{
+    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
+    {{#isMap}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(std::move(item)));
+    const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), std::move(item){{/isMap}});
+    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
+}
+
+bool {{classname}}::remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{classname}}::{{name}}ItemType &item{{/isMap}})
+{
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) return false;{{/yes}}{{/is-optional}}
+    {{#isMap}}
+    return m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.erase(key) == 1;
+    {{/isMap}}{{^isMap}}
+    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return true;{{/yes}}{{/is-optional}}{{/items}}
+    m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.remove(item);
+    {{<is-optional}}{{$yes}}if (m_{{name}}.value().empty()) m_{{name}}.reset();{{/yes}}{{/is-optional}}
+    return true;
+    {{/isMap}}
+}
+
+{{#isMap}}
+const std::string &{{classname}}::keyFor{{name}}(const {{classname}}::{{name}}ItemType &item)
+{
+    static const std::string s_null;
+
+    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) return s_null;{{/yes}}{{/is-optional}}
+    for (auto &it : m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}) {
+        if (it.second == item) return it.first;
+    }
+
+    return s_null;
+}
+
+{{/isMap}}
+bool {{classname}}::clear{{name}}()
+{
+    m_{{name}}{{<is-optional}}{{$yes}}.reset(){{/yes}}{{$no}}.clear(){{/no}}{{/is-optional}};
+    return true;
+}{{/isContainer}}{{/vars}}
