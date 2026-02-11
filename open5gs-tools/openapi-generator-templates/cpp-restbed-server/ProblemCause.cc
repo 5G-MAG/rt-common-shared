@@ -45,11 +45,11 @@ const ProblemCause ProblemCause::OPTIONAL_QUERY_PARAM_INCORRECT(ProblemCause::re
 const ProblemCause ProblemCause::MANDATORY_QUERY_PARAM_MISSING(ProblemCause::registerCause(
         "MANDATORY_QUERY_PARAM_MISSING", 400, "Mandatory Query Parameter Missing", "Query parameter which is defined as mandatory, or as conditional but mandatory required, for an HTTP method is not included in the URI of the request."));
 const ProblemCause ProblemCause::MANDATORY_IE_INCORRECT(ProblemCause::registerCause(
-        "MANDATORY_IE_INCORRECT", 400, "Mandatory Interface Element Incorrect", "A mandatory IE (within the JSON body or within a variable part of an \"apiSpecificResourceUriPart\" or within an HTTP header), or conditional IE but mandatory required, for an HTTP method was received with a semantically incorrect value."));
+        "MANDATORY_IE_INCORRECT", 400, "Mandatory Information Element Incorrect", "A mandatory IE (within the JSON body or within a variable part of an \"apiSpecificResourceUriPart\" or within an HTTP header), or conditional IE but mandatory required, for an HTTP method was received with a semantically incorrect value."));
 const ProblemCause ProblemCause::OPTIONAL_IE_INCORRECT(ProblemCause::registerCause(
-        "OPTIONAL_IE_INCORRECT", 400, "Optional Interface Element Incorrect", "An optional IE (within the JSON body or within an HTTP header) for an HTTP method was received with a semantically incorrect value that prevents successful processing of the service request."));
+        "OPTIONAL_IE_INCORRECT", 400, "Optional Information Element Incorrect", "An optional IE (within the JSON body or within an HTTP header) for an HTTP method was received with a semantically incorrect value that prevents successful processing of the service request."));
 const ProblemCause ProblemCause::MANDATORY_IE_MISSING(ProblemCause::registerCause(
-        "MANDATORY_IE_MISSING", 400, "Mandatory Interface Element Missing", "A mandatory IE (within the JSON body or within the variable part of an \"apiSpecificResourceUriPart\" or within an HTTP header), or conditional IE but mandatory required, for an HTTP method is not included in the request."));
+        "MANDATORY_IE_MISSING", 400, "Mandatory Information Element Missing", "A mandatory IE (within the JSON body or within the variable part of an \"apiSpecificResourceUriPart\" or within an HTTP header), or conditional IE but mandatory required, for an HTTP method is not included in the request."));
 const ProblemCause ProblemCause::UNSPECIFIED_MSG_FAILURE(ProblemCause::registerCause(
         "UNSPECIFIED_MSG_FAILURE", 400, "Unspecified Message Failure", "The request is rejected due to unspecified client error."));
 const ProblemCause ProblemCause::RESOURCE_CONTEXT_NOT_FOUND(ProblemCause::registerCause(
