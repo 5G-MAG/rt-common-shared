@@ -311,7 +311,7 @@ async def delete_provisioning_session(
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.delete(url)
 
-        if response.status_code in (200, 204):
+        if response.status_code in (200, 202, 204):
             # Clear state if we deleted the tracked session
             if session_id == state.get_session_id():
                 state.clear_session()
