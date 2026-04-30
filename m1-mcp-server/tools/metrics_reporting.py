@@ -32,10 +32,10 @@ def _connect_error(url: str) -> str:
 # ---------------------------------------------------------------------------
 @mcp.tool()
 async def create_metrics_reporting_configuration(
+    sampling_period: int,
     scheme: str = "urn:3gpp:5gms:metrics-reporting:qoe-metrics",
     reporting_interval: int = 10,
     sample_percentage: float = 100.0,
-    sampling_period: int = None,
     metrics: list[str] = None,
     url_filters: list[str] = None,
     data_network_name: str = None,
@@ -70,9 +70,9 @@ async def create_metrics_reporting_configuration(
            50.0 → half of clients report
            10.0 → 10% of clients (large-scale production)
 
-    sampling_period (OPTIONAL, unit: seconds)
+    sampling_period (REQUIRED, unit: seconds)
         How frequently the client samples metric values locally before aggregating
-        them into a report. Must be a positive integer if provided.
+        them into a report. Must be a positive integer.
         Example: 5 → sample every 5 seconds, report every reporting_interval seconds.
 
     metrics (OPTIONAL)
@@ -137,7 +137,7 @@ async def create_metrics_reporting_configuration(
 
     if reporting_interval <= 0:
         return f"ERROR: reporting_interval must be a positive integer (received {reporting_interval})."
-    if sampling_period is not None and sampling_period <= 0:
+    if sampling_period <= 0:
         return f"ERROR: sampling_period must be a positive integer (received {sampling_period})."
     if not (0.0 <= sample_percentage <= 100.0):
         return f"ERROR: sample_percentage must be between 0.0 and 100.0 (received {sample_percentage})."
@@ -149,8 +149,7 @@ async def create_metrics_reporting_configuration(
     }
     if data_network_name is not None:
         payload["dataNetworkName"] = data_network_name
-    if sampling_period is not None:
-        payload["samplingPeriod"] = sampling_period
+    payload["samplingPeriod"] = sampling_period
     if metrics:
         payload["metrics"] = metrics
     if url_filters is not None:
@@ -189,7 +188,7 @@ async def create_metrics_reporting_configuration(
                 f"{id_line}"
                 f"  Scheme              : {scheme}\n"
                 f"  Reporting Interval  : every {reporting_interval} second(s)\n"
-                + (f"  Sampling Period     : every {sampling_period} second(s)\n" if sampling_period else "")
+                + f"  Sampling Period     : every {sampling_period} second(s)\n"
                 + f"  Sample Percentage   : {sample_percentage}%\n"
                 + (f"  Data Network Name   : {data_network_name}\n" if data_network_name else "")
                 + (f"  Metrics             : {', '.join(metrics)}\n" if metrics else "")

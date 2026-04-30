@@ -36,8 +36,10 @@ Additional tools allow you to inspect and manage existing resources at any time.
 ## Installation
 
 ```bash
-git clone https://github.com/aaronmontilla/M1-mcp.git
-cd M1-mcp
+git clone -b feature/m1-mcp-server https://github.com/aaronmontilla/rt-common-shared.git
+cd m1-mcp-server
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -53,6 +55,7 @@ pip install -r requirements.txt
 ### Running the server
 
 ```bash
+source .venv/bin/activate
 python server.py
 ```
 
@@ -60,23 +63,25 @@ The server communicates over stdio and is intended to be launched by an MCP host
 
 ### Connecting to Claude Desktop
 
-Add the following to your `claude_desktop_config.json`:
+Add the following to your `claude_desktop_config.json`, using the **venv Python interpreter** so the installed dependencies are available:
 
 ```json
 {
   "mcpServers": {
     "5gms-m1": {
-      "command": "python",
+      "command": "/path/to/M1-mcp/.venv/bin/python",
       "args": ["/path/to/M1-mcp/server.py"]
     }
   }
 }
 ```
 
+On Windows replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
+
 ### Connecting to Claude Code
 
 ```bash
-claude mcp add 5gms-m1 python /path/to/M1-mcp/server.py
+claude mcp add 5gms-m1 /path/to/M1-mcp/.venv/bin/python /path/to/M1-mcp/server.py
 ```
 
 ## Tools
@@ -167,7 +172,7 @@ All parameters are optional.
 | `scheme` | No | `urn:3gpp:5gms:metrics-reporting:qoe-metrics` | Metrics reporting scheme URN |
 | `reporting_interval` | No | `10` | Seconds between client reports |
 | `sample_percentage` | No | `100.0` | Percentage of clients that report |
-| `sampling_period` | No | None | Seconds between local metric samples |
+| `sampling_period` | Yes | — | Seconds between local metric samples |
 | `metrics` | No | AF default | List of metric URNs to collect (e.g. `urn:3GPP:ns:PSS:DASH:QM10#BufferLevel`) |
 | `url_filters` | No | None | URL patterns to restrict reporting scope |
 | `data_network_name` | No | None | DNN/APN to scope the configuration to a specific network |
