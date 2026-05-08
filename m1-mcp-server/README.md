@@ -36,7 +36,7 @@ Additional tools allow you to inspect and manage existing resources at any time.
 ## Installation
 
 ```bash
-git clone -b feature/m1-mcp-server https://github.com/aaronmontilla/rt-common-shared.git
+git clone -b feature/m1-mcp-server https://github.com/5G-MAG/rt-common-shared.git
 cd m1-mcp-server
 python3 -m venv .venv
 source .venv/bin/activate
@@ -255,6 +255,14 @@ M1-mcp/
 - [5G-MAG Reference Tools](https://github.com/5G-MAG/rt-5gms-application-function) — The Application Function this server talks to
 - [Model Context Protocol](https://modelcontextprotocol.io/) — The protocol used to expose tools to AI agents
 
+## Acknowledgement
+
+This work has been performed in the framework of the **AGENTIC6G: AUTONOMOUS MULTI-AGENT AGENTIC AI SYSTEM FOR 6G NETWORKS** project (Grant Agreement No. 101290342), funded by the Smart Networks and Services Joint Undertaking (SNS JU) under the European Union's Horizon Europe research and innovation programme.
+
+The SNS JU receives support from the European Union's Horizon Europe research and innovation programme and the SNS JU members (public and private).
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the SNS JU. Neither the European Union nor the granting authority can be held responsible for them.
+
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+This software is licensed under the **5G-MAG Public License (v1.0)** — see [LICENSE](../LICENSE) for details.
