@@ -36,7 +36,7 @@ Additional tools allow you to inspect and manage existing resources at any time.
 ## Installation
 
 ```bash
-git clone -b feature/m1-mcp-server https://github.com/5G-MAG/rt-common-shared.git
+git clone https://github.com/5G-MAG/rt-common-shared.git
 cd m1-mcp-server
 python3 -m venv .venv
 source .venv/bin/activate
