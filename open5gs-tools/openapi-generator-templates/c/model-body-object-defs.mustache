@@ -1156,8 +1156,7 @@ end:
 
     static OpenAPI_regex_t *{{{name}}}_regex = NULL;
     if (!{{{name}}}_regex) {
-            {{{name}}}_regex = OpenAPI_regex_register_named("uri", _OPENAPI_URI_REGEX);
-        }
+        {{{name}}}_regex = OpenAPI_regex_register_named("uri",_OPENAPI_URI_REGEX);
         if (!{{{name}}}_regex) {
             ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]: Failed to compile uri regex");
             if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to compile the uri validation regex for \"{{{baseName}}}\"";
