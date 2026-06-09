@@ -38,8 +38,6 @@
 #define _OPENAPI_URI_RE_ABSOLUTE_URI _OPENAPI_URI_RE_SCHEME ":" _OPENAPI_URI_RE_HIER_PART "(?:\\?" _OPENAPI_URI_RE_QUERY ")?"
 #define _OPENAPI_URI_REGEX "^" _OPENAPI_URI_RE_SCHEME ":" _OPENAPI_URI_RE_HIER_PART "(?:\\?" _OPENAPI_URI_RE_QUERY ")?(?:#" _OPENAPI_URI_RE_FRAGMENT ")?$"
 
-#define _OPENAPI_ABSOLUTE_URL_REGEX "^https?://(?:[^/?#[:space:]]+)(?:/[^?#[:space:]]*)?(?:[?][^#[:space:]]*)?$"
-
 #define _OPENAPI_UUID_REGEX "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 
 {{classname}}_t *{{classname}}_create(
@@ -1158,9 +1156,6 @@ end:
 
     static OpenAPI_regex_t *{{{name}}}_regex = NULL;
     if (!{{{name}}}_regex) {
-        if (!strcmp("{{{baseName}}}", "baseURL")) {
-            {{{name}}}_regex = OpenAPI_regex_register_named("absolute-url", _OPENAPI_ABSOLUTE_URL_REGEX);
-        } else {
             {{{name}}}_regex = OpenAPI_regex_register_named("uri", _OPENAPI_URI_REGEX);
         }
         if (!{{{name}}}_regex) {
