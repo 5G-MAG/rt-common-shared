@@ -51,93 +51,102 @@
 
 {{classname}} &{{classname}}::operator=({{classname}} &&other)
 {
-{{#vars}}
+    {{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+    {{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}
     m_{{name}} = std::move(other.m_{{name}});
-    m_{{name}}_validator = std::move(other.m_{{name}}_validator);{{/vars}}
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);
+    {{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}
+    m_{{name}} = std::move(other.m_{{name}});
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);
+    {{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}
+    m_{{name}} = std::move(other.m_{{name}});
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);
+    {{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}
+    m_{{name}} = std::move(other.m_{{name}});
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);
+    {{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}
+    m_{{name}} = std::move(other.m_{{name}});
+    m_{{name}}_validator = std::move(other.m_{{name}}_validator);{{/vars}}{{/hasVars}}
 
     return *this;
 }
 
 void {{classname}}::fromJSON(const CJson &json, bool as_request)
 {
-{{#vars}}
-    static const char *{{name}}_key = "{{baseName}}";
-    CJson {{name}}_json = CJson::Null;
-    {{#isReadOnly}}
-    if (!as_request) {
-    {{/isReadOnly}}
-    {{#isWriteOnly}}
-    if (as_request) {
-    {{/isWriteOnly}}
-
-    {{name}}_json = json.getObjectItemCaseSensitive({{name}}_key);{{#required}}
-    if ({{name}}_json.isNull()) {
-        throw ModelException("Field \"{{baseName}}\" is required", "{{classname}}", "{{baseName}}", ProblemCause::MANDATORY_IE_MISSING);
-    }{{/required}}
-    if (!{{name}}_json.isNull()) {
-        auto &json_obj = {{name}}_json;{{#isContainer}}
-        const char *obj_key = {{name}}_key;{{/isContainer}}
-        typedef {{name}}Type _PropertyType;
-        auto &member_var = m_{{name}};
-#define _FIELD_NAME "{{baseName}}"
-{{#composedSchemas}}{{#anyOf.0.name}}{{^anyOf.1.name}}{{#anyOf.0}}{{>model-source-object-var-fromJSON}}{{/anyOf.0}}{{/anyOf.1.name}}{{#anyOf.1.name}}{{>model-source-object-var-fromJSON}}{{/anyOf.1.name}}{{/anyOf.0.name}}{{#allOf.0.name}}{{^allOf.1.name}}{{#allOf.0}}{{>model-source-object-var-fromJSON}}{{/allOf.0}}{{/allOf.1.name}}{{#allOf.1.name}}{{>model-source-object-var-fromJSON}}{{/allOf.1.name}}{{/allOf.0.name}}{{#oneOf.0.name}}{{^oneOf.1.name}}{{#oneOf.0}}{{>model-source-object-var-fromJSON}}{{/oneOf.0}}{{/oneOf.1.name}}{{#oneOf.1.name}}{{>model-source-object-var-fromJSON}}{{/oneOf.1.name}}{{/oneOf.0.name}}{{/composedSchemas}}{{^composedSchemas}}{{>model-source-object-var-fromJSON}}{{/composedSchemas}}
-#undef _FIELD_NAME
-        m_{{name}}_validator.validate(m_{{name}});
-    }{{#isReadOnly}}
-    }{{/isReadOnly}}{{#isWriteOnly}}
-    }{{/isWriteOnly}}
-
-{{/vars}}
+{{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+    {{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}
+    {{>model-fromJSON-var}}
+    {{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}
+    {{>model-fromJSON-var}}
+    {{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}
+    {{>model-fromJSON-var}}
+    {{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}
+    {{>model-fromJSON-var}}
+    {{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}
+    {{>model-fromJSON-var}}
+    {{/vars}}{{/hasVars}}
 }
 
 CJson {{classname}}::toJSON(bool as_request) const
 {
     CJson object = CJson::newObject();
-    {{#vars}}
-    {{#isReadOnly}}
-    if (!as_request) {
-    {{/isReadOnly}}
-    {{#isWriteOnly}}
-    if (as_request) {
-    {{/isWriteOnly}}
-
-    const auto &{{name}}_val = {{getter}}();
-    {
-{{<is-optional}}{{$yes}}if ({{name}}_val.has_value()) {
-{{/yes}}{{/is-optional}}
-        const auto &from_value = {{name}}_val{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
-        {{>model-source-object-var-toJSON}}
-        object.set("{{baseName}}", to_json);
-{{<is-optional}}{{$yes}}{{#required}}        } else {
-        {{#isContainer}}object.set("{{baseName}}", {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{classname}}.{{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);{{/isContainer}}
-{{/required}}        }{{/yes}}{{/is-optional}}
-    }
-
-    {{#isReadOnly}}
-    }
-    {{/isReadOnly}}
-    {{#isWriteOnly}}
-    }
-    {{/isWriteOnly}}
-    {{/vars}}
+    {{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+    {{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}
+    {{>model-toJSON-var}}
+    {{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}
+    {{>model-toJSON-var}}
+    {{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}
+    {{>model-toJSON-var}}
+    {{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}
+    {{>model-toJSON-var}}
+    {{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}
+    {{>model-toJSON-var}}
+    {{/vars}}{{/hasVars}}
 
     return object;
 }
 
 bool {{classname}}::operator==(const {{classname}} &other) const
 {
-{{#vars}}    {
+{{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+{{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}    {
         auto &a = m_{{name}};
         auto &b = other.m_{{name}};
         if ({{>model-source-object-var-not-equal}}) return false;
     }
-{{/vars}}
+{{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}    {
+        auto &a = m_{{name}};
+        auto &b = other.m_{{name}};
+        if ({{>model-source-object-var-not-equal}}) return false;
+    }
+{{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}    {
+        auto &a = m_{{name}};
+        auto &b = other.m_{{name}};
+        if ({{>model-source-object-var-not-equal}}) return false;
+    }
+{{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}    {
+        auto &a = m_{{name}};
+        auto &b = other.m_{{name}};
+        if ({{>model-source-object-var-not-equal}}) return false;
+    }
+{{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}    {
+        auto &a = m_{{name}};
+        auto &b = other.m_{{name}};
+        if ({{>model-source-object-var-not-equal}}) return false;
+    }
+{{/vars}}{{/hasVars}}
     return true;
 }
 
 bool {{classname}}::validate() const
 {
-    return {{^hasVars}}true{{/hasVars}}{{#vars}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/vars}};
+    return {{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+{{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}m_{{name}}_validator.validate(m_{{name}}){{^-last}} && {{/-last}}{{/vars}}{{/hasVars}};
 }
 
 {{classname}} *{{classname}}::newWithJSONPatches(const CJson &json) const
@@ -207,78 +216,16 @@ void {{classname}}::applyJSONPatch(const CJson &json)
     throw ModelException(std::string("Runtime Error: Unknown path in JSON Patch: ") + json.serialise(), "{{classname}}", "path", ProblemCause::INVALID_MSG_FORMAT);
 }
 
-{{#vars}}
-
-{{#isBoolean}}const {{classname}}::{{name}}Type &{{classname}}::get{{name}}() const
-{
-    return m_{{name}};
-}
-
-{{classname}}::{{name}}Type {{classname}}::{{getter}}() const{{/isBoolean}}{{^isBoolean}}const {{classname}}::{{name}}Type &{{classname}}::{{getter}}() const{{/isBoolean}}
-{
-    return m_{{name}};
-}
-
-bool {{classname}}::{{setter}}(const {{classname}}::{{name}}Type &{{name}})
-{
-    m_{{name}} = {{name}};
-    return true;
-}
-
-bool {{classname}}::{{setter}}({{classname}}::{{name}}Type &&{{name}})
-{
-    m_{{name}} = std::move({{name}});
-    return true;
-}
-
-{{#isContainer}}
-bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}const {{classname}}::{{name}}ItemType &item)
-{
-    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
-    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
-    {{#isMap}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(item));
-    const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), item{{/isMap}});
-    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
-}
-
-bool {{classname}}::add{{name}}({{#isMap}}const std::string &key, {{/isMap}}{{classname}}::{{name}}ItemType &&item)
-{
-    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return false;{{/yes}}{{/is-optional}}{{/items}}
-    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) m_{{name}} = {{name}}Type::value_type();{{/yes}}{{/is-optional}}
-    {{#isMap}}{{name}}Type{{<is-optional}}{{$yes}}::value_type{{/yes}}{{/is-optional}}::value_type entry = std::make_pair(std::string(key), {{name}}ItemType(std::move(item)));
-    const auto [it, success] = {{/isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.insert({{#isMap}}std::move(entry){{/isMap}}{{^isMap}}m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.end(), std::move(item){{/isMap}});
-    return {{#isMap}}success{{/isMap}}{{^isMap}}true{{/isMap}};
-}
-
-bool {{classname}}::remove{{name}}({{#isMap}}const std::string &key{{/isMap}}{{^isMap}}const {{classname}}::{{name}}ItemType &item{{/isMap}})
-{
-    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) return false;{{/yes}}{{/is-optional}}
-    {{#isMap}}
-    return m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.erase(key) == 1;
-    {{/isMap}}{{^isMap}}
-    {{#items}}{{<is-optional}}{{$yes}}if (!item.has_value()) return true;{{/yes}}{{/is-optional}}{{/items}}
-    m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}.remove(item);
-    {{<is-optional}}{{$yes}}if (m_{{name}}.value().empty()) m_{{name}}.reset();{{/yes}}{{/is-optional}}
-    return true;
-    {{/isMap}}
-}
-
-{{#isMap}}
-const std::string &{{classname}}::keyFor{{name}}(const {{classname}}::{{name}}ItemType &item)
-{
-    static const std::string s_null;
-
-    {{<is-optional}}{{$yes}}if (!m_{{name}}.has_value()) return s_null;{{/yes}}{{/is-optional}}
-    for (auto &it : m_{{name}}{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}) {
-        if (it.second == item) return it.first;
-    }
-
-    return s_null;
-}
-
-{{/isMap}}
-bool {{classname}}::clear{{name}}()
-{
-    m_{{name}}{{<is-optional}}{{$yes}}.reset(){{/yes}}{{$no}}.clear(){{/no}}{{/is-optional}};
-    return true;
-}{{/isContainer}}{{/vars}}
+{{^hasVars}}{{^isEnum}}{{#composedSchemas}}{{#oneOf.0.name}}
+#error "Not implemented oneOf yet!"
+{{/oneOf.0.name}}{{#anyOf.0.name}}{{^anyOf.0.isEnumRef}}{{#anyOf}}
+{{>model-source-getset-fns}}
+{{/anyOf}}{{/anyOf.0.isEnumRef}}{{#anyOf.0.isEnumRef}}{{^anyOf.1.isString}}{{#anyOf}}
+{{>model-source-getset-fns}}
+{{/anyOf}}{{/anyOf.1.isString}}{{#anyOf.1.isString}}{{#anyOf.2.name}}{{#anyOf}}
+{{>model-source-getset-fns}}
+{{/anyOf}}{{/anyOf.2.name}}{{/anyOf.1.isString}}{{/anyOf.0.isEnumRef}}{{/anyOf.0.name}}{{#allOf.0.name}}{{#allOf}}
+{{>model-source-getset-fns}}
+{{/allOf}}{{/allOf.0.name}}{{/composedSchemas}}{{/isEnum}}{{/hasVars}}{{#hasVars}}{{#vars}}
+{{>model-source-getset-fns}}
+{{/vars}}{{/hasVars}}

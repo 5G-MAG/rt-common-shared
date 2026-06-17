@@ -39,7 +39,10 @@ bool {{classname}}::validate() const
         throw ModelException("String did not validate", "{{{classname}}}", nullptr, ProblemCause::{{#required}}MANDATORY{{/required}}{{^required}}OPTIONAL{{/required}}_IE_INCORRECT);
     }
     return true;
-{{/oneOf.0.name}}{{/composedSchemas}}
+{{/oneOf.0.name}}{{^allOf.0.name}}{{^anyOf.0.name}}{{^oneOf.0.name}}
+    return true;
+{{/oneOf.0.name}}{{/anyOf.0.name}}{{/allOf.0.name}}
+{{/composedSchemas}}
 }
 
 void {{classname}}::fromJSON(const fiveg_mag_reftools::CJson &json, bool as_request)

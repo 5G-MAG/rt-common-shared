@@ -1,0 +1,26 @@
+    {{#isReadOnly}}
+    if (!as_request) {
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    if (as_request) {
+    {{/isWriteOnly}}
+
+    const auto &{{name}}_val = {{getter}}();
+    {
+{{<is-optional}}{{$yes}}if ({{name}}_val.has_value()) {
+{{/yes}}{{/is-optional}}
+        const auto &from_value = {{name}}_val{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}};
+        {{>model-source-object-var-toJSON}}
+        object.set("{{baseName}}", to_json);
+{{<is-optional}}{{$yes}}{{#required}}        } else {
+        {{#isContainer}}object.set("{{baseName}}", {{#isArray}}CJson::newArray(){{/isArray}}{{#isMap}}CJson::newObject(){{/isMap}});{{/isContainer}}{{^isContainer}}throw ModelException("Runtime Error: {{classname}}.{{baseName}} is mandatory in a {{#isReadOnly}}response{{/isReadOnly}}{{#isWriteOnly}}request{{/isWriteOnly}} but is unset", "{{classname}}", "{{baseName}}", ProblemCause::SYSTEM_FAILURE);{{/isContainer}}
+{{/required}}        }{{/yes}}{{/is-optional}}
+    }
+
+    {{#isReadOnly}}
+    }
+    {{/isReadOnly}}
+    {{#isWriteOnly}}
+    }
+    {{/isWriteOnly}}
+
