@@ -45,3 +45,15 @@ More information can be found in the corresponding [subfolder](/data-reporting/5
 Includes a helper script to build ffmpeg libraries for Android.
 
 More information can be found in the corresponding [subfolder](/avcodec-build/README.md).
+
+### M1 Interface MCP Server
+
+An MCP (Model Context Protocol) server that exposes the 3GPP M1 interface (TS 26.512) as AI-callable tools, enabling LLM agents to configure 5G Media Streaming sessions through natural language.
+
+More information can be found in the corresponding [subfolder](m1-mcp-server/README.md).
+
+### Docker Monitor
+
+A lightweight web-based monitor for inspecting the status of Docker containers grouped by service. Shared across 5G-MAG Docker-based projects such as [rt-5gms-examples](https://github.com/5G-MAG/rt-5gms-examples) and [rt-mbs-examples](https://github.com/5G-MAG/rt-mbs-examples).
+
+More information can be found in the corresponding [subfolder](docker-monitor/README.md).
