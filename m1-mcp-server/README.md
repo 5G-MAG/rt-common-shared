@@ -84,6 +84,28 @@ On Windows replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 claude mcp add 5gms-m1 /path/to/M1-mcp/.venv/bin/python /path/to/M1-mcp/server.py
 ```
 
+### Connecting to OpenCode
+
+Add the following to your `opencode.json`, using the **venv Python interpreter** so the installed dependencies are available:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "5gms-m1": {
+      "type": "local",
+      "command": [
+        "/path/to/M1-mcp/.venv/bin/python",
+        "/path/to/M1-mcp/server.py"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+
+On Windows replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
+
 ## Tools
 
 ### Provisioning Sessions
