@@ -111,6 +111,13 @@ public:
         if (m_owner && m_node) cJSON_Delete(m_node);
         m_node = cJSON_Duplicate(other.m_node, 1);
         m_owner = true;
+        // BUG FIX (found live, 2026-08-11): missing return statement -- falling off the end of a
+        // non-void function is undefined behaviour; confirmed live (rt-mbs-function build) that
+        // GCC lowered this to a real ud2/SIGILL trap the first time a plain lvalue copy-assignment
+        // (as opposed to the move-assignment overload, which was already correct) actually
+        // exercised this overload at runtime, crashing the whole process. The ["-Wreturn-type"]
+        // compiler warning for this was not benign.
+        return *this;
     }
 
     CJson &operator=(CJson &&other) {
