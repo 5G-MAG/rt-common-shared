@@ -6,20 +6,24 @@ This tool is shared across 5G-MAG Docker-based projects (e.g. [rt-5gms-examples]
 
 ## Usage
 
-The monitor is launched via the `docker-compose-monitor.yml` file included in this directory. Run the following command from your project's Docker setup folder, so that Docker Compose picks up the project's `.env` file automatically:
+The monitor is launched via the `docker-compose-monitor.yml` file included in this directory. Run the following command from your project's Docker setup folder, passing that project's `.env` file explicitly:
 
 ```bash
-docker compose -f /absolute/path/to/rt-common-shared/docker-monitor/docker-compose-monitor.yml up -d
+docker compose -f /absolute/path/to/rt-common-shared/docker-monitor/docker-compose-monitor.yml \
+  --env-file .env up -d
 ```
 
 Then open **http://localhost:3002** in your browser.
 
+> [!IMPORTANT]
+> `--env-file .env` is required. Docker Compose resolves the default `.env` file relative to the project directory — which defaults to the directory of the first `-f` file, i.e. this `docker-monitor` directory — and *not* relative to the directory you run the command from. Without `--env-file`, the version variables stay unset. The path given to `--env-file` is resolved relative to the current working directory.
+
 > [!NOTE]
-> The monitor requires the `5g-mag` Docker network to exist. Start your project stack first before launching the monitor.
+> The monitor is independent of your project stack. It reads container state from the Docker socket rather than over a Docker network, so it can be started before, after, or entirely without the project stack, and it discovers containers on any network.
 
 ## Environment variables
 
-The following variables are read from the project's `.env` file and displayed in the monitor UI:
+The following variables are read from the project's `.env` file and displayed in the monitor UI. Any variable that is unset or empty is displayed as `unknown`:
 
 | Variable | Description |
 |---|---|
@@ -30,5 +34,6 @@ The following variables are read from the project's `.env` file and displayed in
 ## Tear down
 
 ```bash
-docker compose -f /absolute/path/to/rt-common-shared/docker-monitor/docker-compose-monitor.yml down
+docker compose -f /absolute/path/to/rt-common-shared/docker-monitor/docker-compose-monitor.yml \
+  --env-file .env down
 ```
