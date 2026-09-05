@@ -65,3 +65,5 @@ libhttpxpp_dep = declare_dependency(
     link_with : libhttpxpp,
     include_directories : [libhttpxpp_libinc],
     dependencies : [microhttpd_dep, gnutls_dep])
+
+subdir('tests')

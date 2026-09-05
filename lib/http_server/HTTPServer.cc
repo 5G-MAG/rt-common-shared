@@ -122,7 +122,14 @@ MHD_Result HTTPServer::__accessHandlerCallback(void *cls, struct MHD_Connection 
     std::map<std::string, std::list<std::string> > req_headers;
     MHD_get_connection_values(connection, MHD_HEADER_KIND, _get_headers, &req_headers);
 
-    HTTPRequest req(url, method, version, std::move(req_headers), std::vector<char>(upload_data, upload_data + *upload_data_size));
+    // Query arguments are fetched separately, with MHD_GET_ARGUMENT_KIND. The url parameter above is,
+    // per microhttpd's MHD_AccessHandlerCallback documentation, "the URL of the connection request,
+    // without the arguments", so a handler reading "?service-class=..." needs this call. _get_headers
+    // is reused because its signature is generic over any MHD_ValueKind rather than header-specific.
+    std::map<std::string, std::list<std::string> > req_query_args;
+    MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, _get_headers, &req_query_args);
+
+    HTTPRequest req(url, method, version, std::move(req_headers), std::move(req_query_args), std::vector<char>(upload_data, upload_data + *upload_data_size));
 
     auto response = http_server->m_requestHandler->doRequest(req, *http_server);
     struct MHD_Response *mhd_response = response.makeMHDResponse();
