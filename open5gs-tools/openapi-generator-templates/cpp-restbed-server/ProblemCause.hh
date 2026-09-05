@@ -33,6 +33,7 @@ public:
     static const ProblemCause MANDATORY_IE_MISSING;
     static const ProblemCause UNSPECIFIED_MSG_FAILURE;
     static const ProblemCause RESOURCE_CONTEXT_NOT_FOUND;
+    static const ProblemCause ACCESS_TOKEN_CLAIM_MISSING;
     static const ProblemCause CCA_VERIFICATION_FAILURE;
     static const ProblemCause TOKEN_CCA_MISMATCH;
     static const ProblemCause MODIFICATION_NOT_ALLOWED;

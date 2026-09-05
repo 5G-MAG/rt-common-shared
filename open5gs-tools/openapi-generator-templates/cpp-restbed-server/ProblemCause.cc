@@ -54,6 +54,8 @@ const ProblemCause ProblemCause::UNSPECIFIED_MSG_FAILURE(ProblemCause::registerC
         "UNSPECIFIED_MSG_FAILURE", 400, "Unspecified Message Failure", "The request is rejected due to unspecified client error."));
 const ProblemCause ProblemCause::RESOURCE_CONTEXT_NOT_FOUND(ProblemCause::registerCause(
         "RESOURCE_CONTEXT_NOT_FOUND", 400, "Resource Context Not Found", "The notification request is rejected because the callback URI still exists in the receiver of the notification, but the specific resource context identified within the notification payload is not found in the NF service consumer."));
+const ProblemCause ProblemCause::ACCESS_TOKEN_CLAIM_MISSING(ProblemCause::registerCause(
+        "ACCESS_TOKEN_CLAIM_MISSING", 401, "Access Token Claim Missing", "The request is rejected due to one or more missing claim(s) in the OAuth2.0 access token."));
 const ProblemCause ProblemCause::CCA_VERIFICATION_FAILURE(ProblemCause::registerCause(
         "CCA_VERIFICATION_FAILURE", 403, "CCA Verification Failure", "The request is rejected due to a failure to verify the CCA at the receiving entity (e.g. NRF or NF service producer)."));
 const ProblemCause ProblemCause::TOKEN_CCA_MISMATCH(ProblemCause::registerCause(
