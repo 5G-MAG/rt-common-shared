@@ -57,14 +57,26 @@ int main(int argc, char *argv[])
     }
 
     // Test 2 - Basic configuration, no media
+    //
+    // The originator used to be built from the hostname "localhost" resolved via getaddrinfo()
+    // with family AF_INET6 (Address::setSockAddrFromHostname()). Whether "localhost" resolves to
+    // an IPv6 address at all depends entirely on /etc/hosts (or the resolver's own configuration)
+    // on the machine running the test -- confirmed directly: this system's own /etc/hosts maps
+    // "localhost" to 127.0.0.1 only, with the IPv6 loopback mapped under the different name
+    // "ip6-localhost", so getaddrinfo("localhost", ..., AF_INET6) here returns nothing, leaving
+    // the Address unset, isValid() false, and SDP::makeSDP() throwing "No or bad origin" --
+    // code-derived, no spec claim: this was the test's own environmental assumption, not a defect
+    // in the library, which behaved correctly given a hostname that genuinely has no IPv6
+    // mapping on this system. Built directly from the standard in6addr_loopback constant instead,
+    // which needs no hostname resolution and is portable to any host running this test.
     try {
         tests++;
-        auto originator = Originator::makeOriginator("localhost", AF_INET6);
+        auto originator = Originator::makeOriginator(in6addr_loopback);
         auto connection = ConnectionInformation::makeConnectionInformation("localhost", AF_INET);
         auto timings = TimingInformation::makeTimingInformation(now, now + 6s);
         auto sdp = SDP::makeSDP(originator, "Session Name", timings);
         sdp->connectionInformation(connection);
-        auto expected = std::format("v=0\r\no=- {} {} IN IP6 localhost\r\ns=Session Name\r\nc=IN IP4 localhost\r\nt={} {}\r\n", sdp->sessionId(), sdp->sessionVersion(), sdp_now, sdp_now + 6);
+        auto expected = std::format("v=0\r\no=- {} {} IN IP6 ::1\r\ns=Session Name\r\nc=IN IP4 localhost\r\nt={} {}\r\n", sdp->sessionId(), sdp->sessionVersion(), sdp_now, sdp_now + 6);
         auto sdp_record = static_cast<std::string>(*sdp);
         if (sdp_record != expected) {
             std::cerr << "Test 2: Unexpected SDP record:" << std::endl
