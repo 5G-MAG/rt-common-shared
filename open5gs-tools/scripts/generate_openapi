@@ -406,5 +406,10 @@ EOF
         fi
     done
 )
+generate_status=$?
 
-exit 0
+# The work above runs in a subshell, so every `exit 1` inside it leaves that subshell and not this
+# script. Returning 0 regardless told every caller the generation had succeeded: a failure to reach
+# the 5G_APIs repository was reported as "Error: Failed to fetch branch ..." and then exit 0, so the
+# caller carried on and failed later somewhere unrelated, typically as a missing generated source.
+exit "$generate_status"
