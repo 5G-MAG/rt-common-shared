@@ -47,6 +47,10 @@
 {{<is-optional}}{{$yes}}
                        if (patch_target) {
 {{/yes}}{{/is-optional}}
+                           /* Copied before it is patched: the object being patched was copied from the stored
+                              one member by member, so this member still points at the stored object, and
+                              patching it in place would change the original as well as the copy. */
+                           patch_target{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}} = std::make_shared<std::remove_cvref_t<decltype(*patch_target{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}})> >(*patch_target{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}});
                            patch_target{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}->applyJSONPatch(new_patch);
 {{<is-optional}}{{$yes}}
                        }

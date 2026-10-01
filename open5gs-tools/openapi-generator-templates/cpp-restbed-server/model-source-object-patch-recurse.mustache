@@ -190,6 +190,8 @@
                       CJson new_patch(json);
                       new_patch.set("path", CJson::newString(path_rest));
                       try {
+                        /* Copied before it is patched, for the reason given in model-source-object-patch-leaf. */
+                        patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}} = std::make_shared<std::remove_cvref_t<decltype(*patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}})> >(*patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}});
                         patched_obj{{<is-optional}}{{$yes}}.value(){{/yes}}{{/is-optional}}->applyJSONPatch(new_patch);
                       } catch (ModelException &ex) {
                         if (ex.parameter == "op" || ex.parameter == "path" || ex.parameter == "value") {
