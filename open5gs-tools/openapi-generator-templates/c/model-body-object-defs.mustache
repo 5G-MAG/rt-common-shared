@@ -276,12 +276,29 @@ void {{classname}}_free({{classname}}_t *{{classname}})
             ogs_free(localKeyValue->key);
             {{^isEnum}}
               {{#items}}
+                {{#isArray}}
+            if (localKeyValue->value) {
+                OpenAPI_list_t *valueList = (OpenAPI_list_t *)localKeyValue->value;
+                OpenAPI_lnode_t *valueNode = NULL;
+                OpenAPI_list_for_each(valueList, valueNode) {
+                    {{#items.isPrimitiveType}}
+                    ogs_free(valueNode->data);
+                    {{/items.isPrimitiveType}}
+                    {{^items.isPrimitiveType}}
+                    {{items.complexType}}_free(valueNode->data);
+                    {{/items.isPrimitiveType}}
+                }
+                OpenAPI_list_free(valueList);
+            }
+                {{/isArray}}
+                {{^isArray}}
                 {{#isPrimitiveType}}
             ogs_free(localKeyValue->value);
                 {{/isPrimitiveType}}
                 {{^isPrimitiveType}}
             {{complexType}}_free(localKeyValue->value);
                 {{/isPrimitiveType}}
+                {{/isArray}}
               {{/items}}
             {{/isEnum}}
             OpenAPI_map_free(localKeyValue);
@@ -548,13 +565,13 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
             }
                         {{/isByteArray}}
                         {{#isNumeric}}
-            if (cJSON_AddNumberToObject({{{name}}}List, "", (uintptr_t)node->data) == NULL) {
+            if (cJSON_AddNumberToObject({{{name}}}List, "", *(double *)node->data) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
                         {{/isNumeric}}
                         {{#isBoolean}}
-            if (cJSON_AddBoolToObject({{{name}}}List, "", (uintptr_t)node->data) == NULL) {
+            if (cJSON_AddBoolToObject({{{name}}}List, "", *(int *)node->data) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
@@ -622,6 +639,49 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
             }
             {{/isEnum}}
             {{^isEnum}}
+                {{#items.isContainer}}
+                    {{#items.isArray}}
+	    cJSON *itemLocal = localKeyValue->value ? cJSON_CreateArray() : cJSON_CreateNull();
+	    if (itemLocal == NULL) {
+                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                goto end;
+            }
+            if (localKeyValue->value) {
+                OpenAPI_list_t *list = (OpenAPI_list_t*)localKeyValue->value;
+                OpenAPI_lnode_t *node = NULL;
+                OpenAPI_list_for_each(list, node) {
+                    cJSON *item_json = NULL;
+                    {{#items.items.isPrimitiveType}}
+                        {{#items.items.isNumeric}}
+                    item_json = cJSON_CreateNumber(*(double *)node->data);
+                        {{/items.items.isNumeric}}
+                        {{#items.items.isBoolean}}
+                    item_json = cJSON_CreateBool(*(int *)node->data);
+                        {{/items.items.isBoolean}}
+                        {{^items.items.isNumeric}}
+                            {{^items.items.isBoolean}}
+                    item_json = cJSON_CreateString((char *)node->data);
+                            {{/items.items.isBoolean}}
+                        {{/items.items.isNumeric}}
+                    {{/items.items.isPrimitiveType}}
+                    {{^items.items.isPrimitiveType}}
+                    item_json = {{items.items.complexType}}_convertToJSON(({{items.items.complexType}}_t *)node->data, {{classname}}_as_request);
+                    {{/items.items.isPrimitiveType}}
+                    if (item_json == NULL) {
+                        ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
+                        cJSON_Delete(itemLocal);
+                        goto end;
+                    }
+                    cJSON_AddItemToArray(itemLocal, item_json);
+                }
+            }
+            cJSON_AddItemToObject({{{name}}}Map, localKeyValue->key, itemLocal);
+                                                {{/items.isArray}}
+                    {{#items.isMap}}
+#error "Not implemented yet!"
+                    {{/items.isMap}}
+                {{/items.isContainer}}
+                {{^items.isContainer}}
                 {{#items.isPrimitiveType}}
                     {{#items.isString}}
             if (cJSON_AddStringToObject({{{name}}}Map, localKeyValue->key, (char*)localKeyValue->value) == NULL) {
@@ -636,13 +696,13 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
             }
                     {{/items.isByteArray}}
                     {{#items.isNumeric}}
-            if (cJSON_AddNumberToObject({{{name}}}Map, localKeyValue->key, (uintptr_t)localKeyValue->value) == NULL) {
+            if (cJSON_AddNumberToObject({{{name}}}Map, localKeyValue->key, *(double *)localKeyValue->value) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
                     {{/items.isNumeric}}
                     {{#items.isBoolean}}
-            if (cJSON_AddBoolToObject({{{name}}}Map, localKeyValue->key, (uintptr_t)localKeyValue->value) == NULL) {
+            if (cJSON_AddBoolToObject({{{name}}}Map, localKeyValue->key, *(int *)localKeyValue->value) == NULL) {
                 ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
                 goto end;
             }
@@ -692,30 +752,9 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
             }
             cJSON_AddItemToObject({{{name}}}Map, localKeyValue->key, itemLocal);
                         {{/items.isAnyType}}
-		        {{#items.isContainer}}
-                            {{#items.isArray}}
-	    cJSON *itemLocal = localKeyValue->value ? cJSON_CreateArray() : cJSON_CreateNull();
-	    if (itemLocal == NULL) {
-                ogs_error("{{classname}}_convertToJSON() failed [{{{name}}}]");
-                goto end;
-            }
-            if (localKeyValue->value) {
-                OpenAPI_list_t *list = (OpenAPI_list_t*)localKeyValue->value;
-                OpenAPI_lnode_t *node = NULL;
-		OpenAPI_list_for_each(list, node) {
-                    {{items.items.dataType}}_t *item = ({{items.items.dataType}}_t*)node->data;
-		    cJSON *item_json = {{items.items.dataType}}_convertToJSON(item, {{classname}}_as_request);
-		    cJSON_AddItemToArray(itemLocal, item_json);
-                }
-            }
-            cJSON_AddItemToObject({{{name}}}Map, localKeyValue->key, itemLocal);
-                            {{/items.isArray}}
-                            {{#items.isMap}}
-#error "Not implemented yet!"
-                            {{/items.isMap}}
-	                {{/items.isContainer}}
                     {{/items.isModel}}
                 {{/items.isPrimitiveType}}
+                {{/items.isContainer}}
             {{/isEnum}}
         }
     }
@@ -1604,17 +1643,78 @@ end:
                 if (cJSON_IsArray(localMapObject)) {
                     cJSON *json_array_node = NULL;
                     OpenAPI_list_t *new_array = OpenAPI_list_create();
+                    bool array_failed = false;
                     cJSON_ArrayForEach(json_array_node, localMapObject) {
-                        {{#items.items.isPrimativeType}}
-#error "Not implemented yet"
-                        {{/items.items.isPrimativeType}}
-                        {{^items.items.isPrimativeType}}
-                        {{items.items.dataType}}_t *node_data = {{items.items.dataType}}_parseFromJSON(json_array_node, {{classname}}_as_request, {{classname}}_parse_err);
+                        {{#items.items.isPrimitiveType}}
+                            {{#items.items.isNumeric}}
+                        double *node_data = NULL;
+                        if (!cJSON_IsNumber(json_array_node)) {
+                            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map array element is not a number";
+                            array_failed = true;
+                            break;
+                        }
+                        node_data = (double *)ogs_calloc(1, sizeof(double));
                         if (!node_data) {
-                            goto end;
+                            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to allocate memory for \"{{{baseName}}}\" map array element";
+                            array_failed = true;
+                            break;
+                        }
+                        *node_data = json_array_node->valuedouble;
+                        OpenAPI_list_add(new_array, node_data);
+                            {{/items.items.isNumeric}}
+                            {{#items.items.isBoolean}}
+                        int *node_data = NULL;
+                        if (!cJSON_IsBool(json_array_node)) {
+                            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map array element is not a boolean";
+                            array_failed = true;
+                            break;
+                        }
+                        node_data = (int *)ogs_calloc(1, sizeof(int));
+                        if (!node_data) {
+                            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Failed to allocate memory for \"{{{baseName}}}\" map array element";
+                            array_failed = true;
+                            break;
+                        }
+                        *node_data = cJSON_IsTrue(json_array_node) ? 1 : 0;
+                        OpenAPI_list_add(new_array, node_data);
+                            {{/items.items.isBoolean}}
+                            {{^items.items.isNumeric}}
+                                {{^items.items.isBoolean}}
+                        if (!cJSON_IsString(json_array_node)) {
+                            ogs_error("{{classname}}_parseFromJSON() failed [{{{name}}}]");
+                            if ({{classname}}_parse_err) *{{classname}}_parse_err = "Field \"{{{baseName}}}\" map array element is not a string";
+                            array_failed = true;
+                            break;
+                        }
+                        OpenAPI_list_add(new_array, ogs_strdup(json_array_node->valuestring));
+                                {{/items.items.isBoolean}}
+                            {{/items.items.isNumeric}}
+                        {{/items.items.isPrimitiveType}}
+                        {{^items.items.isPrimitiveType}}
+                        {{items.items.complexType}}_t *node_data = {{items.items.complexType}}_parseFromJSON(json_array_node, {{classname}}_as_request, {{classname}}_parse_err);
+                        if (!node_data) {
+                            array_failed = true;
+                            break;
                         }
                         OpenAPI_list_add(new_array, node_data);
-                            {{/items.items.isPrimativeType}}
+                        {{/items.items.isPrimitiveType}}
+                    }
+                    if (array_failed) {
+                        OpenAPI_lnode_t *failed_node = NULL;
+                        OpenAPI_list_for_each(new_array, failed_node) {
+                            {{#items.items.isPrimitiveType}}
+                            ogs_free(failed_node->data);
+                            {{/items.items.isPrimitiveType}}
+                            {{^items.items.isPrimitiveType}}
+                            {{items.items.complexType}}_free(failed_node->data);
+                            {{/items.items.isPrimitiveType}}
+                        }
+                        OpenAPI_list_free(new_array);
+                        goto end;
                     }
                     localMapKeyPair = OpenAPI_map_create(
                         ogs_strdup(localMapObject->string), new_array);
@@ -1807,6 +1907,22 @@ end:
             OpenAPI_map_t *localKeyValue = (OpenAPI_map_t*) node->data;
             ogs_free(localKeyValue->key);
             {{^items.isEnum}}
+                {{#items.isArray}}
+            if (localKeyValue->value) {
+                OpenAPI_list_t *valueList = (OpenAPI_list_t *)localKeyValue->value;
+                OpenAPI_lnode_t *valueNode = NULL;
+                OpenAPI_list_for_each(valueList, valueNode) {
+                    {{#items.items.isPrimitiveType}}
+                    ogs_free(valueNode->data);
+                    {{/items.items.isPrimitiveType}}
+                    {{^items.items.isPrimitiveType}}
+                    {{items.items.complexType}}_free(valueNode->data);
+                    {{/items.items.isPrimitiveType}}
+                }
+                OpenAPI_list_free(valueList);
+            }
+                {{/items.isArray}}
+                {{^items.isArray}}
                 {{#items.isPrimitiveType}}
             ogs_free(localKeyValue->value);
                 {{/items.isPrimitiveType}}
@@ -1823,6 +1939,7 @@ end:
                         {{/items.isAnyType}}
                     {{/items.isModel}}
                 {{/items.isPrimitiveType}}
+                {{/items.isArray}}
             {{/items.isEnum}}
             OpenAPI_map_free(localKeyValue);
         }
