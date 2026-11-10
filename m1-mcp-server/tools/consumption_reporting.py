@@ -1,215 +1,112 @@
 """
-Consumption Reporting Configuration tools — 3GPP M1 Interface
-Endpoints:
-  POST /3gpp-m1/v2/provisioning-sessions/{id}/consumption-reporting-configuration
-  GET  /3gpp-m1/v2/provisioning-sessions/{id}/consumption-reporting-configuration
+Consumption Reporting Configuration tools — Maf_Provisioning_ConsumptionReporting (TS 26.510 V19.2.0 clause 5.2.12)
+Endpoints (base path /3gpp-maf-provisioning/v1/provisioning-sessions/{id}/consumption-reporting-configuration):
+  POST (201), GET (200), PUT (200, 204), PATCH (200, 204), DELETE (204). At most one configuration per session.
 """
 
-import json
-import httpx
-
 from mcp_instance import mcp
-import state
+import m1_http
+import models
+from . import _common
+
+CRC = "consumption-reporting-configuration"
 
 
-# ---------------------------------------------------------------------------
-# Tool — Create Consumption Reporting Configuration
-# ---------------------------------------------------------------------------
 @mcp.tool()
 async def create_consumption_reporting_configuration(
     reporting_interval: int = 10,
     sample_percentage: float = 100.0,
-    location_reporting: bool = True,
     access_reporting: bool = True,
     provisioning_session_id: str = None,
     m1_url: str = None,
 ) -> str:
     """
-    STEP 3 OF 3 — Create a Consumption Reporting Configuration.
+    STEP 3 OF 3 — Activate Consumption Reporting (Consumption Reporting Configuration, 201).
 
-    Configures how the 5GMS system collects analytics about how viewers consume
-    the media stream. Must be called AFTER create_provisioning_session.
-
-    ALL PARAMETERS ARE OPTIONAL — sensible defaults are provided.
+    Body: {reportingInterval (> 0, seconds), samplePercentage (0.0 to 100.0), accessReporting}. All parameters have defaults.
+    Whether the Media Session Handler reports the UE location is the locationReporting property of the Provisioning Session,
+    not of this configuration.
 
     PARAMETERS
     ----------
-    reporting_interval (default: 10, unit: seconds)
-        How often clients send consumption reports.
-        Recommended: 5 (testing), 10 (default), 30 (medium), 60 (large-scale).
-
-    sample_percentage (default: 100.0, range: 0.0–100.0)
-        Percentage of connected clients that will send reports.
-        Reduce in large deployments to limit reporting traffic.
-
-    location_reporting (default: true)
-        Whether to include the viewer's geographic location in the report.
-
-    access_reporting (default: true)
-        Whether to include access network information (WiFi/cellular, signal quality).
-
-    provisioning_session_id (OPTIONAL)
-        The ID of an existing provisioning session to attach this configuration to.
-        If omitted, the session ID from the current state is used (set automatically
-        by create_provisioning_session). Provide this explicitly when resuming work
-        on a session that was created in a previous interaction.
-        Example: "3a2f1b00-1234-5678-abcd-ef0123456789"
-
-    m1_url (OPTIONAL)
-        Base URL of the M1 interface. If omitted, the URL from the current state
-        is used. Provide this explicitly when resuming a previous session.
-        Example: "http://192.168.1.100:7778"
-
-    RETURNS
-    -------
-    Confirmation summary. If all 3 steps are complete, a full workflow summary
-    is displayed.
+    reporting_interval (default 10, seconds)  Interval between two consecutive consumption reports.
+    sample_percentage (default 100.0)  Proportion of clients that report.
+    access_reporting (default true)  Report access network changes during a session.
+    provisioning_session_id (OPTIONAL)  The session; the one in the current state when omitted.
+    m1_url (OPTIONAL)  Base URL of the M1 interface; remembered.
     """
-    # Allow explicit parameters to override state
-    if m1_url:
-        state.set_m1_url(m1_url)
-    if provisioning_session_id:
-        state.set_session_id(provisioning_session_id)
-
-    if not state.get_m1_url():
-        return (
-            "ERROR: No M1 URL configured.\n"
-            "Either run create_provisioning_session first, or pass m1_url explicitly."
-        )
-    if not state.get_session_id():
-        return (
-            "ERROR: No Provisioning Session ID found.\n"
-            "Either run create_provisioning_session first, or pass provisioning_session_id explicitly."
-        )
-
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
     if reporting_interval <= 0:
         return f"ERROR: reporting_interval must be a positive integer (received {reporting_interval})."
     if not (0.0 <= sample_percentage <= 100.0):
         return f"ERROR: sample_percentage must be between 0.0 and 100.0 (received {sample_percentage})."
-
-    session_id = state.get_session_id()
-    payload = {
-        "reportingInterval": reporting_interval,
-        "samplePercentage": sample_percentage,
-        "locationReporting": location_reporting,
-        "accessReporting": access_reporting,
-    }
-    url = (
-        f"{state.get_m1_url()}/3gpp-m1/v2/provisioning-sessions/"
-        f"{session_id}/consumption-reporting-configuration"
-    )
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
-
-        if response.status_code in (200, 201, 204):
-            return (
-                f"SUCCESS: Consumption Reporting Configuration created.\n\n"
-                f"  Session ID          : {session_id}\n"
-                f"  Reporting Interval  : every {reporting_interval} second(s)\n"
-                f"  Sample Percentage   : {sample_percentage}%\n"
-                f"  Location Reporting  : {'enabled' if location_reporting else 'disabled'}\n"
-                f"  Access Reporting    : {'enabled' if access_reporting else 'disabled'}\n\n"
-                f"All 3 steps completed! Your 5GMS session is fully configured:\n"
-                f"  [1] Provisioning Session          : {session_id}\n"
-                f"  [2] Content Hosting Configuration : created\n"
-                f"  [3] Consumption Reporting         : configured\n\n"
-                f"The 5GMS Application Function is now ready to serve media to clients."
-            )
-        return (
-            f"ERROR: HTTP {response.status_code} {response.reason_phrase}\n"
-            f"  URL: {url}\n  Body: {json.dumps(payload, indent=2)}\n"
-            f"  Response: {response.text[:600]}"
-        )
-
-    except httpx.ConnectError:
-        return f"ERROR: Could not connect to '{state.get_m1_url()}'. Is the 5GMS AF running?"
-    except httpx.TimeoutException:
-        return f"ERROR: Request timed out to '{state.get_m1_url()}'."
-    except Exception as exc:
-        return f"ERROR: {type(exc).__name__}: {exc}"
+    payload = {"reportingInterval": reporting_interval, "samplePercentage": sample_percentage, "accessReporting": access_reporting}
+    return (await _common.create(m1_http.session_path(provisioning_session_id, CRC), payload, "Consumption Reporting Configuration",
+                                 id_label="Resource"))[1]
 
 
-# ---------------------------------------------------------------------------
-# Tool — Get Consumption Reporting Configuration
-# ---------------------------------------------------------------------------
 @mcp.tool()
-async def get_consumption_reporting_configuration(
+async def get_consumption_reporting_configuration(provisioning_session_id: str = None, m1_url: str = None) -> str:
+    """
+    Retrieve the Consumption Reporting Configuration of a Provisioning Session (200); 404 when there is none.
+
+    PARAMETERS
+    ----------
+    provisioning_session_id (OPTIONAL)  The session; the one in the current state when omitted.
+    m1_url (OPTIONAL if already provided)  Base URL of the M1 interface.
+    """
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.retrieve(m1_http.session_path(provisioning_session_id, CRC), "Consumption Reporting Configuration")
+
+
+@mcp.tool()
+async def replace_consumption_reporting_configuration(
+    configuration: models.ConsumptionReportingConfiguration,
+    if_match: str = None,
     provisioning_session_id: str = None,
     m1_url: str = None,
 ) -> str:
     """
-    Retrieve the Consumption Reporting Configuration for a Provisioning Session.
+    Replace the Consumption Reporting Configuration (PUT, 200 or 204 when nothing changes).
 
-    PARAMETERS
-    ----------
-    provisioning_session_id (OPTIONAL)
-        The provisioning session whose configuration to retrieve.
-        Defaults to the current session stored in state.
-        Provide this explicitly when querying a session from a previous interaction.
-        Example: "3a2f1b00-1234-5678-abcd-ef0123456789"
-
-    m1_url (OPTIONAL)
-        Base URL of the M1 interface. If omitted, the URL from the current state
-        is used. Provide this explicitly when resuming a previous session.
-        Example: "http://192.168.1.100:7778"
-
-    RETURNS
-    -------
-    Full JSON representation of the Consumption Reporting Configuration, including
-    reporting interval, sample percentage, and location/access reporting flags.
+    if_match is a strong entity tag obtained earlier (clause 7.1.4.4); 412 when the resource has changed since.
     """
-    if m1_url:
-        state.set_m1_url(m1_url)
-    if provisioning_session_id:
-        state.set_session_id(provisioning_session_id)
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.replace(m1_http.session_path(provisioning_session_id, CRC), models.body(configuration),
+                                 "Consumption Reporting Configuration", if_match)
 
-    if not state.get_m1_url():
-        return (
-            "ERROR: No M1 URL configured.\n"
-            "Either run create_provisioning_session first, or pass m1_url explicitly."
-        )
-    session_id = state.get_session_id()
-    if not session_id:
-        return (
-            "ERROR: No Provisioning Session ID found.\n"
-            "Either run create_provisioning_session first, or pass provisioning_session_id explicitly."
-        )
 
-    url = (
-        f"{state.get_m1_url()}/3gpp-m1/v2/provisioning-sessions/"
-        f"{session_id}/consumption-reporting-configuration"
-    )
+@mcp.tool()
+async def patch_consumption_reporting_configuration(
+    patch: str,
+    patch_type: _common.PatchType = "merge-patch",
+    if_match: str = None,
+    provisioning_session_id: str = None,
+    m1_url: str = None,
+) -> str:
+    """
+    Patch the Consumption Reporting Configuration (PATCH, 200 or 204). patch is a JSON merge patch (e.g. {"reportingInterval": 20}) or a
+    JSON patch (a list of operations), as selected by patch_type.
+    """
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.patch(m1_http.session_path(provisioning_session_id, CRC), patch, patch_type,
+                               "Consumption Reporting Configuration", if_match)
 
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url)
 
-        if response.status_code == 200:
-            try:
-                data = response.json()
-                pretty = json.dumps(data, indent=2)
-            except Exception:
-                pretty = response.text
-            return (
-                f"SUCCESS: Consumption Reporting Configuration for session '{session_id}'\n\n"
-                f"{pretty}"
-            )
-        elif response.status_code == 404:
-            return (
-                f"NOT FOUND: No Consumption Reporting Configuration exists for "
-                f"session '{session_id}' (HTTP 404).\n"
-                f"Use create_consumption_reporting_configuration to create one."
-            )
-        return (
-            f"ERROR: HTTP {response.status_code} {response.reason_phrase}\n"
-            f"  URL: {url}\n  Response: {response.text[:600]}"
-        )
-
-    except httpx.ConnectError:
-        return f"ERROR: Could not connect to '{state.get_m1_url()}'. Is the 5GMS AF running?"
-    except httpx.TimeoutException:
-        return f"ERROR: Request timed out to '{state.get_m1_url()}'."
-    except Exception as exc:
-        return f"ERROR: {type(exc).__name__}: {exc}"
+@mcp.tool()
+async def delete_consumption_reporting_configuration(if_match: str = None, provisioning_session_id: str = None, m1_url: str = None) -> str:
+    """
+    Destroy the Consumption Reporting Configuration (DELETE, 204): consumption reporting stops for the session.
+    """
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.destroy(m1_http.session_path(provisioning_session_id, CRC), "Consumption Reporting Configuration", if_match)

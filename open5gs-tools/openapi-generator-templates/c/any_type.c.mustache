@@ -28,7 +28,7 @@ cJSON *{{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.low
     return cJSON_Duplicate((cJSON*)val, 1);
 }
 
-{{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON(cJSON *json, bool as_request, const char **parse_error)
+{{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t *{{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_parseFromJSON(cJSON *json, bool as_request, const char **parse_error, char **err_parameter)
 {
     return ({{#modelNamePrefix}}{{#lambda.lowercase}}{{modelNamePrefix}}{{/lambda.lowercase}}{{/modelNamePrefix}}{{^modelNamePrefix}}OpenAPI{{/modelNamePrefix}}_any_type_t*)cJSON_Duplicate(json, 1);
 }

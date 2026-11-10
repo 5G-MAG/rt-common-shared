@@ -47,16 +47,17 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
     return NULL;
 }
 
-{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err)
+{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err, char **{{classname}}_err_parameter)
 {
     {{classname}}_t *{{classname}}_ptr = NULL;
+
+    if ({{classname}}_parse_err) *{{classname}}_parse_err = NULL;
+    if ({{classname}}_err_parameter) *{{classname}}_err_parameter = NULL;
 
     if (!{{classname}}JSON) {
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Bad JSON object";
         return NULL;
     }
-
-    if ({{classname}}_parse_err) *{{classname}}_parse_err = NULL;
 
     if (!cJSON_IsObject({{classname}}JSON)) {
 	if ({{classname}}_parse_err) *{{classname}}_parse_err = "Expected a JSON Object";
@@ -66,6 +67,7 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
     cJSON *discriminator = cJSON_GetObjectItemCaseSensitive({{classname}}JSON, "{{discriminator.propertyName}}");
     if (!cJSON_IsString(discriminator)) {
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Discriminator \"{{discriminator.propertyName}}\" is not a string";
+	if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{discriminator.propertyName}}");
         return NULL;
     }
     
@@ -73,6 +75,7 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
     if (discriminator_val < 0) {
         ogs_error("{{classname}}_parseFromJSON failed [{{{name}}}]");
         if ({{classname}}_parse_err) *{{classname}}_parse_err = "Discriminator \"{{discriminator.propertyName}}\" value not recognised";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{discriminator.propertyName}}");
 	return NULL;
     }
 
@@ -82,7 +85,7 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
     switch (discriminator_val) {
 {{#discriminator.mappedModels}}
     case {{#vars}}{{#isDiscriminator}}{{dataType}}{{/isDiscriminator}}{{/vars}}_VAL_{{mappingName}}:
-        {{classname}}_ptr->{{modelName}} = {{modelName}}_parseFromJSON({{classname}}JSON, {{classname}}_as_request, {{classname}}_parse_err);
+        {{classname}}_ptr->{{modelName}} = {{modelName}}_parseFromJSON({{classname}}JSON, {{classname}}_as_request, {{classname}}_parse_err, {{classname}}_err_parameter);
 	if (!{{classname}}_ptr->{{modelName}}) {
 	    ogs_error("{{classname}}_parseFromJSON failed parse of {{modelName}} type");
             ogs_free({{classname}}_ptr);
@@ -94,6 +97,7 @@ cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{
     default:
         ogs_error("{{classname}}_parseFromJSON failed [{{discriminator.propertyName}}]");
 	if ({{classname}}_parse_err) *{{classname}}_parse_err = "Discriminator \"{{discriminator.propertyName}}\" value not mapped";
+        if ({{classname}}_err_parameter) *{{classname}}_err_parameter = ogs_strdup("{{discriminator.propertyName}}");
 	ogs_free({{classname}}_ptr);
         return NULL;
     }

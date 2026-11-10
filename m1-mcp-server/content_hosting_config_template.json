@@ -1,12 +1,13 @@
 {
     "name": "My 5GMS Stream",
     "ingestConfiguration": {
-        "pull": true,
-        "protocol": "urn:3gpp:5gms:content-protocol:http-pull-ingest",
+        "mode": "PULL",
+        "protocol": "urn:3gpp:5gms:content-protocol:http-pull",
         "baseURL": "https://example.com/media/"
     },
     "distributionConfigurations": [
         {
+            "distributionId": "d1",
             "entryPoint": {
                 "relativePath": "stream/manifest.mpd",
                 "contentType": "application/dash+xml",

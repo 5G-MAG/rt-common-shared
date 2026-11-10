@@ -33,9 +33,9 @@ typedef struct {{classname}}_s {
 
 void {{classname}}_free({{classname}}_t *{{classname}});
 
-{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err);
-{{classname}}_t *{{classname}}_parseRequestFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err);
-{{classname}}_t *{{classname}}_parseResponseFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err);
+{{classname}}_t *{{classname}}_parseFromJSON(cJSON *{{classname}}JSON, bool {{classname}}_as_request, const char **{{classname}}_parse_err, char **{{classname}}_err_parameter);
+{{classname}}_t *{{classname}}_parseRequestFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err, char **{{classname}}_err_parameter);
+{{classname}}_t *{{classname}}_parseResponseFromJSON(cJSON *{{classname}}JSON, const char **{{classname}}_parse_err, char **{{classname}}_err_parameter);
 
 cJSON *{{classname}}_convertToJSON(const {{classname}}_t *{{classname}}, bool {{classname}}_as_request);
 cJSON *{{classname}}_convertRequestToJSON(const {{classname}}_t *{{classname}});

@@ -28,6 +28,11 @@
 {{#imports}}
 #include "{{{.}}}.h"
 {{/imports}}
+{{#discriminator}}
+{{#mappedModels}}
+#include "{{{modelName}}}.h"
+{{/mappedModels}}
+{{/discriminator}}
 
 #define {{classname}}_info_title "{{appName}}"
 #define {{classname}}_info_version "{{appVersion}}"

@@ -4,7 +4,7 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that 
 
 ## Overview
 
-This server wraps the 5GMS Application Function's M1 REST API into a full set of tools covering the complete provisioning lifecycle — create, inspect, and delete sessions and their configurations.
+This server wraps the 5GMS Application Function's M1 REST API (the Release 19 Maf_Provisioning API of TS 26.510 V19.2.0, base path `/3gpp-maf-provisioning/v1`) into tools covering the provisioning lifecycle of a downlink media streaming service: Provisioning Sessions, Content Protocols, Server Certificates, Content Hosting, Content Preparation Templates, Policy Templates, Consumption Reporting, Metrics Reporting and Event Data Processing. Only the methods that the OpenAPI files define are used (the AF answers 405 to anything else, OPTIONS and HEAD included). Edge resources, content publishing (uplink), RTC, event exposure, eMBMS/MBS and remote control are not offered.
 
 The standard 3-step provisioning workflow is:
 
@@ -14,17 +14,18 @@ Step 2 → create_content_hosting_configuration
 Step 3 → create_consumption_reporting_configuration
 ```
 
-Additional tools allow you to inspect and manage existing resources at any time.
+Every resource has get, replace (PUT), patch (PATCH) and delete tools; the bodies of the create and replace tools carry the Release 19 schemas (tool input schemas generated from `models.py`).
 
 ## Features
 
 - Full 3-step 5GMS provisioning workflow via MCP tools
-- GET and DELETE tools for all major resources
-- Enumerate all provisioning sessions via the 5G-MAG management API
-- Session state persisted across tool calls (M1 URL, MAF URL, and session ID remembered automatically)
+- Create, get, replace, patch and delete tools for every Maf_Provisioning resource
+- Tool input schemas of the Release 19 resources (required properties, enumerations, limits); read-only properties are not part of a request
+- Entity tags: every answer shows the ETag, and the update and delete tools take it as `if_match` (TS 26.510 clause 7.1.4.4; 412 explained)
+- ProblemDetails of error answers shown, with explanations for 405 (Allow), 412, 413, 415
+- Enumerate all provisioning sessions through the M1 interface (`GET /provisioning-sessions`)
+- Session state persisted across tool calls (M1 URL and session ID remembered automatically)
 - Supports both DASH and HLS entry points
-- JSON template support for content hosting configuration
-- Clear, structured error messages with troubleshooting hints
 - Modular codebase — each resource group lives in its own tool module
 - Compatible with any MCP client (Claude Desktop, Claude Code, custom agents)
 
@@ -47,7 +48,7 @@ pip install -r requirements.txt
 
 | Package | Purpose |
 |---------|---------|
-| `mcp[cli]` | MCP server framework (FastMCP) |
+| `mcp[cli]` (>= 1.2, < 2) | MCP server framework (FastMCP; mcp 2.x renamed it) |
 | `httpx` | Async HTTP client for M1 API calls |
 
 ## Usage
@@ -108,99 +109,56 @@ On Windows replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
 ## Tools
 
-### Provisioning Sessions
+Every tool takes `m1_url` (remembered after the first call) and, where a Provisioning Session is needed, `provisioning_session_id` (the one created last when omitted). Update and delete tools take `if_match`, a strong entity tag shown by an earlier answer.
 
-| Tool | Method | Description |
-|------|--------|-------------|
-| `create_provisioning_session` | POST | Create a new provisioning session (Step 1) |
-| `get_provisioning_session` | GET | Retrieve details for an existing session |
-| `enumerate_provisioning_sessions` | GET | List all provisioning sessions (uses MAF management API) |
-| `delete_provisioning_session` | DELETE | Delete a provisioning session and all its configurations |
+| Module | Tools (HTTP) |
+|--------|--------------|
+| Provisioning Sessions | `create_provisioning_session` (POST), `get_provisioning_session` (GET), `enumerate_provisioning_sessions` (GET), `delete_provisioning_session` (DELETE), `get_content_protocols` (GET) |
+| Server Certificates | `create_server_certificate` (POST), `reserve_server_certificate` (POST ?csr=true), `upload_server_certificate` (PUT application/x-pem-file), `get_server_certificate` (GET), `delete_server_certificate` (DELETE) |
+| Content Hosting | `create_content_hosting_configuration` (POST, one distribution), `create_content_hosting_configuration_from_schema` (POST, full representation), `get_…`, `replace_…` (PUT), `patch_…` (PATCH), `delete_…`, `purge_content_hosting_cache` (POST form) |
+| Content Preparation Templates | `create_content_preparation_template`, `get_…`, `replace_…`, `patch_…`, `delete_content_preparation_template` |
+| Policy Templates | `create_policy_template`, `get_…`, `replace_…`, `patch_…`, `delete_policy_template` |
+| Consumption Reporting | `create_consumption_reporting_configuration`, `get_…`, `replace_…`, `patch_…`, `delete_consumption_reporting_configuration` |
+| Metrics Reporting | `create_metrics_reporting_configuration`, `get_…`, `replace_…`, `patch_…`, `delete_metrics_reporting_configuration` |
+| Event Data Processing | `create_event_data_processing_configuration`, `get_…`, `replace_…`, `patch_…`, `delete_event_data_processing_configuration` |
 
-#### `create_provisioning_session`
+`patch_…` tools take the patch as JSON text and `patch_type` `merge-patch` (`application/merge-patch+json`, the default) or `json-patch` (`application/json-patch+json`).
 
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `asp_id` | Yes | — | Application Service Provider ID |
-| `app_id` | Yes | — | Application ID |
-| `provisioning_session_type` | No | `DOWNLINK` | `DOWNLINK` or `UPLINK` |
-| `m1_url` | Yes (first call) | — | Base URL of M1 interface, e.g. `http://192.168.1.100:7778` |
+### `create_provisioning_session`
 
-#### `enumerate_provisioning_sessions`
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `external_service_id` | Yes | Identifier of the session towards the Media Client, a reverse FQDN, e.g. `com.example.live-event-1` |
+| `app_id` | Yes | Application ID |
+| `asp_id` | No | Application Service Provider ID |
+| `location_reporting` | No | Require the Media Session Handler to report UE location (a property of the Provisioning Session) |
+| `m1_url` | Yes (first call) | Base URL of the M1 interface, e.g. `http://192.168.1.100:7777` |
 
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `maf_url` | Yes (first call) | — | Base URL of the 5G-MAG management API, e.g. `http://192.168.1.100:7779` |
+The Provisioning Session type is always `MS_DOWNLINK`.
 
----
-
-### Content Hosting Configuration
-
-| Tool | Method | Description |
-|------|--------|-------------|
-| `create_content_hosting_configuration` | POST | Define media ingest origin and distribution entry point (Step 2) |
-| `get_content_hosting_configuration` | GET | Retrieve the current content hosting configuration |
-| `delete_content_hosting_configuration` | DELETE | Remove the content hosting configuration |
-
-#### `create_content_hosting_configuration`
+### `create_content_hosting_configuration`
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `name` | Yes | — | Friendly name for the configuration |
-| `ingest_base_url` | Yes | — | Origin server base URL |
-| `entry_point_relative_path` | Yes | — | Path to `.mpd` (DASH) or `.m3u8` (HLS) manifest |
-| `entry_point_content_type` | No | `application/dash+xml` | MIME type of the manifest |
-| `domain_name_alias` | No | None | CDN hostname alias |
-| `dash_profiles` | No | `["urn:mpeg:dash:profile:isoff-live:2011"]` | DASH profile URNs |
-| `ingest_pull` | No | `true` | Pull vs push ingest |
-| `ingest_protocol` | No | HTTP pull URN | Ingest protocol URN |
+| `name` | Yes | — | Label of the configuration |
+| `ingest_base_url` | Yes | — | Origin base URL (`ingestConfiguration.baseURL`) |
+| `entry_point_relative_path` | Yes | — | Path of the manifest relative to the ingest base URL |
+| `entry_point_content_type` | No | `application/dash+xml` | `application/dash+xml` or `application/vnd.apple.mpegurl` |
+| `domain_name_alias` | No | — | Alternative FQDN (needs `certificate_id` with a matching name) |
+| `certificate_id` | No | — | A Server Certificate of the session |
+| `dash_profiles` | No | isoff-live 2011 | Profile URIs of the entry point |
+| `ingest_pull` | No | `true` | `false` for a PUSH ingest (then the protocol has to be a DASH-IF term; the AF assigns the base URL) |
+| `ingest_protocol` | No | `urn:3gpp:5gms:content-protocol:http-pull` | Term of TS 26.512 table 8.1-1 |
 
----
+The AF assigns `baseURL` and `canonicalDomainName` of a pull distribution. For several distributions, caching, geo-fencing, URL signing or a push distribution use `create_content_hosting_configuration_from_schema`.
 
-### Consumption Reporting Configuration
+### `create_consumption_reporting_configuration`
 
-| Tool | Method | Description |
-|------|--------|-------------|
-| `create_consumption_reporting_configuration` | POST | Enable viewer analytics reporting (Step 3) |
-| `get_consumption_reporting_configuration` | GET | Retrieve the current consumption reporting configuration |
+`reporting_interval` (default 10 s, > 0), `sample_percentage` (default 100.0), `access_reporting` (default true). The UE location is reported when the Provisioning Session has `locationReporting`; it is not a property of this configuration.
 
-#### `create_consumption_reporting_configuration`
+### `create_metrics_reporting_configuration`
 
-All parameters are optional.
-
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `reporting_interval` | No | `10` | Seconds between client reports |
-| `sample_percentage` | No | `100.0` | Percentage of clients that report |
-| `location_reporting` | No | `true` | Include geographic location |
-| `access_reporting` | No | `true` | Include network access info |
-| `provisioning_session_id` | No | state | Override the session ID from state |
-| `m1_url` | No | state | Override the M1 URL from state |
-
----
-
-### Metrics Reporting Configuration
-
-| Tool | Method | Description |
-|------|--------|-------------|
-| `create_metrics_reporting_configuration` | POST | Create a new metrics reporting configuration |
-| `get_metrics_reporting_configuration` | GET | Retrieve an existing metrics reporting configuration |
-| `delete_metrics_reporting_configuration` | DELETE | Remove a metrics reporting configuration |
-
-#### `create_metrics_reporting_configuration`
-
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `scheme` | No | `urn:3gpp:5gms:metrics-reporting:qoe-metrics` | Metrics reporting scheme URN |
-| `reporting_interval` | No | `10` | Seconds between client reports |
-| `sample_percentage` | No | `100.0` | Percentage of clients that report |
-| `sampling_period` | Yes | — | Seconds between local metric samples |
-| `metrics` | No | AF default | List of metric URNs to collect (e.g. `urn:3GPP:ns:PSS:DASH:QM10#BufferLevel`) |
-| `url_filters` | No | None | URL patterns to restrict reporting scope |
-| `data_network_name` | No | None | DNN/APN to scope the configuration to a specific network |
-| `slice_scope` | No | None | List of S-NSSAI objects (e.g. `[{"sst": 1, "sd": "000001"}]`) |
-| `provisioning_session_id` | No | state | Override the session ID from state |
-| `m1_url` | No | state | Override the M1 URL from state |
+`sampling_period` (required, > 0), `scheme` (default `urn:3GPP:ns:PSS:DASH:QM10`), `reporting_interval`, `sample_percentage`, `metrics`, `url_filters`, `data_network_name`, `slice_scope` (`[{"sst": 1, "sd": "000001"}]`), `reporting_start_offset`, `reporting_duration`, `positive_crossing_thresholds`, `negative_crossing_thresholds` (`{metric URI: [values]}`), `location_filter` (LocationArea5G objects).
 
 ## Content Hosting Configuration Template
 
@@ -210,12 +168,13 @@ The file `content_hosting_config_template.json` is used as a base for `create_co
 {
     "name": "My 5GMS Stream",
     "ingestConfiguration": {
-        "pull": true,
-        "protocol": "urn:3gpp:5gms:content-protocol:http-pull-ingest",
+        "mode": "PULL",
+        "protocol": "urn:3gpp:5gms:content-protocol:http-pull",
         "baseURL": "https://example.com/media/"
     },
     "distributionConfigurations": [
         {
+            "distributionId": "d1",
             "entryPoint": {
                 "relativePath": "stream/manifest.mpd",
                 "contentType": "application/dash+xml",
@@ -232,7 +191,7 @@ The file `content_hosting_config_template.json` is used as a base for `create_co
 User: Set up a 5GMS stream for my live event.
 
 Agent: Step 1 — I'll create a provisioning session.
-       [calls create_provisioning_session(asp_id="acme", app_id="live-event-1", m1_url="http://10.0.0.5:7778")]
+       [calls create_provisioning_session(external_service_id="com.acme.live-event-1", app_id="live-event-1", m1_url="http://10.0.0.5:7777")]
        → Session ID: abc-123
 
 Agent: Step 2 — Now I'll configure the content hosting.
@@ -254,22 +213,39 @@ Agent: Step 3 — Finally, enabling consumption analytics.
 M1-mcp/
 ├── server.py                            # Entry point — imports mcp instance and tool modules
 ├── mcp_instance.py                      # Shared FastMCP server instance
-├── state.py                             # Shared session state (M1 URL, MAF URL, session ID)
+├── state.py                             # Shared session state (M1 URL, session ID)
+├── m1_http.py                           # Requests to the AF with the HTTP rules of TS 26.510 clause 7.1
+├── models.py                            # Release 19 request bodies (Pydantic): the schemas of the tools
 ├── tools/
 │   ├── __init__.py                      # Imports all tool modules (self-registration)
-│   ├── provisioning.py                  # create / get / enumerate / delete provisioning sessions
-│   ├── content_hosting.py               # create / get / delete content hosting configurations
-│   ├── consumption_reporting.py         # create consumption reporting configurations
-│   └── metrics_reporting.py             # get / delete metrics reporting configurations
+│   ├── _common.py                       # create / retrieve / replace / patch / destroy helpers
+│   ├── provisioning.py                  # provisioning sessions, content protocols
+│   ├── certificates.py                  # server certificates
+│   ├── content_hosting.py               # content hosting configuration, cache purge
+│   ├── content_preparation.py           # content preparation templates
+│   ├── policy_templates.py              # policy templates
+│   ├── consumption_reporting.py         # consumption reporting configuration
+│   ├── metrics_reporting.py             # metrics reporting configurations
+│   └── event_data_processing.py         # event data processing configurations
+├── tests/
+│   ├── test_tools.py                    # unit tests against a local stand-in for the AF (pytest)
+│   └── live_check.py                    # life cycle of every tool against a running AF
 ├── content_hosting_config_template.json # Base template for create_content_hosting_configuration
 ├── requirements.txt                     # Python dependencies
 └── README.md                            # This file
 ```
 
+## Tests
+
+```bash
+python -m pytest tests/test_tools.py        # no AF needed (needs pytest in the venv)
+python tests/live_check.py http://host:7777  # runs every tool against a running AF and deletes what it created
+```
+
 ## Standards Reference
 
-- **3GPP TS 26.512** — 5G Media Streaming (5GMS); Protocols
-- **M1 Interface** — Provisioning interface between AF and AS
+- **3GPP TS 26.510 V19.2.0** — Media delivery; Interactions and APIs (Maf_Provisioning at M1)
+- **3GPP TS 26.512 V19.3.0** — 5G Media Streaming (5GMS); Protocols (content protocol terms, table 8.1-1)
 - **5G-MAG Reference Tools** — Open-source 5GMS implementation
 
 ## Related Projects

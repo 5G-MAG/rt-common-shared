@@ -1,53 +1,29 @@
 """
-Content Hosting Configuration tools — 3GPP M1 Interface
-Endpoints:
-  POST   /3gpp-m1/v2/provisioning-sessions/{id}/content-hosting-configuration
-  GET    /3gpp-m1/v2/provisioning-sessions/{id}/content-hosting-configuration
-  DELETE /3gpp-m1/v2/provisioning-sessions/{id}/content-hosting-configuration
+Content Hosting Configuration tools — Maf_Provisioning_ContentHosting (TS 26.510 V19.2.0 clause 5.2.8)
+Endpoints (base path /3gpp-maf-provisioning/v1/provisioning-sessions/{id}):
+  POST   /content-hosting-configuration         create (201; at most one per session; 403 unless the session is MS_DOWNLINK)
+  GET    /content-hosting-configuration         retrieve (200)
+  PUT    /content-hosting-configuration         replace (200, 204 when unchanged)
+  PATCH  /content-hosting-configuration         merge-patch+json or json-patch+json (200, 204)
+  DELETE /content-hosting-configuration         destroy (204; the text of clause 5.2.8.5 says 200)
+  POST   /content-hosting-configuration/purge   application/x-www-form-urlencoded pattern=<regex> (200 count, 204 nothing purged)
 """
 
-import json
 from pathlib import Path
-import httpx
+from typing import Optional
+import json
+import urllib.parse
 
 from mcp_instance import mcp
+import m1_http
+import models
 import state
+from . import _common
 
 TEMPLATE_PATH = Path(__file__).parent.parent / "content_hosting_config_template.json"
+CHC = "content-hosting-configuration"
 
 
-# ---------------------------------------------------------------------------
-# Helper
-# ---------------------------------------------------------------------------
-def _base_url_for_session(session_id: str) -> str:
-    return (
-        f"{state.get_m1_url()}/3gpp-m1/v2/provisioning-sessions/"
-        f"{session_id}/content-hosting-configuration"
-    )
-
-
-def _connect_error(url: str) -> str:
-    return f"ERROR: Could not connect to '{url}'. Is the 5GMS AF running?"
-
-
-def _check_state() -> str | None:
-    """Return an error string if m1_url or session_id are missing, else None."""
-    if not state.get_m1_url():
-        return (
-            "ERROR: No M1 URL configured.\n"
-            "Either run create_provisioning_session first, or pass m1_url explicitly."
-        )
-    if not state.get_session_id():
-        return (
-            "ERROR: No Provisioning Session ID found.\n"
-            "Either run create_provisioning_session first, or pass provisioning_session_id explicitly."
-        )
-    return None
-
-
-# ---------------------------------------------------------------------------
-# Tool — Create Content Hosting Configuration
-# ---------------------------------------------------------------------------
 @mcp.tool()
 async def create_content_hosting_configuration(
     name: str,
@@ -55,268 +31,173 @@ async def create_content_hosting_configuration(
     entry_point_relative_path: str,
     entry_point_content_type: str = "application/dash+xml",
     domain_name_alias: str = None,
+    certificate_id: str = None,
     dash_profiles: list[str] = None,
     ingest_pull: bool = True,
-    ingest_protocol: str = "urn:3gpp:5gms:content-protocol:http-pull-ingest",
+    ingest_protocol: str = "urn:3gpp:5gms:content-protocol:http-pull",
     provisioning_session_id: str = None,
     m1_url: str = None,
 ) -> str:
     """
-    STEP 2 OF 3 — Create a Content Hosting Configuration.
+    STEP 2 OF 3 — Create a Content Hosting Configuration with one distribution (distributionId "d1").
 
-    Defines WHERE the media content comes from (ingest origin server) and HOW it will
-    be distributed to end-user devices. Must be called AFTER create_provisioning_session.
+    For several distributions, caching, geo-fencing, URL signing or a PUSH distribution use
+    create_content_hosting_configuration_from_schema. The Media AF assigns baseURL and canonicalDomainName of a PULL distribution.
 
     PARAMETERS
     ----------
-    name (REQUIRED)
-        Human-readable label for this configuration.
-        Example: "My Live Stream", "VOD Library", "Sports Channel HD"
-
-    ingest_base_url (REQUIRED)
-        Base URL of the origin server from which the 5GMS AF will pull media content.
-        Example: "https://rdmedia.bbc.co.uk/"
-
-    entry_point_relative_path (REQUIRED)
-        Path to the media manifest relative to ingest_base_url.
-        Example (DASH): "elephants_dream/1/client_manifest-all.mpd"
-        Example (HLS):  "live/channel1/index.m3u8"
-
-    entry_point_content_type (default: "application/dash+xml")
-        MIME type: "application/dash+xml" for DASH, "application/vnd.apple.mpegurl" for HLS.
-
-    domain_name_alias (default: none)
-        Alternate hostname clients use to reach the distribution point.
-
-    dash_profiles (default: ["urn:mpeg:dash:profile:isoff-live:2011"])
-        List of DASH profile URNs.
-
-    ingest_pull (default: true)
-        true → AF pulls from origin. false → content is pushed to the AF.
-
-    ingest_protocol (default: "urn:3gpp:5gms:content-protocol:http-pull-ingest")
-        Protocol URN for the ingest method.
-
-    provisioning_session_id (OPTIONAL)
-        The ID of an existing provisioning session to attach this configuration to.
-        If omitted, the session ID from the current state is used (set automatically
-        by create_provisioning_session). Provide this explicitly when resuming work
-        on a session that was created in a previous interaction.
-        Example: "3a2f1b00-1234-5678-abcd-ef0123456789"
-
-    m1_url (OPTIONAL)
-        Base URL of the M1 interface. If omitted, the URL from the current state
-        is used. Provide this explicitly when resuming a previous session.
-        Example: "http://192.168.1.100:7778"
+    name (REQUIRED)  Label of the configuration.
+    ingest_base_url (REQUIRED)  Origin base URL that the Media AS pulls from (ingestConfiguration.baseURL), e.g. "https://rdmedia.bbc.co.uk/".
+    entry_point_relative_path (REQUIRED)  Path of the manifest relative to ingest_base_url, e.g. "elephants_dream/1/client_manifest-all.mpd".
+    entry_point_content_type  "application/dash+xml" (DASH) or "application/vnd.apple.mpegurl" (HLS).
+    domain_name_alias  Alternative FQDN advertised to the client; needs certificate_id whose certificate lists it.
+    certificate_id  A Server Certificate of the session for HTTPS distribution.
+    dash_profiles  Profile URIs of the entry point (default ["urn:mpeg:dash:profile:isoff-live:2011"]).
+    ingest_pull  true: PULL ingest (default); false: PUSH ingest (then ingest_protocol has to be a DASH-IF term).
+    ingest_protocol  Content protocol term of TS 26.512 table 8.1-1 (default http-pull).
+    provisioning_session_id  The session; the one in the current state when omitted.
+    m1_url  Base URL of the M1 interface; remembered.
     """
-    # Allow explicit parameters to override state
-    if m1_url:
-        state.set_m1_url(m1_url)
-    if provisioning_session_id:
-        state.set_session_id(provisioning_session_id)
-
-    err = _check_state()
+    err = _common.prepare(m1_url, provisioning_session_id)
     if err:
         return err
-
-    session_id = state.get_session_id()
-
     try:
-        with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
-            config = json.load(f)
+        config = json.loads(TEMPLATE_PATH.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        config = {
-            "name": "",
-            "ingestConfiguration": {
-                "pull": True,
-                "protocol": "urn:3gpp:5gms:content-protocol:http-pull-ingest",
-                "baseURL": "",
-            },
-            "distributionConfigurations": [
-                {
-                    "entryPoint": {
-                        "relativePath": "",
-                        "contentType": "application/dash+xml",
-                        "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"],
-                    }
-                }
-            ],
-        }
-
+        config = {"name": "", "ingestConfiguration": {"mode": "PULL", "protocol": ingest_protocol}, "distributionConfigurations": []}
     config["name"] = name
-    config["ingestConfiguration"]["pull"] = ingest_pull
-    config["ingestConfiguration"]["protocol"] = ingest_protocol
-    config["ingestConfiguration"]["baseURL"] = (
-        ingest_base_url if ingest_base_url.endswith("/") else ingest_base_url + "/"
-    )
-
-    profiles = dash_profiles or ["urn:mpeg:dash:profile:isoff-live:2011"]
-    dist = {
-        "entryPoint": {
-            "relativePath": entry_point_relative_path.lstrip("/"),
-            "contentType": entry_point_content_type,
-            "profiles": profiles,
-        }
-    }
+    ingest = {"mode": "PULL" if ingest_pull else "PUSH", "protocol": ingest_protocol}
+    if ingest_pull:  # the base URL of a PUSH ingest is assigned by the Media AF
+        ingest["baseURL"] = ingest_base_url if ingest_base_url.endswith("/") else ingest_base_url + "/"
+    config["ingestConfiguration"] = ingest
+    dist = {"distributionId": "d1",
+            "entryPoint": {"relativePath": entry_point_relative_path.lstrip("/"), "contentType": entry_point_content_type,
+                           "profiles": dash_profiles or ["urn:mpeg:dash:profile:isoff-live:2011"]}}
+    if certificate_id:
+        dist["certificateId"] = certificate_id
     if domain_name_alias:
         dist["domainNameAlias"] = domain_name_alias
     config["distributionConfigurations"] = [dist]
-
-    url = _base_url_for_session(session_id)
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json=config, headers={"Content-Type": "application/json"})
-
-        if response.status_code in (200, 201, 204):
-            return (
-                f"SUCCESS: Content Hosting Configuration created.\n\n"
-                f"  Session ID   : {session_id}\n"
-                f"  Name         : {name}\n"
-                f"  Ingest URL   : {config['ingestConfiguration']['baseURL']}\n"
-                f"  Entry Point  : {entry_point_relative_path}\n"
-                f"  Content Type : {entry_point_content_type}\n"
-                + (f"  Domain Alias : {domain_name_alias}\n" if domain_name_alias else "")
-                + f"\nNEXT STEP → Call create_consumption_reporting_configuration"
-            )
-        return (
-            f"ERROR: HTTP {response.status_code} {response.reason_phrase}\n"
-            f"  URL: {url}\n  Body:\n{json.dumps(config, indent=2)}\n"
-            f"  Response: {response.text[:600]}"
-        )
-
-    except httpx.ConnectError:
-        return _connect_error(state.get_m1_url())
-    except httpx.TimeoutException:
-        return f"ERROR: Request timed out to '{state.get_m1_url()}'."
-    except Exception as exc:
-        return f"ERROR: {type(exc).__name__}: {exc}"
+    return (await _common.create(m1_http.session_path(provisioning_session_id, CHC), config, "Content Hosting Configuration",
+                                 extra=f"  Name         : {name}\n  Ingest       : {ingest['mode']} {ingest.get('baseURL', '(assigned by the AF)')}\n"
+                                       "\nNEXT STEP → Call create_consumption_reporting_configuration", id_label="Resource"))[1]
 
 
-# ---------------------------------------------------------------------------
-# Tool — Get Content Hosting Configuration
-# ---------------------------------------------------------------------------
 @mcp.tool()
-async def get_content_hosting_configuration(
+async def create_content_hosting_configuration_from_schema(
+    configuration: models.ContentHostingConfiguration,
     provisioning_session_id: str = None,
     m1_url: str = None,
 ) -> str:
     """
-    Retrieve the Content Hosting Configuration for a Provisioning Session.
+    Create a Content Hosting Configuration from the full Release 19 representation (TS 26.510 table 8.8.3.1-1).
+
+    name, ingestConfiguration {mode, protocol, baseURL?} and distributionConfigurations (at least one, each with a distributionId) are
+    required. For a PULL distribution the AF assigns baseURL and canonicalDomainName: omit them. 400 for an invalid reference
+    (certificateId, contentPreparationTemplateId) or a domainNameAlias without a matching certificate.
+    """
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return (await _common.create(m1_http.session_path(provisioning_session_id, CHC), models.body(configuration),
+                                 "Content Hosting Configuration", id_label="Resource"))[1]
+
+
+@mcp.tool()
+async def get_content_hosting_configuration(provisioning_session_id: str = None, m1_url: str = None) -> str:
+    """
+    Retrieve the Content Hosting Configuration of a Provisioning Session (200), including what the AF assigned
+    (distribution baseURL, canonicalDomainName, push ingest baseURL). The ETag is shown for use as if_match.
 
     PARAMETERS
     ----------
-    provisioning_session_id (OPTIONAL)
-        The provisioning session to query. Defaults to the current session in state.
-
-    m1_url (OPTIONAL if already provided)
-        Base URL of the 5GMS Application Function M1 interface.
-        Example: "http://192.168.1.100:7778"
-
-    RETURNS
-    -------
-    Full JSON representation of the Content Hosting Configuration, including
-    ingest settings and distribution entry points.
+    provisioning_session_id (OPTIONAL)  The session; the one in the current state when omitted.
+    m1_url (OPTIONAL if already provided)  Base URL of the M1 interface.
     """
-    if m1_url:
-        state.set_m1_url(m1_url)
-    if not state.get_m1_url():
-        return "ERROR: No M1 URL configured. Provide m1_url parameter."
-
-    session_id = provisioning_session_id or state.get_session_id()
-    if not session_id:
-        return "ERROR: No provisioning_session_id provided or stored in state."
-
-    url = _base_url_for_session(session_id)
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url)
-
-        if response.status_code == 200:
-            try:
-                data = response.json()
-                pretty = json.dumps(data, indent=2)
-            except Exception:
-                pretty = response.text
-            return f"SUCCESS: Content Hosting Configuration for session '{session_id}'\n\n{pretty}"
-        elif response.status_code == 404:
-            return (
-                f"NOT FOUND: No Content Hosting Configuration exists for session '{session_id}' (HTTP 404).\n"
-                "Call create_content_hosting_configuration to create one."
-            )
-        return (
-            f"ERROR: HTTP {response.status_code} {response.reason_phrase}\n"
-            f"  URL: {url}\n  Response: {response.text[:600]}"
-        )
-
-    except httpx.ConnectError:
-        return _connect_error(state.get_m1_url())
-    except httpx.TimeoutException:
-        return f"ERROR: Request timed out to '{state.get_m1_url()}'."
-    except Exception as exc:
-        return f"ERROR: {type(exc).__name__}: {exc}"
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.retrieve(m1_http.session_path(provisioning_session_id, CHC), "Content Hosting Configuration")
 
 
-# ---------------------------------------------------------------------------
-# Tool — Delete Content Hosting Configuration
-# ---------------------------------------------------------------------------
 @mcp.tool()
-async def delete_content_hosting_configuration(
+async def replace_content_hosting_configuration(
+    configuration: models.ContentHostingConfiguration,
+    if_match: str = None,
     provisioning_session_id: str = None,
     m1_url: str = None,
 ) -> str:
     """
-    Delete the Content Hosting Configuration for a Provisioning Session.
+    Replace the Content Hosting Configuration (PUT, 200, or 204 when nothing changes).
 
-    Removes the ingest and distribution settings from the session. The Provisioning
-    Session itself is NOT deleted — only this sub-resource is removed.
+    All writable properties except domainNameAlias can change; 403 for an attempt to change a read-only property such as
+    canonicalDomainName. if_match is a strong entity tag obtained earlier (clause 7.1.4.4); 412 when the resource has changed since.
+    """
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.replace(m1_http.session_path(provisioning_session_id, CHC), models.body(configuration),
+                                 "Content Hosting Configuration", if_match)
+
+
+@mcp.tool()
+async def patch_content_hosting_configuration(
+    patch: str,
+    patch_type: _common.PatchType = "merge-patch",
+    if_match: str = None,
+    provisioning_session_id: str = None,
+    m1_url: str = None,
+) -> str:
+    """
+    Patch the Content Hosting Configuration (PATCH, 200 or 204).
+
+    patch is a JSON text: a JSON merge patch (RFC 7396, application/merge-patch+json, e.g. {"name": "New name"}) or a JSON patch
+    (RFC 6902, application/json-patch+json, e.g. [{"op": "replace", "path": "/name", "value": "New name"}]).
+    """
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.patch(m1_http.session_path(provisioning_session_id, CHC), patch, patch_type, "Content Hosting Configuration", if_match)
+
+
+@mcp.tool()
+async def delete_content_hosting_configuration(if_match: str = None, provisioning_session_id: str = None, m1_url: str = None) -> str:
+    """
+    Destroy the Content Hosting Configuration (DELETE; 204, or 200 with an empty body as clause 5.2.8.5 says). The Media AF releases the
+    network resources, purges the cache and ends the distribution.
 
     PARAMETERS
     ----------
-    provisioning_session_id (OPTIONAL)
-        The provisioning session whose Content Hosting Configuration to delete.
-        Defaults to the current session in state.
-
-    m1_url (OPTIONAL if already provided)
-        Base URL of the 5GMS Application Function M1 interface.
-        Example: "http://192.168.1.100:7778"
-
-    RETURNS
-    -------
-    Confirmation of deletion or an error message.
+    if_match (OPTIONAL)  A strong entity tag obtained earlier (clause 7.1.4.4).
+    provisioning_session_id (OPTIONAL)  The session; the one in the current state when omitted.
+    m1_url (OPTIONAL if already provided)  Base URL of the M1 interface.
     """
-    if m1_url:
-        state.set_m1_url(m1_url)
-    if not state.get_m1_url():
-        return "ERROR: No M1 URL configured. Provide m1_url parameter."
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    return await _common.destroy(m1_http.session_path(provisioning_session_id, CHC), "Content Hosting Configuration", if_match, expect=(200, 204))
 
-    session_id = provisioning_session_id or state.get_session_id()
-    if not session_id:
-        return "ERROR: No provisioning_session_id provided or stored in state."
 
-    url = _base_url_for_session(session_id)
+@mcp.tool()
+async def purge_content_hosting_cache(pattern: str = ".*", provisioning_session_id: str = None, m1_url: str = None) -> str:
+    """
+    Purge media resources from the Media AS cache (POST .../content-hosting-configuration/purge).
 
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.delete(url)
+    The body is application/x-www-form-urlencoded with the key "pattern" and a regular expression for the media resource URLs.
+    200 with the number of purged entries, 204 when none matched, 400 for a malformed expression.
 
-        if response.status_code in (200, 204):
-            return (
-                f"SUCCESS: Content Hosting Configuration for session '{session_id}' deleted.\n"
-                "The Provisioning Session remains active. You can create a new configuration with "
-                "create_content_hosting_configuration."
-            )
-        elif response.status_code == 404:
-            return f"ERROR: No Content Hosting Configuration found for session '{session_id}' (HTTP 404)."
-        return (
-            f"ERROR: HTTP {response.status_code} {response.reason_phrase}\n"
-            f"  URL: {url}\n  Response: {response.text[:600]}"
-        )
-
-    except httpx.ConnectError:
-        return _connect_error(state.get_m1_url())
-    except httpx.TimeoutException:
-        return f"ERROR: Request timed out to '{state.get_m1_url()}'."
-    except Exception as exc:
-        return f"ERROR: {type(exc).__name__}: {exc}"
+    PARAMETERS
+    ----------
+    pattern  Regular expression (default ".*": everything).
+    """
+    err = _common.prepare(m1_url, provisioning_session_id)
+    if err:
+        return err
+    out = await m1_http.call("POST", m1_http.session_path(provisioning_session_id, CHC, "purge"),
+                             body=urllib.parse.urlencode({"pattern": pattern}), content_type="application/x-www-form-urlencoded",
+                             accept="text/plain, application/json, */*", expect=(200, 204))
+    if not out.ok:
+        return out.error
+    if out.response.status_code == 204:
+        return "SUCCESS: no cache entry matched the pattern (HTTP 204)."
+    return f"SUCCESS: {out.response.text.strip()} cache entries purged."
