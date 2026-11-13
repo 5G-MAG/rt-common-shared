@@ -112,18 +112,20 @@ def read_af_conf(conf_file: str) -> Tuple[Any,Any,str]:
     except yaml.scanner.ScannerError:
         raise ConfigError(f'Unable to parse "{conf_file}" as YAML')
 
-    if 'msaf' not in conf or 'contentHostingConfiguration' not in conf['msaf']:
-        raise ConfigError(f'The file "{conf_file}" does not appear to be a 5GMS Application Function configuration file')
-    if 'certificate' not in conf['msaf']:
+    # "maf" is the root key of the Media AF section; "msaf" is the key of earlier releases
+    root = conf.get('maf') or conf.get('msaf') if isinstance(conf, dict) else None
+    if not isinstance(root, dict) or 'contentHostingConfiguration' not in root:
+        raise ConfigError(f'The file "{conf_file}" does not appear to be a Media Application Function configuration file')
+    if 'certificate' not in root:
         raise ConfigError(f'AF configuration file "{conf_file}" does not have a certificates index file')
-    if 'applicationServers' not in conf['msaf'] or len(conf['msaf']['applicationServers']) == 0:
+    if 'applicationServers' not in root or len(root['applicationServers']) == 0:
         raise ConfigError(f'AF configuration file "{conf_file}" does not have any Application Servers configured')
-    if 'canonicalHostname' not in conf['msaf']['applicationServers'][0]:
+    if 'canonicalHostname' not in root['applicationServers'][0]:
         raise ConfigError(f'AF configuration file "{conf_file}" does not have a canonicalHostname for the Application Server')
 
-    return (join_paths(conf_file, conf['msaf']['contentHostingConfiguration']),
-            join_paths(conf_file, conf['msaf']['certificate']),
-            conf['msaf']['applicationServers'][0]['canonicalHostname'])
+    return (join_paths(conf_file, root['contentHostingConfiguration']),
+            join_paths(conf_file, root['certificate']),
+            root['applicationServers'][0]['canonicalHostname'])
 
 def openssl_version():
     result = subprocess.run(['openssl','version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)

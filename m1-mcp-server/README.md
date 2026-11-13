@@ -32,7 +32,7 @@ Every resource has get, replace (PUT), patch (PATCH) and delete tools; the bodie
 ## Requirements
 
 - Python 3.10+
-- A running [5G-MAG Reference Tools](https://github.com/5G-MAG/rt-5gms-application-function) Application Function instance with the M1 interface accessible
+- A running [5G-MAG Reference Tools](https://github.com/5G-MAG/rt-media-application-function) Application Function instance with the M1 interface accessible
 
 ## Installation
 
@@ -250,7 +250,7 @@ python tests/live_check.py http://host:7777  # runs every tool against a running
 
 ## Related Projects
 
-- [5G-MAG Reference Tools](https://github.com/5G-MAG/rt-5gms-application-function) — The Application Function this server talks to
+- [5G-MAG Reference Tools](https://github.com/5G-MAG/rt-media-application-function) — The Application Function this server talks to
 - [Model Context Protocol](https://modelcontextprotocol.io/) — The protocol used to expose tools to AI agents
 
 ## Acknowledgement

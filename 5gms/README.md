@@ -2,7 +2,7 @@
 
 This directory contains files that are shared by two or more of these repositories:
 - [rt-5gms-application](https://github.com/5G-MAG/rt-5gms-application)
-- [rt-5gms-application-function](https://github.com/5G-MAG/rt-5gms-application-function)
+- [rt-media-application-function](https://github.com/5G-MAG/rt-media-application-function)
 - [rt-5gms-application-provider](https://github.com/5G-MAG/rt-5gms-application-provider)
 - [rt-5gms-application-server](https://github.com/5G-MAG/rt-5gms-application-server)
 - [rt-5gms-media-session-handler](https://github.com/5G-MAG/rt-5gms-media-session-handler)
