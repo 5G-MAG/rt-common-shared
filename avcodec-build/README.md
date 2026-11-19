@@ -64,5 +64,5 @@ podman run --arch=amd64 -v ${pwd}/build/ffmpeg/aarch64:/usr/build/ffmpeg --env T
 ## Additional recommendations in relation to the V3C Immersive Platform
 
 ### Android
-Once compiled, the `.so` libraries from the build artifacts' `lib` directory can be included into the `./External/avcodec/7.1/Android/arm64-v8a/lib` directory of the rt-v3c-unity-player.
+Once compiled, the `.so` libraries from the build artifacts' `lib` directory can be included into the `./External/avcodec/7.1/Android/arm64-v8a/lib` directory of the [rt-v3c-decoder-plugin](https://github.com/5G-MAG/rt-v3c-decoder-plugin).
 
