@@ -31,14 +31,17 @@
 ## Introduction
 
 This repository holds files, components and example configurations that several 5G-MAG Reference
-Tools repositories use in common. There is no top-level build: each folder stands on its own, and
-all but `open5gs-tools` have a README of their own, linked below.
+Tools repositories use in common. The top-level `meson.build` builds the libraries in `lib`
+(an HTTP server and SDP parsing and generation), which rt-mbs-function and rt-mbs-transport-function use as a
+git submodule. Every other folder stands on its own, and all but `open5gs-tools` have a README of their own,
+linked below.
 
 | Folder | Contents |
 |---|---|
 | [5gms](5gms/README.md) | 5G Media Streaming (5GMS): example configurations and common scripts for the 5GMS (rt-5gms-\*) Reference Tools |
 | [mbms](mbms/README.md) | MBMS and LTE-based 5G Broadcast: example configurations for the LTE-based 5G Broadcast (rt-mbms-\*) Reference Tools, and a description of the [MBMS Service Announcement formats](mbms/MBMS-service-announcement-files.md) |
 | [simple-express-server](simple-express-server/README.md) | a simple HTTP server, based on express.js, for hosting static files |
+| [lib](lib/) | C++ libraries built by the top-level `meson.build`: `http_server` and `rtsdp` (SDP parsing and generation) |
 | [open5gs-tools](open5gs-tools/) | Open5GS tools: scripts related to the OpenAPI generator |
 | [data-reporting/5G_APIs-overrides](data-reporting/5G_APIs-overrides/README.md) | Data Reporting 5G_APIs overrides: modified versions of the OpenAPI YAML files from the 5G_APIs repository, specific to Data Reporting, for use with a Data Collection Application Function |
 | [avcodec-build](avcodec-build/README.md) | a helper script to build FFmpeg libraries for Android |
